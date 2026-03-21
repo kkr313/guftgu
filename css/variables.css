@@ -1,0 +1,23 @@
+/* ═══════════════════════════════════════
+   CSS Variables / Design Tokens
+   ═══════════════════════════════════════ */
+
+:root {
+  --bg: #0A0B10;
+  --bg2: #10121A;
+  --bg3: #181A24;
+  --card: rgba(24,26,36,0.85);
+  --border: rgba(255,255,255,0.07);
+  --accent: #FF6B6B;
+  --accent2: #4ECDC4;
+  --accent3: #FFE66D;
+  --text: #F0F1F5;
+  --text2: #8B8FA8;
+  --text3: #555870;
+  --radius: 20px;
+  --radius-sm: 12px;
+  --nav-h: 72px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --glass: rgba(255,255,255,0.04);
+  --glow: 0 0 40px rgba(255,107,107,0.15);
+}

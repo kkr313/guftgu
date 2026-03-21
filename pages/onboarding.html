@@ -1,0 +1,307 @@
+﻿<!-- pages/onboarding.html -->
+  <div id="screen-onboard" class="screen active">
+    <div class="onboard-bg" id="obBg"></div>
+
+    <!-- Back button -->
+    <button class="ob-back-btn" id="obBackBtn" onclick="obPrevStep()" aria-label="Back">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+
+    <div class="onboard-content" id="onboardContent">
+      <!-- Logo -->
+      <div class="onboard-logo">
+        <div class="logo-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="11" rx="3" fill="white" opacity="0.9"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0" stroke="white" stroke-width="1.8" stroke-linecap="round" opacity="0.75"/><line x1="12" y1="18.5" x2="12" y2="22" stroke="white" stroke-width="1.8" stroke-linecap="round" opacity="0.75"/><line x1="9" y1="22" x2="15" y2="22" stroke="white" stroke-width="1.8" stroke-linecap="round" opacity="0.75"/></svg></div>
+        <div class="logo-text">Guftgu</div>
+      </div>
+      <div class="onboard-tagline">
+        <span class="tagline-hindi">बात करो, दिल से</span>
+        <span class="tagline-en">Speak freely · Connect deeply</span>
+      </div>
+
+      <!-- Progress (hidden on splash) -->
+      <div class="ob-progress" id="obProgress">
+        <div class="ob-prog-steps">
+          <div class="ob-prog-step"><div class="ob-prog-dot active" id="pdot-1" onclick="obJumpTo(1)">1</div></div>
+          <div class="ob-prog-line" id="pline-1"><div class="ob-prog-line-fill"></div></div>
+          <div class="ob-prog-step"><div class="ob-prog-dot" id="pdot-2" onclick="obJumpTo(2)">2</div></div>
+          <div class="ob-prog-line" id="pline-2"><div class="ob-prog-line-fill"></div></div>
+          <div class="ob-prog-step"><div class="ob-prog-dot" id="pdot-3" onclick="obJumpTo(3)">3</div></div>
+          <div class="ob-prog-line" id="pline-3"><div class="ob-prog-line-fill"></div></div>
+          <div class="ob-prog-step"><div class="ob-prog-dot" id="pdot-4">4</div></div>
+        </div>
+        <div class="ob-prog-label" id="obProgLabel">Step <span>1</span> of 4</div>
+      </div>
+
+      <!-- ══ SPLASH (step 0) ══ -->
+      <div class="onboard-step active" id="ob-step-0">
+
+        <!-- App highlights -->
+        <div class="splash-highlights">
+          <div class="splash-hl"><span class="splash-hl-icon">🎙️</span><span>Voice calls with<br>real people</span></div>
+          <div class="splash-hl"><span class="splash-hl-icon">🎭</span><span>100% anonymous<br>always</span></div>
+          <div class="splash-hl"><span class="splash-hl-icon">🌏</span><span>People across<br>India</span></div>
+          <div class="splash-hl"><span class="splash-hl-icon">⚡</span><span>No sign-up<br>needed</span></div>
+        </div>
+
+        <!-- Quick-start card -->
+        <div class="qs-card" onclick="quickStart()">
+          <div class="qs-icon">⚡</div>
+          <div class="qs-info">
+            <div class="qs-title">Quick Start</div>
+            <div class="qs-sub">We'll pick a random avatar &amp; name — just choose your language &amp; jump in</div>
+          </div>
+          <div class="qs-arrow">›</div>
+        </div>
+
+        <div class="or-divider">
+          <div class="or-line"></div>
+          <div class="or-text">OR SET UP YOURSELF</div>
+          <div class="or-line"></div>
+        </div>
+
+        <button class="btn btn-primary" onclick="obNextStep()">Set Profile →</button>
+
+        <div class="splash-footer">
+          🎭 Stay fully anonymous &nbsp;·&nbsp; <svg width="20" height="14" viewBox="0 0 20 14" style="vertical-align:middle;border-radius:2px;margin-bottom:1px;" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="14" fill="#138808"/><rect width="20" height="9.33" fill="#fff"/><rect width="20" height="4.67" fill="#FF9933"/><circle cx="10" cy="7" r="2.2" fill="none" stroke="#000080" stroke-width="0.4"/><g stroke="#000080" stroke-width="0.3" transform="translate(10,7)"><line x1="0" y1="-2.2" x2="0" y2="2.2"/><line x1="-2.2" y1="0" x2="2.2" y2="0"/><line x1="-1.56" y1="-1.56" x2="1.56" y2="1.56"/><line x1="1.56" y1="-1.56" x2="-1.56" y2="1.56"/><line x1="-0.83" y1="-2.03" x2="0.83" y2="2.03"/><line x1="0.83" y1="-2.03" x2="-0.83" y2="2.03"/><line x1="-2.03" y1="-0.83" x2="2.03" y2="0.83"/><line x1="2.03" y1="-0.83" x2="-2.03" y2="0.83"/></g><circle cx="10" cy="7" r="0.4" fill="#000080"/></svg> Made for India
+        </div>
+      </div>
+
+      <!-- ══ QUICK-START REGION ONLY (step QS) ══ -->
+      <div class="onboard-step" id="ob-step-qs">
+        <div class="step-label">Quick Start · 1 step</div>
+        <div class="step-title">Where are you from?</div>
+        <div class="step-sub">That's all we need — everything else is randomised for you.</div>
+
+        <!-- Random profile preview -->
+        <div class="qs-profile-preview" id="qsPreview">
+          <div class="qs-preview-avatar" id="qsPreviewAvatar">🦊</div>
+          <div class="qs-preview-details">
+            <div class="qs-preview-name" id="qsPreviewName">SilentFox42</div>
+            <div class="qs-preview-meta" id="qsPreviewMeta">Feeling Happy 😄 · Just chat</div>
+          </div>
+          <button class="qs-preview-edit" onclick="reshuffleQS()">🔀 Reshuffle</button>
+        </div>
+
+        <div class="step3-section-label" style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;">🗣️ Language</div>
+        <div class="lang-pill-row" id="qsLangRow">
+          <div class="lang-pill selected" data-lang="Hindi" onclick="qsSelectLang(this)">🇮🇳 हिन्दी</div>
+          <div class="lang-pill" data-lang="English" onclick="qsSelectLang(this)">🌐 English</div>
+          <div class="lang-pill" data-lang="Bengali" onclick="qsSelectLang(this)">🪷 বাংলা</div>
+          <div class="lang-pill" data-lang="Tamil" onclick="qsSelectLang(this)">🌺 தமிழ்</div>
+          <div class="lang-pill" data-lang="Telugu" onclick="qsSelectLang(this)">🌸 తెలుగు</div>
+          <div class="lang-pill" data-lang="Marathi" onclick="qsSelectLang(this)">🏵️ मराठी</div>
+          <div class="lang-pill" data-lang="Kannada" onclick="qsSelectLang(this)">🌼 ಕನ್ನಡ</div>
+          <div class="lang-pill" data-lang="Punjabi" onclick="qsSelectLang(this)">☘️ ਪੰਜਾਬੀ</div>
+          <div class="lang-pill" data-lang="Bhojpuri" onclick="qsSelectLang(this)">🌻 भोजपुरी</div>
+        </div>
+
+        <div class="step3-section-label" style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;">📍 Region <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></div>
+        <div class="region-grid" id="qsRegionGrid">
+          <div class="region-card" data-region="North" onclick="qsSelectRegion(this)">
+            <div class="region-icon">🏔️</div>
+            <div class="region-name">North India</div>
+            <div class="region-states">Delhi · UP · Punjab</div>
+          </div>
+          <div class="region-card" data-region="South" onclick="qsSelectRegion(this)">
+            <div class="region-icon">🌴</div>
+            <div class="region-name">South India</div>
+            <div class="region-states">TN · Kerala · Karnataka</div>
+          </div>
+          <div class="region-card" data-region="East" onclick="qsSelectRegion(this)">
+            <div class="region-icon">🌊</div>
+            <div class="region-name">East India</div>
+            <div class="region-states">WB · Odisha · Bihar</div>
+          </div>
+          <div class="region-card" data-region="West" onclick="qsSelectRegion(this)">
+            <div class="region-icon">🌅</div>
+            <div class="region-name">West India</div>
+            <div class="region-states">MH · Gujarat · Goa</div>
+          </div>
+          <div class="region-card" data-region="Central" onclick="qsSelectRegion(this)">
+            <div class="region-icon">🌾</div>
+            <div class="region-name">Central India</div>
+            <div class="region-states">MP · CG · Telangana</div>
+          </div>
+          <div class="region-card" data-region="Northeast" onclick="qsSelectRegion(this)">
+            <div class="region-icon">🏕️</div>
+            <div class="region-name">Northeast</div>
+            <div class="region-states">Assam · Manipur · NE</div>
+          </div>
+        </div>
+
+        <button class="btn btn-teal" onclick="finishQS()">Start talking 🎙️</button>
+        <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:10px;">
+          You can update your profile anytime from Settings
+        </div>
+      </div>
+
+      <!-- ══ STEP 1: MOOD + INTENT ══ -->
+      <div class="onboard-step" id="ob-step-1">
+        <div class="step-title">How are you feeling?</div>
+        <div class="step-sub">Your mood is your match filter — Lonely finds Lonely, Happy finds Happy.</div>
+        <div class="mood-grid" id="moodGrid">
+          <div class="mood-card selected" data-mood="Happy" onclick="selectMood(this)"><div class="mood-emoji">😄</div><div class="mood-name">Happy</div></div>
+          <div class="mood-card" data-mood="Chill" onclick="selectMood(this)"><div class="mood-emoji">😎</div><div class="mood-name">Chill</div></div>
+          <div class="mood-card" data-mood="Excited" onclick="selectMood(this)"><div class="mood-emoji">🤩</div><div class="mood-name">Excited</div></div>
+          <div class="mood-card" data-mood="Lonely" onclick="selectMood(this)"><div class="mood-emoji">🥺</div><div class="mood-name">Lonely</div></div>
+          <div class="mood-card" data-mood="Sad" onclick="selectMood(this)"><div class="mood-emoji">😔</div><div class="mood-name">Sad</div></div>
+          <div class="mood-card" data-mood="Anxious" onclick="selectMood(this)"><div class="mood-emoji">😰</div><div class="mood-name">Anxious</div></div>
+          <div class="mood-card" data-mood="Angry" onclick="selectMood(this)"><div class="mood-emoji">😤</div><div class="mood-name">Angry</div></div>
+          <div class="mood-card" data-mood="Curious" onclick="selectMood(this)"><div class="mood-emoji">🤔</div><div class="mood-name">Curious</div></div>
+          <div class="mood-card" data-mood="Bored" onclick="selectMood(this)"><div class="mood-emoji">😑</div><div class="mood-name">Bored</div></div>
+        </div>
+
+        <div class="step3-section-label" style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;">What do you want to do?</div>
+        <div class="intent-row" id="intentRow">
+          <div class="intent-chip selected" data-intent="Just chat" onclick="selectIntent(this)">
+            <div class="intent-chip-icon">💬</div>
+            <div><div class="intent-chip-title">Just chat</div><div class="intent-chip-sub">Free flow</div></div>
+          </div>
+          <div class="intent-chip" data-intent="Vent" onclick="selectIntent(this)">
+            <div class="intent-chip-icon">🌊</div>
+            <div><div class="intent-chip-title">Vent</div><div class="intent-chip-sub">Off my chest</div></div>
+          </div>
+          <div class="intent-chip" data-intent="Laugh" onclick="selectIntent(this)">
+            <div class="intent-chip-icon">😂</div>
+            <div><div class="intent-chip-title">Laugh</div><div class="intent-chip-sub">Jokes &amp; fun</div></div>
+          </div>
+          <div class="intent-chip" data-intent="Deep talk" onclick="selectIntent(this)">
+            <div class="intent-chip-icon">🧠</div>
+            <div><div class="intent-chip-title">Deep talk</div><div class="intent-chip-sub">Ideas &amp; life</div></div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="obNextStep()">Continue →</button>
+      </div>
+
+      <!-- ══ STEP 2: AVATAR ══ -->
+      <div class="onboard-step" id="ob-step-2">
+        <div class="step-title">Choose your avatar</div>
+        <div class="step-sub">Pick one that represents you — no real identity revealed.</div>
+        <div class="avatar-tabs">
+          <div class="avatar-tab active" onclick="switchAvatarTab('animal', this)">🐾 Animals</div>
+          <div class="avatar-tab" onclick="switchAvatarTab('people', this)">👥 People</div>
+          <div class="avatar-tab" onclick="switchAvatarTab('fantasy', this)">✨ Fantasy</div>
+        </div>
+        <!-- ANIMALS -->
+        <div class="avatar-panel active avatar-grid" id="panel-animal" style="grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px;">
+          <div class="avatar-opt selected" data-avatar="cat" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><polygon points="18,30 10,10 26,26" fill="#F9B44E"/><polygon points="62,30 70,10 54,26" fill="#F9B44E"/><polygon points="20,30 13,13 26,27" fill="#F4A0A0"/><polygon points="60,30 67,13 54,27" fill="#F4A0A0"/><circle cx="40" cy="46" r="26" fill="#F9B44E"/><ellipse cx="40" cy="58" rx="16" ry="10" fill="#E8952A"/><ellipse cx="40" cy="52" rx="12" ry="10" fill="#FDDDA0"/><ellipse cx="30" cy="44" rx="5.5" ry="6.5" fill="#3D2B1F"/><ellipse cx="50" cy="44" rx="5.5" ry="6.5" fill="#3D2B1F"/><circle cx="30" cy="44" r="4" fill="#1a1a2e"/><circle cx="50" cy="44" r="4" fill="#1a1a2e"/><circle cx="31.5" cy="42.5" r="1.5" fill="#fff"/><circle cx="51.5" cy="42.5" r="1.5" fill="#fff"/><ellipse cx="40" cy="52" rx="3.5" ry="2.5" fill="#E8952A"/><path d="M36 56 Q40 59 44 56" stroke="#C06020" stroke-width="1.5" fill="none" stroke-linecap="round"/><line x1="24" y1="50" x2="9" y2="47" stroke="#C06020" stroke-width="1.2"/><line x1="24" y1="53" x2="9" y2="53" stroke="#C06020" stroke-width="1.2"/><line x1="56" y1="50" x2="71" y2="47" stroke="#C06020" stroke-width="1.2"/><line x1="56" y1="53" x2="71" y2="53" stroke="#C06020" stroke-width="1.2"/></svg><div class="avatar-opt-name">Cat</div></div>
+          <div class="avatar-opt" data-avatar="fox" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><polygon points="16,28 6,6 24,22" fill="#E8622A"/><polygon points="64,28 74,6 56,22" fill="#E8622A"/><polygon points="17,28 9,9 24,23" fill="#F9D8C0"/><polygon points="63,28 71,9 56,23" fill="#F9D8C0"/><circle cx="40" cy="46" r="26" fill="#E8622A"/><ellipse cx="40" cy="54" rx="14" ry="12" fill="#F9D8C0"/><ellipse cx="40" cy="60" rx="12" ry="7" fill="#C04010"/><ellipse cx="30" cy="44" rx="5.5" ry="6.5" fill="#3D2B1F"/><ellipse cx="50" cy="44" rx="5.5" ry="6.5" fill="#3D2B1F"/><circle cx="30" cy="44" r="4" fill="#1a1a2e"/><circle cx="50" cy="44" r="4" fill="#1a1a2e"/><circle cx="31.5" cy="42.5" r="1.5" fill="#fff"/><circle cx="51.5" cy="42.5" r="1.5" fill="#fff"/><ellipse cx="40" cy="53" rx="3.5" ry="2.5" fill="#C04010"/><path d="M35 57 Q40 60 45 57" stroke="#8B2000" stroke-width="1.5" fill="none" stroke-linecap="round"/><line x1="24" y1="50" x2="9" y2="47" stroke="#8B2000" stroke-width="1.2"/><line x1="24" y1="53" x2="9" y2="53" stroke="#8B2000" stroke-width="1.2"/><line x1="56" y1="50" x2="71" y2="47" stroke="#8B2000" stroke-width="1.2"/><line x1="56" y1="53" x2="71" y2="53" stroke="#8B2000" stroke-width="1.2"/></svg><div class="avatar-opt-name">Fox</div></div>
+          <div class="avatar-opt" data-avatar="wolf" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><polygon points="16,28 8,6 26,24" fill="#8B9BB4"/><polygon points="64,28 72,6 54,24" fill="#8B9BB4"/><polygon points="18,28 12,10 26,25" fill="#D0D8E8"/><polygon points="62,28 68,10 54,25" fill="#D0D8E8"/><circle cx="40" cy="46" r="26" fill="#8B9BB4"/><ellipse cx="40" cy="56" rx="14" ry="12" fill="#C8D4E4"/><ellipse cx="40" cy="62" rx="12" ry="7" fill="#6B7A94"/><ellipse cx="30" cy="43" rx="6" ry="7" fill="#3D2B1F"/><ellipse cx="50" cy="43" rx="6" ry="7" fill="#3D2B1F"/><circle cx="30" cy="43" r="4.5" fill="#E8B820"/><circle cx="30" cy="43" r="2.8" fill="#1a1a2e"/><circle cx="50" cy="43" r="4.5" fill="#E8B820"/><circle cx="50" cy="43" r="2.8" fill="#1a1a2e"/><circle cx="31.5" cy="41.5" r="1.2" fill="#fff"/><circle cx="51.5" cy="41.5" r="1.2" fill="#fff"/><ellipse cx="40" cy="54" rx="4" ry="3" fill="#6B7A94"/><path d="M35 58 Q40 61 45 58" stroke="#4A5A74" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg><div class="avatar-opt-name">Wolf</div></div>
+          <div class="avatar-opt" data-avatar="panda" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="46" r="26" fill="#F5F5F0"/><ellipse cx="40" cy="62" rx="14" ry="8" fill="#DDDDDD"/><circle cx="26" cy="28" r="9" fill="#252525"/><circle cx="54" cy="28" r="9" fill="#252525"/><ellipse cx="26" cy="40" rx="9" ry="10" fill="#252525"/><ellipse cx="54" cy="40" rx="9" ry="10" fill="#252525"/><circle cx="28" cy="40" r="6" fill="#fff"/><circle cx="52" cy="40" r="6" fill="#fff"/><circle cx="28" cy="41" r="4" fill="#1a1a2e"/><circle cx="52" cy="41" r="4" fill="#1a1a2e"/><circle cx="29.5" cy="39.5" r="1.5" fill="#fff"/><circle cx="53.5" cy="39.5" r="1.5" fill="#fff"/><ellipse cx="40" cy="53" rx="5" ry="4" fill="#DDDDDD"/><ellipse cx="40" cy="53" rx="3" ry="2" fill="#252525"/><path d="M34 57 Q40 61 46 57" stroke="#888" stroke-width="1.5" fill="none" stroke-linecap="round"/><line x1="28" y1="56" x2="14" y2="53" stroke="#bbb" stroke-width="1"/><line x1="28" y1="59" x2="14" y2="59" stroke="#bbb" stroke-width="1"/><line x1="52" y1="56" x2="66" y2="53" stroke="#bbb" stroke-width="1"/><line x1="52" y1="59" x2="66" y2="59" stroke="#bbb" stroke-width="1"/></svg><div class="avatar-opt-name">Panda</div></div>
+          <div class="avatar-opt" data-avatar="lion" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="42" r="30" fill="#D4890A" opacity="0.28"/><circle cx="40" cy="42" r="25" fill="#D4890A" opacity="0.22"/><circle cx="40" cy="44" r="23" fill="#F2A820"/><ellipse cx="40" cy="60" rx="15" ry="8" fill="#D4890A"/><ellipse cx="40" cy="54" rx="13" ry="10" fill="#F9C860"/><ellipse cx="30" cy="43" rx="5.5" ry="6.5" fill="#3D2B1F"/><ellipse cx="50" cy="43" rx="5.5" ry="6.5" fill="#3D2B1F"/><circle cx="30" cy="43" r="4" fill="#1a1a2e"/><circle cx="50" cy="43" r="4" fill="#1a1a2e"/><circle cx="31.5" cy="41.5" r="1.5" fill="#fff"/><circle cx="51.5" cy="41.5" r="1.5" fill="#fff"/><ellipse cx="40" cy="53" rx="4" ry="3" fill="#D4890A"/><path d="M35 57 Q40 61 45 57" stroke="#8B4A00" stroke-width="1.5" fill="none" stroke-linecap="round"/><line x1="24" y1="51" x2="9" y2="48" stroke="#8B4A00" stroke-width="1.2"/><line x1="24" y1="54" x2="9" y2="54" stroke="#8B4A00" stroke-width="1.2"/><line x1="56" y1="51" x2="71" y2="48" stroke="#8B4A00" stroke-width="1.2"/><line x1="56" y1="54" x2="71" y2="54" stroke="#8B4A00" stroke-width="1.2"/></svg><div class="avatar-opt-name">Lion</div></div>
+          <div class="avatar-opt" data-avatar="frog" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="22" cy="26" r="13" fill="#4CAF50"/><circle cx="58" cy="26" r="13" fill="#4CAF50"/><circle cx="22" cy="25" r="9" fill="#E8F5E9"/><circle cx="58" cy="25" r="9" fill="#E8F5E9"/><circle cx="22" cy="25" r="6" fill="#4CAF50"/><circle cx="58" cy="25" r="6" fill="#4CAF50"/><circle cx="22" cy="25" r="4" fill="#1a1a2e"/><circle cx="58" cy="25" r="4" fill="#1a1a2e"/><circle cx="23.5" cy="23.5" r="1.5" fill="#fff"/><circle cx="59.5" cy="23.5" r="1.5" fill="#fff"/><ellipse cx="40" cy="52" rx="25" ry="22" fill="#4CAF50"/><ellipse cx="40" cy="64" rx="18" ry="10" fill="#388E3C"/><ellipse cx="40" cy="48" rx="16" ry="12" fill="#81C784"/><ellipse cx="32" cy="46" rx="5.5" ry="6.5" fill="#388E3C"/><ellipse cx="48" cy="46" rx="5.5" ry="6.5" fill="#388E3C"/><circle cx="32" cy="46" r="3" fill="#1a1a2e"/><circle cx="48" cy="46" r="3" fill="#1a1a2e"/><circle cx="33" cy="45" r="1" fill="#fff"/><circle cx="49" cy="45" r="1" fill="#fff"/><path d="M28 58 Q40 66 52 58" stroke="#2E7D32" stroke-width="2" fill="none" stroke-linecap="round"/></svg><div class="avatar-opt-name">Frog</div></div>
+          <div class="avatar-opt" data-avatar="owl" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="46" r="26" fill="#8B6010"/><ellipse cx="40" cy="62" rx="14" ry="8" fill="#6B4A00"/><polygon points="22,22 14,6 28,20" fill="#8B6010"/><polygon points="58,22 66,6 52,20" fill="#8B6010"/><polygon points="23,22 17,9 28,21" fill="#C49A3C"/><polygon points="57,22 63,9 52,21" fill="#C49A3C"/><circle cx="30" cy="42" r="12" fill="#F5F0E8"/><circle cx="50" cy="42" r="12" fill="#F5F0E8"/><circle cx="30" cy="42" r="9" fill="#E8A820"/><circle cx="50" cy="42" r="9" fill="#E8A820"/><circle cx="30" cy="42" r="6" fill="#1a1a2e"/><circle cx="50" cy="42" r="6" fill="#1a1a2e"/><circle cx="32" cy="40" r="2.5" fill="#fff"/><circle cx="52" cy="40" r="2.5" fill="#fff"/><polygon points="37,54 40,58 43,54" fill="#E8A820"/><ellipse cx="40" cy="54" rx="3" ry="2" fill="#E8A820"/></svg><div class="avatar-opt-name">Owl</div></div>
+          <div class="avatar-opt" data-avatar="bear" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="26" r="12" fill="#8B5E3C"/><circle cx="60" cy="26" r="12" fill="#8B5E3C"/><circle cx="20" cy="27" r="8" fill="#A0724E"/><circle cx="60" cy="27" r="8" fill="#A0724E"/><circle cx="40" cy="46" r="26" fill="#8B5E3C"/><ellipse cx="40" cy="62" rx="15" ry="8" fill="#6B3E1C"/><ellipse cx="40" cy="54" rx="13" ry="11" fill="#A0724E"/><ellipse cx="30" cy="44" rx="5.5" ry="6.5" fill="#3D2B1F"/><ellipse cx="50" cy="44" rx="5.5" ry="6.5" fill="#3D2B1F"/><circle cx="30" cy="44" r="4" fill="#1a1a2e"/><circle cx="50" cy="44" r="4" fill="#1a1a2e"/><circle cx="31.5" cy="42.5" r="1.5" fill="#fff"/><circle cx="51.5" cy="42.5" r="1.5" fill="#fff"/><ellipse cx="40" cy="54" rx="5" ry="4" fill="#6B3E1C"/><ellipse cx="40" cy="54" rx="3" ry="2.5" fill="#3D2014"/><path d="M34 58 Q40 62 46 58" stroke="#3D2014" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg><div class="avatar-opt-name">Bear</div></div>
+          <div class="avatar-opt" data-avatar="rabbit" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><ellipse cx="26" cy="18" rx="8" ry="18" fill="#F0EAE8"/><ellipse cx="54" cy="18" rx="8" ry="18" fill="#F0EAE8"/><ellipse cx="26" cy="20" rx="5" ry="14" fill="#F4B8C0"/><ellipse cx="54" cy="20" rx="5" ry="14" fill="#F4B8C0"/><circle cx="40" cy="48" r="26" fill="#F0EAE8"/><ellipse cx="40" cy="64" rx="14" ry="7" fill="#D8D0CC"/><ellipse cx="30" cy="46" rx="5.5" ry="6.5" fill="#A090A0"/><ellipse cx="50" cy="46" rx="5.5" ry="6.5" fill="#A090A0"/><circle cx="30" cy="47" r="4" fill="#1a1a2e"/><circle cx="50" cy="47" r="4" fill="#1a1a2e"/><circle cx="31.5" cy="45.5" r="1.5" fill="#fff"/><circle cx="51.5" cy="45.5" r="1.5" fill="#fff"/><ellipse cx="40" cy="55" rx="4.5" ry="3.5" fill="#F4B8C0"/><path d="M35 59 Q40 62 45 59" stroke="#C890A0" stroke-width="1.5" fill="none" stroke-linecap="round"/><line x1="27" y1="53" x2="12" y2="50" stroke="#C890A0" stroke-width="1.1"/><line x1="27" y1="56" x2="12" y2="56" stroke="#C890A0" stroke-width="1.1"/><line x1="53" y1="53" x2="68" y2="50" stroke="#C890A0" stroke-width="1.1"/><line x1="53" y1="56" x2="68" y2="56" stroke="#C890A0" stroke-width="1.1"/></svg><div class="avatar-opt-name">Rabbit</div></div>
+          <div class="avatar-opt" data-avatar="tiger" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><polygon points="18,28 10,8 26,24" fill="#E8862A"/><polygon points="62,28 70,8 54,24" fill="#E8862A"/><polygon points="19,28 13,12 26,25" fill="#F9C880"/><polygon points="61,28 67,12 54,25" fill="#F9C880"/><circle cx="40" cy="46" r="26" fill="#E8862A"/><ellipse cx="40" cy="60" rx="16" ry="8" fill="#C06010"/><ellipse cx="40" cy="54" rx="13" ry="11" fill="#F9C880"/><ellipse cx="30" cy="44" rx="5.5" ry="6.5" fill="#3D2B1F"/><ellipse cx="50" cy="44" rx="5.5" ry="6.5" fill="#3D2B1F"/><circle cx="30" cy="44" r="4" fill="#1a1a2e"/><circle cx="50" cy="44" r="4" fill="#1a1a2e"/><circle cx="31.5" cy="42.5" r="1.5" fill="#fff"/><circle cx="51.5" cy="42.5" r="1.5" fill="#fff"/><ellipse cx="40" cy="53" rx="4.5" ry="3.5" fill="#C06010"/><path d="M34 58 Q40 61 46 58" stroke="#8B3A00" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M28,35 Q34,31 40,34 Q46,31 52,35" stroke="#8B3A00" stroke-width="2" fill="none"/><path d="M25,28 Q30,24 34,27" stroke="#8B3A00" stroke-width="1.5" fill="none"/><path d="M46,27 Q50,24 55,28" stroke="#8B3A00" stroke-width="1.5" fill="none"/></svg><div class="avatar-opt-name">Tiger</div></div>
+          <div class="avatar-opt" data-avatar="deer" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><path d="M22,26 L16,8 L20,16 L14,10 L22,22" stroke="#8B6010" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M58,26 L64,8 L60,16 L66,10 L58,22" stroke="#8B6010" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="40" cy="46" r="26" fill="#C8843C"/><ellipse cx="40" cy="62" rx="14" ry="8" fill="#A06020"/><ellipse cx="40" cy="54" rx="14" ry="11" fill="#E8C090"/><ellipse cx="30" cy="44" rx="5.5" ry="6.5" fill="#3D2B1F"/><ellipse cx="50" cy="44" rx="5.5" ry="6.5" fill="#3D2B1F"/><circle cx="30" cy="44" r="4" fill="#1a1a2e"/><circle cx="50" cy="44" r="4" fill="#1a1a2e"/><circle cx="31.5" cy="42.5" r="1.5" fill="#fff"/><circle cx="51.5" cy="42.5" r="1.5" fill="#fff"/><ellipse cx="40" cy="54" rx="5" ry="4" fill="#8B5010"/><circle cx="40" cy="54" r="3" fill="#5A2808"/><path d="M34 58 Q40 62 46 58" stroke="#5A2808" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg><div class="avatar-opt-name">Deer</div></div>
+          <div class="avatar-opt" data-avatar="penguin" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><ellipse cx="40" cy="50" rx="22" ry="24" fill="#1E2340"/><ellipse cx="40" cy="54" rx="14" ry="17" fill="#F5F5F0"/><circle cx="40" cy="30" r="16" fill="#1E2340"/><ellipse cx="40" cy="32" rx="9" ry="11" fill="#F5F5F0"/><ellipse cx="32" cy="27" rx="5.5" ry="6.5" fill="#1E2340"/><ellipse cx="48" cy="27" rx="5.5" ry="6.5" fill="#1E2340"/><circle cx="32" cy="28" r="4" fill="#fff"/><circle cx="48" cy="28" r="4" fill="#fff"/><circle cx="32" cy="28" r="2.5" fill="#1a1a2e"/><circle cx="48" cy="28" r="2.5" fill="#1a1a2e"/><circle cx="33" cy="27" r="1" fill="#fff"/><circle cx="49" cy="27" r="1" fill="#fff"/><polygon points="37,36 40,41 43,36" fill="#FF8C00"/><ellipse cx="26" cy="52" rx="8" ry="6" fill="#1E2340" transform="rotate(-20 26 52)"/><ellipse cx="54" cy="52" rx="8" ry="6" fill="#1E2340" transform="rotate(20 54 52)"/><ellipse cx="33" cy="70" rx="7" ry="4" fill="#FF8C00"/><ellipse cx="47" cy="70" rx="7" ry="4" fill="#FF8C00"/></svg><div class="avatar-opt-name">Penguin</div></div>
+        </div>
+
+        <!-- PEOPLE -->
+        <div class="avatar-panel avatar-grid" id="panel-people" style="grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px;">
+          <div class="avatar-opt selected" data-avatar="coder" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="26" r="16" fill="#FDBCB4"/><rect x="32" y="14" width="16" height="4" rx="2" fill="#3E2723"/><ellipse cx="28" cy="48" rx="8" ry="14" fill="#FDBCB4"/><ellipse cx="52" cy="48" rx="8" ry="14" fill="#FDBCB4"/><ellipse cx="40" cy="60" rx="20" ry="16" fill="#1565C0"/><rect x="20" y="40" width="40" height="26" rx="6" fill="#1565C0"/><circle cx="33" cy="23" r="3.5" fill="#4E342E"/><circle cx="47" cy="23" r="3.5" fill="#4E342E"/><circle cx="34" cy="22" r="1.5" fill="#fff"/><circle cx="48" cy="22" r="1.5" fill="#fff"/><path d="M35 31 Q40 34 45 31" stroke="#C07860" stroke-width="1.5" fill="none" stroke-linecap="round"/><ellipse cx="40" cy="29" rx="4" ry="3" fill="#E8947A"/><rect x="26" y="46" width="28" height="18" rx="3" fill="#0D47A1"/><rect x="29" y="50" width="22" height="12" rx="2" fill="#1E88E5"/><text x="40" y="60" text-anchor="middle" font-size="8" fill="#E3F2FD" font-family="monospace">&lt;/&gt;</text></svg><div class="avatar-opt-name">Coder</div></div>
+          <div class="avatar-opt" data-avatar="artist" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="26" r="16" fill="#D4A574"/><path d="M24,24 Q32,16 40,20 Q48,14 56,22" stroke="#4A2800" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="28" cy="48" rx="8" ry="14" fill="#D4A574"/><ellipse cx="52" cy="48" rx="8" ry="14" fill="#D4A574"/><ellipse cx="40" cy="60" rx="20" ry="16" fill="#7B1FA2"/><rect x="20" y="40" width="40" height="26" rx="6" fill="#7B1FA2"/><circle cx="33" cy="23" r="3.5" fill="#3E2723"/><circle cx="47" cy="23" r="3.5" fill="#3E2723"/><circle cx="34" cy="22" r="1.5" fill="#fff"/><circle cx="48" cy="22" r="1.5" fill="#fff"/><path d="M35 31 Q40 34 45 31" stroke="#A0724E" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="30" cy="58" r="5" fill="#FF5722"/><circle cx="40" cy="62" r="5" fill="#FFEB3B"/><circle cx="50" cy="58" r="5" fill="#2196F3"/></svg><div class="avatar-opt-name">Artist</div></div>
+          <div class="avatar-opt" data-avatar="doctor" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="26" r="16" fill="#FDBCB4"/><ellipse cx="28" cy="48" rx="8" ry="14" fill="#FDBCB4"/><ellipse cx="52" cy="48" rx="8" ry="14" fill="#FDBCB4"/><ellipse cx="40" cy="60" rx="20" ry="16" fill="#f5f5f5"/><rect x="20" y="40" width="40" height="26" rx="6" fill="#f5f5f5"/><circle cx="33" cy="23" r="3.5" fill="#4E342E"/><circle cx="47" cy="23" r="3.5" fill="#4E342E"/><circle cx="34" cy="22" r="1.5" fill="#fff"/><circle cx="48" cy="22" r="1.5" fill="#fff"/><path d="M35 31 Q40 34 45 31" stroke="#C07860" stroke-width="1.5" fill="none" stroke-linecap="round"/><ellipse cx="40" cy="29" rx="4" ry="3" fill="#E8947A"/><rect x="32" y="50" width="7" height="16" rx="2" fill="#EF5350"/><rect x="28" y="54" width="15" height="8" rx="2" fill="#EF5350"/><path d="M52,46 Q56,50 54,60 Q56,66 52,64" stroke="#90CAF9" stroke-width="3" fill="none" stroke-linecap="round"/></svg><div class="avatar-opt-name">Doctor</div></div>
+          <div class="avatar-opt" data-avatar="chef" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="28" r="16" fill="#FDBCB4"/><ellipse cx="28" cy="50" rx="8" ry="14" fill="#FDBCB4"/><ellipse cx="52" cy="50" rx="8" ry="14" fill="#FDBCB4"/><ellipse cx="40" cy="62" rx="20" ry="16" fill="#f5f5f5"/><rect x="20" y="44" width="40" height="24" rx="5" fill="#f0f0f0"/><circle cx="33" cy="25" r="3.5" fill="#4E342E"/><circle cx="47" cy="25" r="3.5" fill="#4E342E"/><circle cx="34" cy="24" r="1.5" fill="#fff"/><circle cx="48" cy="24" r="1.5" fill="#fff"/><path d="M35 33 Q40 36 45 33" stroke="#C07860" stroke-width="1.5" fill="none" stroke-linecap="round"/><ellipse cx="40" cy="15" rx="14" ry="10" fill="#fff" stroke="#E0E0E0" stroke-width="1.5"/><ellipse cx="40" cy="22" rx="14" ry="5" fill="#fff"/><line x1="30" y1="50" x2="50" y2="50" stroke="#DDD" stroke-width="1.5"/><path d="M28,56 Q33,52 38,56" stroke="#FF8A65" stroke-width="1.5" fill="none"/><path d="M42,56 Q47,52 52,56" stroke="#FF8A65" stroke-width="1.5" fill="none"/></svg><div class="avatar-opt-name">Chef</div></div>
+          <div class="avatar-opt" data-avatar="musician" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="26" r="16" fill="#FDBCB4"/><ellipse cx="28" cy="48" rx="8" ry="14" fill="#FDBCB4"/><ellipse cx="52" cy="48" rx="8" ry="14" fill="#FDBCB4"/><ellipse cx="40" cy="60" rx="20" ry="16" fill="#212121"/><rect x="20" y="40" width="40" height="26" rx="6" fill="#212121"/><circle cx="33" cy="23" r="3.5" fill="#1a1a2e"/><circle cx="47" cy="23" r="3.5" fill="#1a1a2e"/><circle cx="34" cy="22" r="1.5" fill="#fff"/><circle cx="48" cy="22" r="1.5" fill="#fff"/><path d="M35 31 Q40 34 45 31" stroke="#C07860" stroke-width="1.5" fill="none" stroke-linecap="round"/><ellipse cx="40" cy="29" rx="4" ry="3" fill="#E8947A"/><circle cx="54" cy="52" r="9" fill="#E53935"/><circle cx="54" cy="52" r="5" fill="#B71C1C"/><circle cx="54" cy="52" r="2.5" fill="#212121"/><line x1="54" y1="43" x2="54" y2="47" stroke="#E53935" stroke-width="2.5"/></svg><div class="avatar-opt-name">Musician</div></div>
+          <div class="avatar-opt" data-avatar="astronaut" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><ellipse cx="40" cy="52" rx="26" ry="24" fill="#CFD8DC"/><ellipse cx="40" cy="70" rx="18" ry="9" fill="#B0BEC5"/><ellipse cx="18" cy="52" rx="9" ry="13" fill="#B0BEC5"/><ellipse cx="62" cy="52" rx="9" ry="13" fill="#B0BEC5"/><circle cx="40" cy="34" r="20" fill="#ECEFF1"/><circle cx="40" cy="33" r="15" fill="#263238"/><circle cx="40" cy="33" r="13" fill="#37474F" opacity="0.7"/><circle cx="34" cy="29" r="5" fill="#fff" opacity="0.12"/><circle cx="33" cy="28" r="2.5" fill="#fff" opacity="0.9"/><circle cx="47" cy="30" r="2" fill="#fff" opacity="0.5"/><rect x="28" y="56" width="24" height="12" rx="3" fill="#FF5722"/><rect x="32" y="58" width="16" height="8" rx="2" fill="#FF7043"/></svg><div class="avatar-opt-name">Astronaut</div></div>
+          <div class="avatar-opt" data-avatar="teacher" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="26" r="16" fill="#D4A574"/><path d="M24,24 Q32,20 40,22 Q48,20 56,24" stroke="#4A2800" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="28" cy="48" rx="8" ry="14" fill="#D4A574"/><ellipse cx="52" cy="48" rx="8" ry="14" fill="#D4A574"/><ellipse cx="40" cy="60" rx="20" ry="16" fill="#2E7D32"/><rect x="20" y="40" width="40" height="26" rx="6" fill="#2E7D32"/><circle cx="33" cy="23" r="3.5" fill="#3E2723"/><circle cx="47" cy="23" r="3.5" fill="#3E2723"/><circle cx="34" cy="22" r="1.5" fill="#fff"/><circle cx="48" cy="22" r="1.5" fill="#fff"/><path d="M35 31 Q40 34 45 31" stroke="#A0724E" stroke-width="1.5" fill="none" stroke-linecap="round"/><rect x="56" y="34" width="14" height="18" rx="2" fill="#FFF9C4" stroke="#F9A825" stroke-width="1.5"/><line x1="58" y1="40" x2="68" y2="40" stroke="#F9A825" stroke-width="1"/><line x1="58" y1="44" x2="66" y2="44" stroke="#F9A825" stroke-width="1"/></svg><div class="avatar-opt-name">Teacher</div></div>
+          <div class="avatar-opt" data-avatar="student" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="26" r="16" fill="#FDBCB4"/><ellipse cx="28" cy="48" rx="8" ry="14" fill="#FDBCB4"/><ellipse cx="52" cy="48" rx="8" ry="14" fill="#FDBCB4"/><ellipse cx="40" cy="60" rx="20" ry="16" fill="#1565C0"/><rect x="20" y="40" width="40" height="26" rx="6" fill="#1565C0"/><circle cx="33" cy="23" r="3.5" fill="#4E342E"/><circle cx="47" cy="23" r="3.5" fill="#4E342E"/><circle cx="34" cy="22" r="1.5" fill="#fff"/><circle cx="48" cy="22" r="1.5" fill="#fff"/><path d="M35 31 Q40 34 45 31" stroke="#C07860" stroke-width="1.5" fill="none" stroke-linecap="round"/><polygon points="40,8 58,18 40,28 22,18" fill="#F9A825"/><polygon points="40,28 58,18 58,26 40,36" fill="#E65100"/><line x1="58" y1="18" x2="58" y2="32" stroke="#E65100" stroke-width="2.5"/><circle cx="58" cy="32" r="3.5" fill="#E65100"/></svg><div class="avatar-opt-name">Student</div></div>
+          <div class="avatar-opt" data-avatar="pilot" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="26" r="16" fill="#FDBCB4"/><ellipse cx="28" cy="48" rx="8" ry="14" fill="#FDBCB4"/><ellipse cx="52" cy="48" rx="8" ry="14" fill="#FDBCB4"/><ellipse cx="40" cy="60" rx="20" ry="16" fill="#1A237E"/><rect x="20" y="40" width="40" height="26" rx="6" fill="#1A237E"/><circle cx="33" cy="23" r="3.5" fill="#4E342E"/><circle cx="47" cy="23" r="3.5" fill="#4E342E"/><circle cx="34" cy="22" r="1.5" fill="#fff"/><circle cx="48" cy="22" r="1.5" fill="#fff"/><path d="M35 31 Q40 34 45 31" stroke="#C07860" stroke-width="1.5" fill="none" stroke-linecap="round"/><rect x="22" y="14" width="36" height="8" rx="4" fill="#1A237E"/><rect x="26" y="12" width="28" height="5" rx="2.5" fill="#283593"/><rect x="32" y="10" width="16" height="5" rx="2.5" fill="#FFD54F"/><circle cx="34" cy="56" r="3.5" fill="#FFD54F"/><circle cx="46" cy="56" r="3.5" fill="#FFD54F"/><line x1="34" y1="56" x2="46" y2="56" stroke="#FFD54F" stroke-width="2"/></svg><div class="avatar-opt-name">Pilot</div></div>
+          <div class="avatar-opt" data-avatar="scientist" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="26" r="16" fill="#FDBCB4"/><ellipse cx="28" cy="48" rx="8" ry="14" fill="#FDBCB4"/><ellipse cx="52" cy="48" rx="8" ry="14" fill="#FDBCB4"/><ellipse cx="40" cy="60" rx="20" ry="16" fill="#E0E0E0"/><rect x="20" y="40" width="40" height="26" rx="6" fill="#fff"/><circle cx="33" cy="23" r="3.5" fill="#1a1a2e"/><circle cx="47" cy="23" r="3.5" fill="#1a1a2e"/><rect x="28" y="20" width="11" height="7" rx="2.5" fill="none" stroke="#90CAF9" stroke-width="2"/><rect x="41" y="20" width="11" height="7" rx="2.5" fill="none" stroke="#90CAF9" stroke-width="2"/><line x1="39" y1="23.5" x2="41" y2="23.5" stroke="#90CAF9" stroke-width="2"/><path d="M35 31 Q40 34 45 31" stroke="#C07860" stroke-width="1.5" fill="none" stroke-linecap="round"/><rect x="32" y="50" width="7" height="18" rx="3.5" fill="#4DD0E1"/><rect x="29" y="48" width="6" height="7" fill="#B0BEC5" rx="1"/><circle cx="35.5" cy="64" r="6" fill="#00BCD4" opacity="0.5"/><circle cx="35.5" cy="64" r="4" fill="#00ACC1"/></svg><div class="avatar-opt-name">Scientist</div></div>
+          <div class="avatar-opt" data-avatar="farmer" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="28" r="16" fill="#D4A574"/><ellipse cx="28" cy="50" rx="8" ry="14" fill="#D4A574"/><ellipse cx="52" cy="50" rx="8" ry="14" fill="#D4A574"/><ellipse cx="40" cy="62" rx="20" ry="16" fill="#558B2F"/><rect x="20" y="44" width="40" height="24" rx="5" fill="#558B2F"/><circle cx="33" cy="25" r="3.5" fill="#3E2723"/><circle cx="47" cy="25" r="3.5" fill="#3E2723"/><circle cx="34" cy="24" r="1.5" fill="#fff"/><circle cx="48" cy="24" r="1.5" fill="#fff"/><path d="M35 33 Q40 36 45 33" stroke="#A0724E" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M12,22 Q40,10 68,22 Q54,14 40,16 Q26,14 12,22Z" fill="#F9A825"/><ellipse cx="40" cy="22" rx="24" ry="6" fill="#F57F17"/><rect x="38" y="10" width="4" height="12" rx="1" fill="#8D6E63"/></svg><div class="avatar-opt-name">Farmer</div></div>
+          <div class="avatar-opt" data-avatar="engineer" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="26" r="16" fill="#FDBCB4"/><ellipse cx="28" cy="48" rx="8" ry="14" fill="#FDBCB4"/><ellipse cx="52" cy="48" rx="8" ry="14" fill="#FDBCB4"/><ellipse cx="40" cy="60" rx="20" ry="16" fill="#37474F"/><rect x="20" y="40" width="40" height="26" rx="6" fill="#37474F"/><circle cx="33" cy="23" r="3.5" fill="#4E342E"/><circle cx="47" cy="23" r="3.5" fill="#4E342E"/><circle cx="34" cy="22" r="1.5" fill="#fff"/><circle cx="48" cy="22" r="1.5" fill="#fff"/><path d="M35 31 Q40 34 45 31" stroke="#C07860" stroke-width="1.5" fill="none" stroke-linecap="round"/><rect x="22" y="14" width="36" height="8" rx="3" fill="#FF8F00"/><rect x="26" y="12" width="28" height="5" rx="2" fill="#F57F17"/><circle cx="54" cy="56" r="9" fill="#455A64"/><circle cx="54" cy="56" r="6" fill="#546E7A"/><circle cx="54" cy="56" r="2.5" fill="#37474F"/><line x1="54" y1="47" x2="54" y2="51" stroke="#CFD8DC" stroke-width="2"/><line x1="54" y1="61" x2="54" y2="65" stroke="#CFD8DC" stroke-width="2"/><line x1="45" y1="56" x2="49" y2="56" stroke="#CFD8DC" stroke-width="2"/><line x1="59" y1="56" x2="63" y2="56" stroke="#CFD8DC" stroke-width="2"/></svg><div class="avatar-opt-name">Engineer</div></div>
+        </div>
+
+        <!-- FANTASY -->
+        <div class="avatar-panel avatar-grid" id="panel-fantasy" style="grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px;">
+          <div class="avatar-opt selected" data-avatar="wizard" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="40" r="16" fill="#FDBCB4"/><ellipse cx="28" cy="56" rx="8" ry="14" fill="#4A148C"/><ellipse cx="52" cy="56" rx="8" ry="14" fill="#4A148C"/><ellipse cx="40" cy="66" rx="20" ry="14" fill="#4A148C"/><rect x="20" y="46" width="40" height="26" rx="6" fill="#4A148C"/><circle cx="33" cy="37" r="3.5" fill="#5D4037"/><circle cx="47" cy="37" r="3.5" fill="#5D4037"/><circle cx="34" cy="36" r="1.5" fill="#fff"/><circle cx="48" cy="36" r="1.5" fill="#fff"/><path d="M35 44 Q40 47 45 44" stroke="#C07860" stroke-width="1.5" fill="none" stroke-linecap="round"/><ellipse cx="40" cy="42" rx="4" ry="3" fill="#E8947A"/><polygon points="40,4 22,40 58,40" fill="#6A1B9A"/><polygon points="40,4 22,40 58,40" fill="#7B1FA2" opacity="0.8"/><ellipse cx="40" cy="40" rx="18" ry="5" fill="#4A148C"/><circle cx="40" cy="4" r="5" fill="#FFD54F"/><circle cx="24" cy="20" r="2.5" fill="#CE93D8"/><circle cx="56" cy="24" r="2.5" fill="#FFD54F"/><circle cx="30" cy="12" r="2" fill="#fff" opacity="0.8"/></svg><div class="avatar-opt-name">Wizard</div></div>
+          <div class="avatar-opt" data-avatar="fairy" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><ellipse cx="14" cy="40" rx="16" ry="11" fill="#F8BBD0" opacity="0.7"/><ellipse cx="66" cy="40" rx="16" ry="11" fill="#F8BBD0" opacity="0.7"/><ellipse cx="16" cy="38" rx="11" ry="8" fill="#FCE4EC" opacity="0.85"/><ellipse cx="64" cy="38" rx="11" ry="8" fill="#FCE4EC" opacity="0.85"/><circle cx="40" cy="32" r="16" fill="#FDBCB4"/><ellipse cx="28" cy="52" rx="8" ry="14" fill="#F48FB1"/><ellipse cx="52" cy="52" rx="8" ry="14" fill="#F48FB1"/><ellipse cx="40" cy="64" rx="20" ry="14" fill="#F48FB1"/><rect x="20" y="44" width="40" height="24" rx="6" fill="#F48FB1"/><circle cx="33" cy="29" r="3.5" fill="#4E342E"/><circle cx="47" cy="29" r="3.5" fill="#4E342E"/><circle cx="34" cy="28" r="1.5" fill="#fff"/><circle cx="48" cy="28" r="1.5" fill="#fff"/><path d="M35 37 Q40 40 45 37" stroke="#C07860" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="30" cy="18" r="3.5" fill="#FFD54F"/><circle cx="40" cy="14" r="3.5" fill="#FF80AB"/><circle cx="50" cy="18" r="3.5" fill="#FFD54F"/><path d="M30,21 Q35,17 40,19 Q45,17 50,21" stroke="#E91E8C" stroke-width="2" fill="none"/></svg><div class="avatar-opt-name">Fairy</div></div>
+          <div class="avatar-opt" data-avatar="vampire" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="30" r="16" fill="#E8E0E8"/><polygon points="22,20 14,4 28,18" fill="#1a1a2e"/><polygon points="58,20 66,4 52,18" fill="#1a1a2e"/><ellipse cx="28" cy="50" rx="8" ry="14" fill="#1a1a2e"/><ellipse cx="52" cy="50" rx="8" ry="14" fill="#1a1a2e"/><ellipse cx="40" cy="62" rx="20" ry="14" fill="#1a1a2e"/><rect x="20" y="42" width="40" height="24" rx="6" fill="#1a1a2e"/><circle cx="33" cy="27" r="3.5" fill="#C00020"/><circle cx="47" cy="27" r="3.5" fill="#C00020"/><circle cx="34" cy="26" r="1.5" fill="#fff"/><circle cx="48" cy="26" r="1.5" fill="#fff"/><path d="M34 34 L36 38 L38 34 L40 39 L42 34 L44 38 L46 34" stroke="#C00020" stroke-width="1.8" fill="none"/><path d="M26,52 Q23,58 26,66" stroke="#C00020" stroke-width="2.5" fill="none" opacity="0.8"/></svg><div class="avatar-opt-name">Vampire</div></div>
+          <div class="avatar-opt" data-avatar="genie" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><path d="M40,72 Q16,62 18,44 Q20,28 40,34 Q60,28 62,44 Q64,62 40,72Z" fill="#0277BD" opacity="0.35"/><circle cx="40" cy="36" r="18" fill="#81D4FA"/><ellipse cx="40" cy="52" rx="14" ry="10" fill="#0288D1"/><ellipse cx="28" cy="50" rx="8" ry="12" fill="#0277BD"/><ellipse cx="52" cy="50" rx="8" ry="12" fill="#0277BD"/><circle cx="33" cy="33" r="3.5" fill="#0D47A1"/><circle cx="47" cy="33" r="3.5" fill="#0D47A1"/><circle cx="34" cy="32" r="1.5" fill="#fff"/><circle cx="48" cy="32" r="1.5" fill="#fff"/><path d="M35 41 Q40 44 45 41" stroke="#0288D1" stroke-width="1.5" fill="none" stroke-linecap="round"/><ellipse cx="40" cy="22" rx="12" ry="6" fill="#0277BD"/><ellipse cx="34" cy="20" rx="6" ry="5" fill="#01579B"/><ellipse cx="46" cy="20" rx="6" ry="5" fill="#01579B"/><circle cx="40" cy="13" r="6" fill="#FFD54F"/><circle cx="40" cy="13" r="3.5" fill="#FF8F00"/><circle cx="28" cy="22" r="2.5" fill="#80DEEA"/><circle cx="52" cy="20" r="2.5" fill="#80DEEA"/></svg><div class="avatar-opt-name">Genie</div></div>
+          <div class="avatar-opt" data-avatar="elf" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="30" r="16" fill="#FDBCB4"/><polygon points="22,26 12,10 26,24" fill="#FDBCB4" stroke="#E8A080" stroke-width="1.5"/><polygon points="58,26 68,10 54,24" fill="#FDBCB4" stroke="#E8A080" stroke-width="1.5"/><ellipse cx="28" cy="50" rx="8" ry="14" fill="#2E7D32"/><ellipse cx="52" cy="50" rx="8" ry="14" fill="#2E7D32"/><ellipse cx="40" cy="62" rx="20" ry="14" fill="#2E7D32"/><rect x="20" y="42" width="40" height="24" rx="6" fill="#2E7D32"/><circle cx="33" cy="27" r="3.5" fill="#4E342E"/><circle cx="47" cy="27" r="3.5" fill="#4E342E"/><circle cx="34" cy="26" r="1.5" fill="#fff"/><circle cx="48" cy="26" r="1.5" fill="#fff"/><path d="M35 34 Q40 37 45 34" stroke="#C07860" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M28,22 Q34,14 40,18 Q46,14 52,22" stroke="#2E7D32" stroke-width="2.5" fill="none"/></svg><div class="avatar-opt-name">Elf</div></div>
+          <div class="avatar-opt" data-avatar="robot" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect x="24" y="24" width="32" height="30" rx="7" fill="#546E7A"/><rect x="28" y="30" width="11" height="9" rx="2.5" fill="#29B6F6"/><rect x="41" y="30" width="11" height="9" rx="2.5" fill="#29B6F6"/><circle cx="33.5" cy="34.5" r="3" fill="#fff"/><circle cx="46.5" cy="34.5" r="3" fill="#fff"/><circle cx="33.5" cy="34.5" r="1.8" fill="#0D47A1"/><circle cx="46.5" cy="34.5" r="1.8" fill="#0D47A1"/><rect x="30" y="43" width="20" height="6" rx="3" fill="#37474F"/><rect x="34" y="45" width="5" height="2" fill="#EF5350"/><rect x="41" y="45" width="5" height="2" fill="#66BB6A"/><rect x="36" y="14" width="8" height="12" rx="4" fill="#546E7A"/><circle cx="40" cy="14" r="5" fill="#29B6F6"/><rect x="8" y="32" width="16" height="12" rx="5" fill="#546E7A"/><rect x="56" y="32" width="16" height="12" rx="5" fill="#546E7A"/><rect x="26" y="54" width="28" height="18" rx="6" fill="#455A64"/><rect x="30" y="58" width="9" height="10" rx="3" fill="#546E7A"/><rect x="41" y="58" width="9" height="10" rx="3" fill="#546E7A"/></svg><div class="avatar-opt-name">Robot</div></div>
+          <div class="avatar-opt" data-avatar="alien" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><ellipse cx="40" cy="36" rx="24" ry="30" fill="#66BB6A"/><ellipse cx="40" cy="60" rx="16" ry="10" fill="#4CAF50"/><ellipse cx="27" cy="30" rx="10" ry="13" fill="#1a1a2e"/><ellipse cx="53" cy="30" rx="10" ry="13" fill="#1a1a2e"/><ellipse cx="27" cy="30" rx="7" ry="9" fill="#00E5FF"/><ellipse cx="53" cy="30" rx="7" ry="9" fill="#00E5FF"/><circle cx="27" cy="30" r="4" fill="#1a1a2e"/><circle cx="53" cy="30" r="4" fill="#1a1a2e"/><circle cx="28.5" cy="28.5" r="1.8" fill="#fff"/><circle cx="54.5" cy="28.5" r="1.8" fill="#fff"/><path d="M30 46 Q40 53 50 46" stroke="#388E3C" stroke-width="2.5" fill="none" stroke-linecap="round"/><line x1="16" y1="22" x2="4" y2="14" stroke="#66BB6A" stroke-width="3.5" stroke-linecap="round"/><line x1="64" y1="22" x2="76" y2="14" stroke="#66BB6A" stroke-width="3.5" stroke-linecap="round"/><circle cx="4" cy="14" r="6" fill="#A5D6A7"/><circle cx="76" cy="14" r="6" fill="#A5D6A7"/></svg><div class="avatar-opt-name">Alien</div></div>
+          <div class="avatar-opt" data-avatar="ninja" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="34" r="22" fill="#212121"/><ellipse cx="40" cy="38" rx="18" ry="9" fill="#1a1a2e"/><ellipse cx="40" cy="28" rx="18" ry="16" fill="#212121"/><ellipse cx="32" cy="32" rx="7" ry="8" fill="#3D2B1F"/><ellipse cx="48" cy="32" rx="7" ry="8" fill="#3D2B1F"/><circle cx="32" cy="32" r="5" fill="#E8D5A0"/><circle cx="48" cy="32" r="5" fill="#E8D5A0"/><circle cx="32" cy="32" r="3.5" fill="#1a1a2e"/><circle cx="48" cy="32" r="3.5" fill="#1a1a2e"/><circle cx="33.5" cy="30.5" r="1.5" fill="#fff"/><circle cx="49.5" cy="30.5" r="1.5" fill="#fff"/><rect x="22" y="42" width="36" height="7" rx="3.5" fill="#212121"/><ellipse cx="40" cy="72" rx="24" ry="12" fill="#212121"/><ellipse cx="26" cy="56" rx="9" ry="16" fill="#212121"/><ellipse cx="54" cy="56" rx="9" ry="16" fill="#212121"/></svg><div class="avatar-opt-name">Ninja</div></div>
+          <div class="avatar-opt" data-avatar="knight" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><ellipse cx="40" cy="38" rx="20" ry="24" fill="#78909C"/><ellipse cx="40" cy="28" rx="18" ry="20" fill="#90A4AE"/><ellipse cx="28" cy="28" rx="8" ry="10" fill="#78909C"/><ellipse cx="52" cy="28" rx="8" ry="10" fill="#78909C"/><ellipse cx="40" cy="34" rx="14" ry="9" fill="#546E7A"/><ellipse cx="32" cy="30" rx="6" ry="7" fill="#CFD8DC"/><ellipse cx="48" cy="30" rx="6" ry="7" fill="#CFD8DC"/><circle cx="32" cy="30" r="4" fill="#37474F"/><circle cx="48" cy="30" r="4" fill="#37474F"/><circle cx="33.5" cy="28.5" r="1.5" fill="#80DEEA"/><circle cx="49.5" cy="28.5" r="1.5" fill="#80DEEA"/><ellipse cx="40" cy="60" rx="24" ry="18" fill="#546E7A"/><ellipse cx="40" cy="72" rx="20" ry="10" fill="#455A64"/><rect x="36" y="44" width="8" height="22" rx="2" fill="#E53935"/><rect x="28" y="52" width="24" height="7" rx="2" fill="#E53935"/></svg><div class="avatar-opt-name">Knight</div></div>
+          <div class="avatar-opt" data-avatar="witch" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="36" r="16" fill="#FDBCB4"/><polygon points="40,4 26,36 54,36" fill="#1a1a2e"/><ellipse cx="40" cy="36" rx="18" ry="6" fill="#212121"/><path d="M36,18 Q26,22 24,32" stroke="#1a1a2e" stroke-width="3.5" fill="none" stroke-linecap="round"/><ellipse cx="28" cy="54" rx="8" ry="14" fill="#1a1a2e"/><ellipse cx="52" cy="54" rx="8" ry="14" fill="#1a1a2e"/><ellipse cx="40" cy="66" rx="20" ry="14" fill="#1a1a2e"/><rect x="20" y="46" width="40" height="26" rx="6" fill="#1a1a2e"/><circle cx="33" cy="33" r="3.5" fill="#5D4037"/><circle cx="47" cy="33" r="3.5" fill="#5D4037"/><circle cx="34" cy="32" r="1.5" fill="#fff"/><circle cx="48" cy="32" r="1.5" fill="#fff"/><path d="M35 40 Q40 43 45 40" stroke="#C07860" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="60" cy="46" r="7" fill="#4CAF50" opacity="0.75"/><circle cx="60" cy="46" r="5" fill="#2E7D32"/><circle cx="60" cy="46" r="2.5" fill="#1B5E20"/></svg><div class="avatar-opt-name">Witch</div></div>
+          <div class="avatar-opt" data-avatar="angel" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><ellipse cx="12" cy="44" rx="16" ry="11" fill="#FFF9C4" opacity="0.82"/><ellipse cx="68" cy="44" rx="16" ry="11" fill="#FFF9C4" opacity="0.82"/><ellipse cx="13" cy="42" rx="11" ry="8" fill="#FFFDE7" opacity="0.92"/><ellipse cx="67" cy="42" rx="11" ry="8" fill="#FFFDE7" opacity="0.92"/><circle cx="40" cy="32" r="16" fill="#FDBCB4"/><ellipse cx="28" cy="52" rx="8" ry="14" fill="#E3F2FD"/><ellipse cx="52" cy="52" rx="8" ry="14" fill="#E3F2FD"/><ellipse cx="40" cy="64" rx="20" ry="14" fill="#E3F2FD"/><rect x="20" y="44" width="40" height="24" rx="6" fill="#E3F2FD"/><circle cx="33" cy="29" r="3.5" fill="#4E342E"/><circle cx="47" cy="29" r="3.5" fill="#4E342E"/><circle cx="34" cy="28" r="1.5" fill="#fff"/><circle cx="48" cy="28" r="1.5" fill="#fff"/><path d="M35 37 Q40 40 45 37" stroke="#C07860" stroke-width="1.5" fill="none" stroke-linecap="round"/><ellipse cx="40" cy="16" rx="12" ry="4.5" fill="#FFD54F" opacity="0.85"/><ellipse cx="40" cy="16" rx="8" ry="3" fill="#FFD54F"/></svg><div class="avatar-opt-name">Angel</div></div>
+          <div class="avatar-opt" data-avatar="samurai" onclick="selectAvatar(this)"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><circle cx="40" cy="32" r="16" fill="#D4A574"/><ellipse cx="40" cy="20" rx="20" ry="11" fill="#B71C1C"/><ellipse cx="26" cy="18" rx="7" ry="11" fill="#C62828"/><ellipse cx="54" cy="18" rx="7" ry="11" fill="#C62828"/><ellipse cx="28" cy="52" rx="8" ry="14" fill="#B71C1C"/><ellipse cx="52" cy="52" rx="8" ry="14" fill="#B71C1C"/><ellipse cx="40" cy="64" rx="20" ry="14" fill="#B71C1C"/><rect x="20" y="44" width="40" height="26" rx="6" fill="#B71C1C"/><circle cx="33" cy="29" r="3.5" fill="#3E2723"/><circle cx="47" cy="29" r="3.5" fill="#3E2723"/><circle cx="34" cy="28" r="1.5" fill="#fff"/><circle cx="48" cy="28" r="1.5" fill="#fff"/><path d="M35 36 Q40 39 45 36" stroke="#A0724E" stroke-width="1.5" fill="none" stroke-linecap="round"/><rect x="64" y="40" width="5" height="30" rx="2.5" fill="#78909C"/><rect x="61" y="36" width="11" height="6" rx="3" fill="#FFD54F"/></svg><div class="avatar-opt-name">Samurai</div></div>
+        </div>
+                <button class="btn btn-primary" id="avatarContinueBtn" onclick="obNextStep()">Continue →</button>
+      </div>
+
+      <!-- ══ STEP 3: LANGUAGE + REGION ══ -->
+      <div class="onboard-step" id="ob-step-3">
+        <div class="step-title">Language &amp; Region</div>
+        <div class="step-sub">We'll prioritise matches who speak your language and live nearby.</div>
+
+        <div class="step3-section-label" style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;">🗣️ Language</div>
+        <div class="lang-pill-row" id="langGrid">
+          <div class="lang-pill selected" data-lang="Hindi" onclick="selectLang(this)">🙏 हिन्दी</div>
+          <div class="lang-pill" data-lang="English" onclick="selectLang(this)">🌐 English</div>
+          <div class="lang-pill" data-lang="Bengali" onclick="selectLang(this)">🪷 বাংলা</div>
+          <div class="lang-pill" data-lang="Tamil" onclick="selectLang(this)">🌺 தமிழ்</div>
+          <div class="lang-pill" data-lang="Telugu" onclick="selectLang(this)">🌸 తెలుగు</div>
+          <div class="lang-pill" data-lang="Marathi" onclick="selectLang(this)">🏵️ मराठी</div>
+          <div class="lang-pill" data-lang="Kannada" onclick="selectLang(this)">🌼 ಕನ್ನಡ</div>
+          <div class="lang-pill" data-lang="Punjabi" onclick="selectLang(this)">☘️ ਪੰਜਾਬੀ</div>
+          <div class="lang-pill" data-lang="Bhojpuri" onclick="selectLang(this)">🌻 भोजपुरी</div>
+        </div>
+
+        <div class="step3-section-label" style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;">📍 Region <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></div>
+        <div class="region-grid" id="regionGrid">
+          <div class="region-card" data-region="North" onclick="selectRegion(this)">
+            <div class="region-icon">🏔️</div>
+            <div class="region-name">North India</div>
+            <div class="region-states">Delhi · UP · Punjab<br>HP · Uttarakhand</div>
+          </div>
+          <div class="region-card" data-region="South" onclick="selectRegion(this)">
+            <div class="region-icon">🌴</div>
+            <div class="region-name">South India</div>
+            <div class="region-states">TN · Kerala<br>Karnataka · AP</div>
+          </div>
+          <div class="region-card" data-region="East" onclick="selectRegion(this)">
+            <div class="region-icon">🌊</div>
+            <div class="region-name">East India</div>
+            <div class="region-states">WB · Odisha<br>Bihar · Jharkhand</div>
+          </div>
+          <div class="region-card" data-region="West" onclick="selectRegion(this)">
+            <div class="region-icon">🌅</div>
+            <div class="region-name">West India</div>
+            <div class="region-states">MH · Gujarat<br>Rajasthan · Goa</div>
+          </div>
+          <div class="region-card" data-region="Central" onclick="selectRegion(this)">
+            <div class="region-icon">🌾</div>
+            <div class="region-name">Central India</div>
+            <div class="region-states">MP · Chhattisgarh<br>Telangana</div>
+          </div>
+          <div class="region-card" data-region="Northeast" onclick="selectRegion(this)">
+            <div class="region-icon">🏕️</div>
+            <div class="region-name">Northeast India</div>
+            <div class="region-states">Assam · Manipur<br>Meghalaya · more</div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="obNextStep()">Continue →</button>
+      </div>
+
+      <!-- ══ STEP 4: NAME ══ -->
+      <div class="onboard-step" id="ob-step-4">
+        <div class="step-title">What should we call you?</div>
+        <div class="step-sub">Pick a suggestion or type your own — you stay fully anonymous.</div>
+        <div class="step3-section-label" style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;">✨ Suggested names</div>
+        <div class="name-suggestion" id="nameSuggestions"></div>
+        <input type="text" id="nicknameInput" placeholder="Or type your own name..."
+          maxlength="20" style="margin-bottom:8px"
+          oninput="onNameInput(this.value)" autocomplete="off" autocorrect="off" spellcheck="false"/>
+        <div id="nameHint" style="font-size:12px;color:var(--text3);margin-bottom:20px;">
+          ✓ No email or phone required &nbsp;·&nbsp; ✓ Fully anonymous
+        </div>
+        <button class="btn btn-primary" onclick="finishOnboard()">Start talking 🎙️</button>
+      </div>
+
+    </div><!-- /onboard-content -->
+  </div>
+
+  <!-- ═══════════════ WELCOME / COMPLETION OVERLAY ═══════════════ -->

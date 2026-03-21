@@ -1,0 +1,58 @@
+﻿<!-- pages/history.html -->
+  <div id="screen-history" class="screen">
+    <div class="scroll-body" style="padding:60px 20px 0;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <div style="width:36px;height:36px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="goBack()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </div>
+        <div style="font-size:22px;font-weight:700;">Call History</div>
+      </div>
+
+      <div class="history-item" onclick="openChat('🦉','WiseOwl','Hey!','Lonely')">
+        <div class="hist-avatar">🦉</div>
+        <div class="hist-info">
+          <div class="hist-name">WiseOwl</div>
+          <div class="hist-detail">4 min 32 sec</div>
+        </div>
+        <div class="hist-meta">
+          <span class="hist-time">1h ago</span>
+          <span class="hist-type incoming">Incoming</span>
+        </div>
+      </div>
+      <div class="history-item" onclick="openChat('🐼','PandaSoul','Sup','Sad')">
+        <div class="hist-avatar">🐼</div>
+        <div class="hist-info">
+          <div class="hist-name">PandaSoul</div>
+          <div class="hist-detail">Missed</div>
+        </div>
+        <div class="hist-meta">
+          <span class="hist-time">2h ago</span>
+          <span class="hist-type missed">Missed</span>
+        </div>
+      </div>
+      <div class="history-item" onclick="openChat('🦁','SunKing','Hello!','Excited')">
+        <div class="hist-avatar">🦁</div>
+        <div class="hist-info">
+          <div class="hist-name">SunKing</div>
+          <div class="hist-detail">12 min 08 sec</div>
+        </div>
+        <div class="hist-meta">
+          <span class="hist-time">Yesterday</span>
+          <span class="hist-type outgoing">Outgoing</span>
+        </div>
+      </div>
+      <div class="history-item" onclick="openChat('🐱','MidnightCat','Hey!','Happy')">
+        <div class="hist-avatar">🐱</div>
+        <div class="hist-info">
+          <div class="hist-name">MidnightCat</div>
+          <div class="hist-detail">8 min 55 sec</div>
+        </div>
+        <div class="hist-meta">
+          <span class="hist-time">2 days ago</span>
+          <span class="hist-type incoming">Incoming</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ MOOD MODAL ═══════════════ -->
