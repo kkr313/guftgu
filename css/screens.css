@@ -1546,13 +1546,7 @@
 
   /* ── App Info Screen ── */
   #screen-appinfo {
-    display:none;
-    position:fixed; inset:0; z-index:100;
     background:var(--bg);
-    overflow-y:auto;
-  }
-  #screen-appinfo.show {
-    display:block;
   }
   .appinfo-header {
     padding:60px 24px 32px;

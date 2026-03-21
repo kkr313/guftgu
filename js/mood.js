@@ -174,12 +174,10 @@ function confirmDeleteAccount() {
 // APP INFO
 // ═══════════════════════════════════════
 function showAppInfo() {
-  const el = document.getElementById('screen-appinfo');
-  if (el) el.classList.add('show');
+  showScreen('screen-appinfo');
 }
 function closeAppInfo() {
-  const el = document.getElementById('screen-appinfo');
-  if (el) el.classList.remove('show');
+  goBack();
 }
 
 // ═══════════════════════════════════════
