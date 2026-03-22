@@ -1,0 +1,69 @@
+/* ─────────────────────────────────────────────────────────────────
+   Friend block button (Req 5)
+   Sits inside .friend-meta, hidden until hover on the friend item.
+   ───────────────────────────────────────────────────────────────── */
+.friend-block-btn {
+  display: block;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1;
+  padding: 4px 6px;
+  cursor: pointer;
+  color: var(--text3);
+  transition: all 0.18s;
+  opacity: 0;
+  margin-top: 2px;
+}
+.friend-item:hover .friend-block-btn {
+  opacity: 1;
+}
+.friend-block-btn:hover {
+  opacity: 1;
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(255, 107, 107, 0.08);
+}
+.friend-block-btn:active {
+  transform: scale(0.9);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Match overlay safety row — Block + Report (Req 6)
+   Sits below the primary Skip / Connect row.
+   ───────────────────────────────────────────────────────────────── */
+.mf-safety-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  width: 100%;
+  justify-content: center;
+}
+.mf-safety-btn {
+  flex: 1;
+  max-width: 130px;
+  padding: 9px 14px;
+  border-radius: 50px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-family: 'Sora', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text3);
+  transition: all 0.18s;
+}
+.mf-safety-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(255, 107, 107, 0.06);
+}
+.mf-safety-btn:active {
+  transform: scale(0.95);
+}
+
+/* Connect button disabled state (Req 2 — waiting for other side) */
+.mf-accept:disabled {
+  cursor: not-allowed;
+}
