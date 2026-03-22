@@ -36,18 +36,25 @@ function showScreen(id, back=false) {
 
   state.screen = id;
 
-  // Show/hide shared bottom nav
+  // ── FIX: Show/hide shared bottom nav ──────────────────────────────────
+  // We use BOTH style.display AND a CSS class (.nav-visible) so the nav
+  // stays visible even if one mechanism fails (JS error, browser quirk,
+  // style attribute gets reset). The CSS class acts as a failsafe.
   const nav = document.getElementById('mainNav');
   if (nav) {
-    if (_mainTabs.includes(id)) {
+    const isMain = _mainTabs.includes(id);
+
+    if (isMain) {
       nav.style.display = 'flex';
-      // Update active tab
+      nav.classList.add('nav-visible');
+      // Update active tab highlight
       const tab = _tabMap[id] || 'home';
       nav.querySelectorAll('.nav-item').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tab);
       });
     } else {
       nav.style.display = 'none';
+      nav.classList.remove('nav-visible');
     }
   }
 

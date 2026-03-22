@@ -7,3 +7,7 @@
 .text-teal { color: var(--accent2); }
 .mt-8 { margin-top: 8px; }
 .mt-16 { margin-top: 16px; }
+
+.nav-visible {
+  display: flex !important;
+}

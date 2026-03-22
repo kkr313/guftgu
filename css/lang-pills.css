@@ -1,0 +1,109 @@
+/* ═══════════════════════════════════════════════════════════════
+   lang-pills.css
+   Single CSS file that styles lang pills consistently in BOTH
+   the onboarding steps (3-col compact) and the modal (2-col full).
+   Replaces the .lang-pill rules in components.css and modals-fix.css.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Base pill (shared everywhere) ── */
+.lang-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bg3);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: all 0.18s;
+  color: var(--text2);
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+}
+.lang-pill:active { transform: scale(0.95); }
+.lang-pill.selected {
+  border-color: var(--accent2);
+  background: rgba(78,205,196,0.09);
+  color: var(--accent2);
+}
+
+/* Spans inside every pill */
+.lang-flag   { font-size: 16px; flex-shrink: 0; line-height: 1; }
+.lang-name   { font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lang-native { font-size: 10px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: auto; }
+
+.lang-pill.selected .lang-name   { color: var(--accent2); }
+.lang-pill.selected .lang-native { color: rgba(78,205,196,0.6); }
+
+/* Selected tick */
+.lang-pill.selected::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 0; height: 0;
+  border-style: solid;
+  border-width: 0 18px 18px 0;
+  border-color: transparent var(--accent2) transparent transparent;
+}
+
+/* ── ONBOARDING — 3 columns, compact ── */
+/* #langGrid = Step 3, #qsLangRow = Quick Start */
+#langGrid,
+#qsLangRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+/* In 3-col layout hide the native script (too narrow) */
+#langGrid .lang-native,
+#qsLangRow .lang-native {
+  display: none;
+}
+
+#langGrid .lang-pill,
+#qsLangRow .lang-pill {
+  padding: 11px 10px;
+  border-radius: 12px;
+  justify-content: flex-start;
+}
+
+#langGrid .lang-name,
+#qsLangRow .lang-name {
+  font-size: 12px;
+}
+
+/* ── MODAL — 2 columns, full detail ── */
+#modalLangGrid,
+#langModal .lang-pill-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  padding: 0 20px 20px;
+  margin: 0;
+}
+
+#modalLangGrid .lang-pill,
+#langModal .lang-pill {
+  padding: 12px 13px;
+  border-radius: 13px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* Show native script in 2-col modal layout */
+#modalLangGrid .lang-native,
+#langModal .lang-native {
+  display: block;
+  font-size: 10px;
+  margin-left: auto;
+}
+
+#modalLangGrid .lang-name,
+#langModal .lang-name {
+  font-size: 13px;
+  flex: 1;
+}

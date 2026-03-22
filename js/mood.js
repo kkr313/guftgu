@@ -1,11 +1,41 @@
-﻿// js/mood.js - Mood modal & notifications
+﻿// js/mood.js - All modal open/close/populate logic
 // ═══════════════════════════════════════
+
+// ─────────────────────────────────────────
+// SHARED: build header with handle + title + close btn
+// ─────────────────────────────────────────
+function _modalHTML(id, title, bodyHTML) {
+  return `
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">${title}</div>
+      <button class="modal-close" onclick="_cls('${id}','remove','show')">✕</button>
+    </div>
+    <div class="modal-body">${bodyHTML}</div>`;
+}
+
+// ─────────────────────────────────────────
+// MOOD MODAL
+// ─────────────────────────────────────────
+const MOOD_DATA = [
+  {mood:'Happy',  emoji:'😄'}, {mood:'Sad',     emoji:'😔'}, {mood:'Anxious', emoji:'😰'},
+  {mood:'Bored',  emoji:'😑'}, {mood:'Lonely',  emoji:'🥺'}, {mood:'Excited', emoji:'🤩'},
+  {mood:'Angry',  emoji:'😤'}, {mood:'Curious', emoji:'🤔'}, {mood:'Chill',   emoji:'😎'},
+];
+
 function showMoodModal() {
-  // highlight the currently selected mood
   const current = state.user.mood || 'Happy';
-  document.querySelectorAll('#modalMoodGrid .mood-card').forEach(c => {
-    c.classList.toggle('selected', c.dataset.mood === current);
-  });
+  const grid = MOOD_DATA.map(m => `
+    <div class="mood-card${m.mood === current ? ' selected' : ''}"
+         data-mood="${m.mood}" data-emoji="${m.emoji}"
+         onclick="changeMood(this)">
+      <div class="mood-emoji">${m.emoji}</div>
+      <div class="mood-name">${m.mood}</div>
+    </div>`).join('');
+
+  const sheet = document.querySelector('#moodModal .modal-sheet');
+  if (sheet) sheet.innerHTML = _modalHTML('moodModal', 'How are you feeling?',
+    `<div class="mood-grid" id="modalMoodGrid">${grid}</div>`);
   _cls('moodModal', 'add', 'show');
 }
 
@@ -16,23 +46,24 @@ function closeMoodModal(e) {
 function changeMood(card) {
   document.querySelectorAll('#modalMoodGrid .mood-card').forEach(c => c.classList.remove('selected'));
   card.classList.add('selected');
-  state.user.mood = card.dataset.mood;
+  state.user.mood      = card.dataset.mood;
   state.user.moodEmoji = card.dataset.emoji || moodEmojis[card.dataset.mood];
   saveUser();
   updateHomeUI();
-  _cls('moodModal', 'remove', 'show');
-  showToast('Mood updated to ' + state.user.mood + ' ' + state.user.moodEmoji);
+  setTimeout(() => _cls('moodModal', 'remove', 'show'), 220);
+  showToast(card.dataset.emoji + ' Mood set to ' + card.dataset.mood);
 }
 
-// ═══════════════════════════════════════
-// LANGUAGE MODAL
-// ═══════════════════════════════════════
+// ─────────────────────────────────────────
+// LANGUAGE MODAL — uses LANG_DATA from lang-data.js
+// ─────────────────────────────────────────
 function showLangModal() {
-  // highlight the currently selected language
   const current = state.user.language || 'Hindi';
-  document.querySelectorAll('#modalLangGrid .lang-pill').forEach(p => {
-    p.classList.toggle('selected', p.dataset.lang === current);
-  });
+  const sheet = document.querySelector('#langModal .modal-sheet');
+  if (sheet) sheet.innerHTML = _modalHTML('langModal', 'Choose language',
+    '<div class="lang-pill-row" id="modalLangGrid"></div>');
+  // renderLangPills is defined in lang-data.js — single source of truth
+  renderLangPills('modalLangGrid', current, 'changeLang');
   _cls('langModal', 'add', 'show');
 }
 
@@ -46,31 +77,116 @@ function changeLang(pill) {
   state.user.language = pill.dataset.lang;
   saveUser();
   updateHomeUI();
-  _cls('langModal', 'remove', 'show');
-  showToast('Language changed to ' + state.user.language);
+  setTimeout(() => _cls('langModal', 'remove', 'show'), 220);
+  showToast('Language set to ' + state.user.language);
 }
 
-function filterMood(el, mood) {
-  document.querySelectorAll('.mood-filter').forEach(f => f.classList.remove('active'));
-  el.classList.add('active');
+// ─────────────────────────────────────────
+// REGION MODAL
+// ─────────────────────────────────────────
+const REGION_DATA = [
+  {region:'North',     icon:'🏔️', name:'North India',   states:'Delhi · UP · Punjab · HP'},
+  {region:'South',     icon:'🌴', name:'South India',   states:'TN · Kerala · Karnataka'},
+  {region:'East',      icon:'🌊', name:'East India',    states:'WB · Odisha · Bihar'},
+  {region:'West',      icon:'🌅', name:'West India',    states:'MH · Gujarat · Goa'},
+  {region:'Central',   icon:'🌾', name:'Central India', states:'MP · CG · Telangana'},
+  {region:'Northeast', icon:'🏕️', name:'Northeast',     states:'Assam · Manipur · NE'},
+];
+
+function showRegionModal() {
+  const current = state.user.region || '';
+  const cards = REGION_DATA.map(r => `
+    <div class="region-card-modal${r.region === current ? ' selected' : ''}"
+         data-region="${r.region}" onclick="changeRegion(this)">
+      <div class="r-icon">${r.icon}</div>
+      <div class="r-name">${r.name}</div>
+      <div class="r-states">${r.states}</div>
+    </div>`).join('');
+
+  const sheet = document.querySelector('#regionModal .modal-sheet');
+  if (sheet) sheet.innerHTML = _modalHTML('regionModal', 'Your region',
+    `<div class="region-modal-grid" id="modalRegionGrid">${cards}</div>`);
+  _cls('regionModal', 'add', 'show');
 }
 
-// ═══════════════════════════════════════
-// AVATAR PICKER MODAL
-// ═══════════════════════════════════════
+function closeRegionModal(e) {
+  if (e.target.id === 'regionModal') _cls('regionModal', 'remove', 'show');
+}
+
+function changeRegion(card) {
+  document.querySelectorAll('#modalRegionGrid .region-card-modal').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  state.user.region = card.dataset.region;
+  saveUser();
+  updateHomeUI();
+  setTimeout(() => _cls('regionModal', 'remove', 'show'), 220);
+  showToast('📍 Region set to ' + state.user.region);
+}
+
+// ─────────────────────────────────────────
+// AVATAR PICKER MODAL — tabbed
+// ─────────────────────────────────────────
+const AVATAR_TABS_DATA = [
+  { label: '🐾 Animals', keys: ['cat','fox','wolf','panda','lion','frog','owl','bear','rabbit','tiger','deer','penguin'] },
+  { label: '👥 People',  keys: ['coder','artist','doctor','chef','musician','astronaut','teacher','student','pilot','scientist','farmer','engineer'] },
+  { label: '✨ Fantasy', keys: ['wizard','fairy','vampire','genie','elf','robot','alien','ninja','knight','witch','angel','samurai'] },
+];
+
+let _avatarActiveTab = 0;
+
 function showAvatarModal() {
+  _avatarActiveTab = 0;
+  const current = state.user.avatar || 'cat';
+
+  // Find which tab the current avatar is in
+  AVATAR_TABS_DATA.forEach((tab, i) => {
+    if (tab.keys.includes(current)) _avatarActiveTab = i;
+  });
+
+  const sheet = document.querySelector('#avatarModal .modal-sheet');
+  if (sheet) {
+    sheet.innerHTML = `
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <div class="modal-title">Choose your avatar</div>
+        <button class="modal-close" onclick="_cls('avatarModal','remove','show')">✕</button>
+      </div>
+      <div class="avatar-picker-tabs" id="avatarPickerTabs">
+        ${AVATAR_TABS_DATA.map((t, i) => `
+          <div class="avatar-picker-tab${i === _avatarActiveTab ? ' active' : ''}"
+               onclick="_switchAvatarTab(${i})">${t.label}</div>
+        `).join('')}
+      </div>
+      <div class="avatar-picker-scroll">
+        <div class="avatar-picker-grid" id="avatarPickerGrid"></div>
+      </div>`;
+  }
+  _renderAvatarTab(current);
+  _cls('avatarModal', 'add', 'show');
+}
+
+function _switchAvatarTab(idx) {
+  _avatarActiveTab = idx;
+  document.querySelectorAll('.avatar-picker-tab').forEach((t, i) => {
+    t.classList.toggle('active', i === idx);
+  });
+  _renderAvatarTab(state.user.avatar || 'cat');
+}
+
+function _renderAvatarTab(current) {
   const grid = document.getElementById('avatarPickerGrid');
   if (!grid) return;
-  grid.innerHTML = '';
-  const current = state.user.avatar || 'cat';
-  for (const key of Object.keys(AVATAR_SVGS)) {
-    const item = document.createElement('div');
-    item.className = 'avatar-picker-item' + (key === current ? ' selected' : '');
-    item.innerHTML = AVATAR_SVGS[key];
-    item.onclick = function() { pickAvatar(key); };
-    grid.appendChild(item);
-  }
-  _cls('avatarModal', 'add', 'show');
+  const tab = AVATAR_TABS_DATA[_avatarActiveTab];
+  grid.innerHTML = tab.keys.map(key => {
+    const svg = AVATAR_SVGS[key] || '';
+    const name = key.charAt(0).toUpperCase() + key.slice(1);
+    return `
+      <div class="avatar-picker-item${key === current ? ' selected' : ''}"
+           data-avatar="${key}" onclick="pickAvatar('${key}')">
+        ${svg}
+        <div class="avatar-picker-item-name">${name}</div>
+      </div>`;
+  }).join('');
 }
 
 function closeAvatarModal(e) {
@@ -81,38 +197,17 @@ function pickAvatar(key) {
   state.user.avatar = key;
   saveUser();
   updateHomeUI();
-  _cls('avatarModal', 'remove', 'show');
-  showToast('Avatar updated! 🎨');
-}
-
-// ═══════════════════════════════════════
-// REGION MODAL
-// ═══════════════════════════════════════
-function showRegionModal() {
-  const current = state.user.region || 'North';
-  document.querySelectorAll('#modalRegionGrid .region-pill').forEach(p => {
-    p.classList.toggle('selected', p.dataset.region === current);
+  // Update selection highlight without closing
+  document.querySelectorAll('.avatar-picker-item').forEach(el => {
+    el.classList.toggle('selected', el.dataset.avatar === key);
   });
-  _cls('regionModal', 'add', 'show');
+  setTimeout(() => _cls('avatarModal', 'remove', 'show'), 280);
+  showToast('Avatar updated 🎨');
 }
 
-function closeRegionModal(e) {
-  if (e.target.id === 'regionModal') _cls('regionModal', 'remove', 'show');
-}
-
-function changeRegion(pill) {
-  document.querySelectorAll('#modalRegionGrid .region-pill').forEach(p => p.classList.remove('selected'));
-  pill.classList.add('selected');
-  state.user.region = pill.dataset.region;
-  saveUser();
-  updateHomeUI();
-  _cls('regionModal', 'remove', 'show');
-  showToast('Region changed to ' + state.user.region + ' 📍');
-}
-
-// ═══════════════════════════════════════
-// DELETE ACCOUNT
-// ═══════════════════════════════════════
+// ─────────────────────────────────────────
+// DELETE ACCOUNT MODAL
+// ─────────────────────────────────────────
 function closeDeleteModal(e) {
   if (e.target.id === 'deleteAccountModal') _cls('deleteAccountModal', 'remove', 'show');
 }
@@ -120,94 +215,103 @@ function closeDeleteModal(e) {
 function confirmDeleteAccount() {
   const phone = state.guftguPhone;
 
-  // 1) Mark deletion in Firebase with 30-day retention (server-side cleanup later)
+  // Firebase cleanup
   if (typeof fbDb !== 'undefined' && fbDb && phone) {
     const now = new Date().toISOString();
     const purgeDate = new Date();
     purgeDate.setDate(purgeDate.getDate() + 30);
-    // Move user data to a "deletedAccounts" node for 30-day retention
     fbDb.ref('users/' + phone).once('value').then(snap => {
       if (snap.exists()) {
         fbDb.ref('deletedAccounts/' + phone).set({
-          data: snap.val(),
-          deletedAt: now,
-          purgeAfter: purgeDate.toISOString()
+          data: snap.val(), deletedAt: now, purgeAfter: purgeDate.toISOString()
         });
       }
-      // Remove live user data
-      fbDb.ref('users/' + phone).remove();
-      fbDb.ref('matchQueue/' + phone).remove();
-      fbDb.ref('callRequests/' + phone).remove();
+      ['users','matchQueue','callRequests'].forEach(node => {
+        fbDb.ref(node + '/' + phone).remove();
+      });
     }).catch(() => {});
   }
 
-  // 2) Wipe ALL local storage, session storage, and cookies
+  // Wipe local storage
   localStorage.clear();
   sessionStorage.clear();
-  // Clear all cookies
   document.cookie.split(';').forEach(c => {
     const name = c.split('=')[0].trim();
     document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
   });
-  // Clear caches if available
-  if ('caches' in window) {
-    caches.keys().then(names => names.forEach(n => caches.delete(n)));
-  }
-  // Unregister service workers
+  if ('caches' in window) caches.keys().then(names => names.forEach(n => caches.delete(n)));
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
   }
 
-  // 3) Reset state
-  state.user = { nickname:'', avatar:'👨‍💻', mood:'Happy', moodEmoji:'😄', language:'Hindi', region:'North', intent:'Just chat' };
+  // Reset state
+  state.user = { nickname:'', avatar:'cat', mood:'Happy', moodEmoji:'😄',
+    language:'Hindi', region:'North', intent:'Just chat' };
   state.guftguPhone = '';
   state.palcode = '';
+  state.currentPal = null;
+  state.onboardStep = 0;
 
+  // Hide nav + close modal
   _cls('deleteAccountModal', 'remove', 'show');
-  showToast('Account deleted. All local data wiped. 🧹');
+  const nav = document.getElementById('mainNav');
+  if (nav) { nav.style.display = 'none'; nav.classList.remove('nav-visible'); }
 
-  // Go back to onboarding
-  setTimeout(() => { showScreen('screen-onboard'); }, 800);
+  showToast('Account deleted. All data wiped. 🧹');
+
+  setTimeout(() => {
+    resetOnboarding();
+    document.querySelectorAll('.screen').forEach(s => {
+      s.classList.remove('active', 'exit');
+      s.style.transform = '';
+      s.style.transition = '';
+    });
+    const ob = document.getElementById('screen-onboard');
+    if (ob) {
+      ob.style.transition = 'none';
+      ob.style.transform = 'none';
+      ob.classList.add('active');
+      requestAnimationFrame(() => { ob.style.transition = ''; });
+    }
+    state.screen = 'screen-onboard';
+    state.prevScreen = null;
+  }, 900);
 }
 
-// ═══════════════════════════════════════
-// APP INFO
-// ═══════════════════════════════════════
-function showAppInfo() {
-  showScreen('screen-appinfo');
-}
-function closeAppInfo() {
-  goBack();
+// ─────────────────────────────────────────
+// MISC
+// ─────────────────────────────────────────
+function filterMood(el, mood) {
+  document.querySelectorAll('.mood-filter').forEach(f => f.classList.remove('active'));
+  if (el) el.classList.add('active');
 }
 
-// ═══════════════════════════════════════
-// NOTIFICATIONS
-// ═══════════════════════════════════════
+function showAppInfo() { showScreen('screen-appinfo'); }
+function closeAppInfo() { goBack(); }
+
+function copyPalcode() {
+  const code = state.palcode || state.guftguPhone;
+  if (navigator.clipboard) navigator.clipboard.writeText(code).catch(() => {});
+  showToast('GuftguPhone number copied! 📱');
+}
+
 function acceptFriend(btn) {
-  btn.closest('.notif-actions').innerHTML = '<span style="font-size:12px;color:var(--accent2);font-weight:600;">✓ Friends now!</span>';
+  btn.closest('.notif-actions').innerHTML =
+    '<span style="font-size:12px;color:var(--accent2);font-weight:600;">✓ Friends now!</span>';
   btn.closest('.notif-item').classList.remove('unread');
   const badge = document.getElementById('notifBadge');
-  const cur = parseInt(badge.textContent);
-  if (cur > 1) badge.textContent = cur-1;
-  else badge.style.display = 'none';
+  if (badge) {
+    const cur = parseInt(badge.textContent) || 0;
+    if (cur > 1) badge.textContent = cur - 1;
+    else badge.style.display = 'none';
+  }
   showToast('Friend request accepted! 🎉');
-  const sf = document.getElementById('statFriends'); if (sf) sf.textContent = parseInt(sf.textContent||'0')+1;
+  const sf = document.getElementById('statFriends');
+  if (sf) sf.textContent = parseInt(sf.textContent || '0') + 1;
 }
 
 function declineFriend(btn) {
   btn.closest('.notif-item').style.opacity = '0.4';
-  btn.closest('.notif-actions').innerHTML = '<span style="font-size:12px;color:var(--text3);">Declined</span>';
+  btn.closest('.notif-actions').innerHTML =
+    '<span style="font-size:12px;color:var(--text3);">Declined</span>';
 }
-
-// ═══════════════════════════════════════
-// PALCODE
-// ═══════════════════════════════════════
-function copyPalcode() {
-  const code = state.palcode;
-  if (navigator.clipboard) navigator.clipboard.writeText(code).catch(()=>{});
-  showToast('GuftguPhone number copied! 📱');
-}
-
-// ═══════════════════════════════════════
-// TOAST
-// ═══════════════════════════════════════

@@ -1,7 +1,5 @@
 ﻿// js/onboarding.js - Onboarding 2-path flow (Quick Start + Full Setup)
 // ═══════════════════════════════════════
-// ONBOARDING — 2 paths: Quick Start & Full Setup
-// ═══════════════════════════════════════
 const NAME_ADJECTIVES = [
   'Silent','Quiet','Bold','Bright','Dark','Swift','Calm','Wild',
   'Deep','Soft','Sharp','Hazy','Warm','Cool','Fierce','Gentle',
@@ -19,12 +17,100 @@ const QS_EMOJIS  = {Happy:'😄',Chill:'😎',Excited:'🤩',Lonely:'🥺',Curio
 // current ob step: 0=splash, 1-4=full steps, 'qs'=quick-start region
 let _obStep = 0;
 // quick-start temp state
-let _qsState = { avatar:'🦊', name:'SilentFox42', mood:'Happy', moodEmoji:'😄', language:'Hindi', region:'', intent:'Just chat' };
+let _qsState = { avatar:'cat', name:'SilentFox42', mood:'Happy', moodEmoji:'😄', language:'Hindi', region:'', intent:'Just chat' };
 
 function genUniqueName() {
   const adj = NAME_ADJECTIVES[Math.floor(Math.random() * NAME_ADJECTIVES.length)];
   const noun = NAME_NOUNS[Math.floor(Math.random() * NAME_NOUNS.length)];
   return adj + noun + String(Math.floor(10 + Math.random() * 90));
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RESET — called by confirmDeleteAccount() to fully restore fresh state
+// ═══════════════════════════════════════════════════════════════════
+function resetOnboarding() {
+  // 1. Reset module-level step tracker
+  _obStep = 0;
+
+  // 2. Reset quick-start temp state
+  _qsState = { avatar:'cat', name:genUniqueName(), mood:'Happy', moodEmoji:'😄', language:'Hindi', region:'', intent:'Just chat' };
+
+  // 3. Reset progress bar UI
+  const prog = document.getElementById('obProgress');
+  if (prog) prog.classList.remove('visible');
+  const back = document.getElementById('obBackBtn');
+  if (back) back.classList.remove('visible');
+
+  // 4. Hide ALL onboarding steps, show only step 0 (splash)
+  document.querySelectorAll('.onboard-step').forEach(s => s.classList.remove('active'));
+  const splash = document.getElementById('ob-step-0');
+  if (splash) splash.classList.add('active');
+
+  // 5. Reset progress dots to pristine state
+  for (let i = 1; i <= 4; i++) {
+    const dot = document.getElementById('pdot-' + i);
+    if (dot) {
+      dot.classList.remove('active', 'done');
+      dot.textContent = i;
+      if (i === 1) dot.classList.add('active');
+    }
+    const line = document.getElementById('pline-' + i);
+    if (line) line.classList.remove('done');
+  }
+  const label = document.getElementById('obProgLabel');
+  if (label) label.innerHTML = 'Step <span>1</span> of 4';
+
+  // 6. Reset onboarding background tint
+  const obBg = document.getElementById('obBg');
+  if (obBg) obBg.style.background = '';
+
+  // 7. Reset mood grid — Happy pre-selected
+  document.querySelectorAll('#moodGrid .mood-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.mood === 'Happy');
+  });
+
+  // 8. Reset intent chips — Just chat pre-selected
+  document.querySelectorAll('#intentRow .intent-chip').forEach(c => {
+    c.classList.toggle('selected', c.dataset.intent === 'Just chat');
+  });
+
+  // 9. Reset language grids from single source — Hindi pre-selected
+  renderLangPills('langGrid',  'Hindi', 'selectLang');
+  renderLangPills('qsLangRow', 'Hindi', 'qsSelectLang');
+
+  // 10. Reset region grid — nothing selected
+  document.querySelectorAll('#regionGrid .region-card').forEach(c => c.classList.remove('selected'));
+
+  // 11. Reset avatar picker — Cat pre-selected in Animals tab
+  document.querySelectorAll('.avatar-opt').forEach(a => {
+    a.classList.toggle('selected', a.dataset.avatar === 'cat');
+  });
+  // Show animals tab, hide others
+  document.querySelectorAll('.avatar-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+  document.querySelectorAll('.avatar-panel').forEach((p, i) => p.classList.toggle('active', i === 0));
+
+  // 12. Clear nickname input
+  const nickInput = document.getElementById('nicknameInput');
+  if (nickInput) nickInput.value = '';
+  const nameHint = document.getElementById('nameHint');
+  if (nameHint) {
+    nameHint.textContent = '✓ No email or phone required · ✓ Fully anonymous';
+    nameHint.style.color = 'var(--text3)';
+  }
+
+  // 13. Reset palcodeDisplay
+  const pcd = document.getElementById('palcodeDisplay');
+  if (pcd) pcd.textContent = '—';
+
+  // 14. Re-sync state defaults
+  state.user.mood = 'Happy';
+  state.user.moodEmoji = '😄';
+  state.user.avatar = 'cat';
+  state.user.language = 'Hindi';
+
+  // 15. Set avatar continue btn to default state
+  const avatarBtn = document.getElementById('avatarContinueBtn');
+  if (avatarBtn) { avatarBtn.disabled = false; avatarBtn.textContent = 'Continue →'; }
 }
 
 // ── Progress bar update ───────────────────────────
@@ -54,7 +140,6 @@ function _obUpdateProgress(step) {
     else { dot.textContent = i; }
     if (line) line.classList.toggle('done', i < step);
   }
-  // tint bg
   const tints = ['','rgba(255,107,107,0.18)','rgba(78,205,196,0.12)','rgba(78,205,196,0.1)','rgba(255,107,107,0.1)'];
   const obBgEl = document.getElementById('obBg');
   if (obBgEl) obBgEl.style.background = `radial-gradient(ellipse 80% 60% at 50% 0%, ${tints[step]||tints[1]} 0%, transparent 70%)`;
@@ -76,6 +161,8 @@ function obNextStep() {
   }
   if (_obStep === 2) {
     if (!state.user.avatar) { showToast('Choose an avatar first'); return; }
+    // Render lang pills from single source before showing step 3
+    renderLangPills('langGrid', state.user.language || 'Hindi', 'selectLang');
     _obShow(3); return;
   }
   if (_obStep === 3) {
@@ -96,8 +183,7 @@ function obJumpTo(n) {
 
 // ── QUICK START path ──────────────────────────────
 function quickStart() {
-  // randomise everything except language & region
-  reshuffleQS();
+  reshuffleQS(); // reshuffleQS calls renderLangPills('qsLangRow',...)
   _obShow('qs');
 }
 
@@ -110,47 +196,33 @@ function reshuffleQS() {
   setAvatarEl('qsPreviewAvatar', _qsState.avatar);
   _txt('qsPreviewName', _qsState.name);
   _txt('qsPreviewMeta', 'Feeling ' + _qsState.mood + ' ' + _qsState.moodEmoji + ' · ' + (_qsState.intent || 'Just chat'));
-}
-
-function qsSelectLang(pill) {
-  document.querySelectorAll('#qsLangRow .lang-pill').forEach(p => p.classList.remove('selected'));
-  pill.classList.add('selected');
-  _qsState.language = pill.dataset.lang;
-}
-
-function qsSelectRegion(card) {
+  // Rebuild lang pills from single source of truth
+  renderLangPills('qsLangRow', 'Hindi', 'qsSelectLang');
   document.querySelectorAll('#qsRegionGrid .region-card').forEach(c => c.classList.remove('selected'));
-  card.classList.add('selected');
-  _qsState.region = card.dataset.region;
+  _qsState.language = 'Hindi';
+  _qsState.region   = '';
 }
 
 // ── Show welcome/completion screen ───────────────
 function showWelcomeScreen() {
   const u = state.user;
+
+  // Set avatar — prefer the large welcome avatar, fall back to wcAvatar
   const avatarId = document.getElementById('welcomeAvatarBig') ? 'welcomeAvatarBig' : 'wcAvatar';
   setAvatarEl(avatarId, u.avatar || 'cat');
 
+  // Set name
   const nameId = document.getElementById('welcomeNameBig') ? 'welcomeNameBig' : 'wcName';
   _txt(nameId, u.nickname || 'Pal');
 
+  // Set phone
   const wpn = document.getElementById('welcomePhoneNum') || document.getElementById('wcPhone');
   if (wpn) wpn.textContent = state.guftguPhone || '-';
 
-  const legacyMoodTag = document.getElementById('welcomeMoodTag');
-  const legacyLangTag = document.getElementById('welcomeLangTag');
-  if (legacyMoodTag || legacyLangTag) {
-    _txt('welcomeMoodTag', (u.moodEmoji || '😊') + ' ' + (u.mood || ''));
-    _txt('welcomeLangTag', u.language || 'Hindi');
-  } else {
-    const wcTagline = document.getElementById('wcTagline');
-    if (wcTagline) wcTagline.textContent = 'Feeling ' + (u.mood || 'Happy') + ' ' + (u.moodEmoji || '😊') + ' · ' + (u.intent || 'Just chat');
-  }
+  // Set tagline
+  const wcTagline = document.getElementById('wcTagline');
+  if (wcTagline) wcTagline.textContent = 'Feeling ' + (u.mood || 'Happy') + ' ' + (u.moodEmoji || '😊') + ' · ' + (u.intent || 'Just chat');
 
-  const rTag = document.getElementById('welcomeRegionTag');
-  if (rTag) {
-    if (u.region) { rTag.textContent = '📍 ' + u.region; rTag.style.display = 'flex'; }
-    else          { rTag.style.display = 'none'; }
-  }
   _launchConfetti();
   showScreen('screen-welcome');
 }
@@ -203,7 +275,7 @@ function finishOnboard() {
   const nick = nickEl ? nickEl.value.trim() : '';
   if (!nick || nick.length < 2) { showToast('Enter a nickname (2+ chars) 👤'); return; }
   if (!state.user.mood)   { state.user.mood='Happy'; state.user.moodEmoji='😄'; }
-  if (!state.user.avatar) { state.user.avatar='🦊'; }
+  if (!state.user.avatar) { state.user.avatar='cat'; }
   if (!state.user.intent) { state.user.intent='Just chat'; }
   state.user.nickname  = nick;
   state.guftguPhone    = genGuftguPhone();
@@ -237,7 +309,6 @@ function switchAvatarTab(tab, el) {
   el.classList.add('active');
   document.querySelectorAll('.avatar-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-' + tab).classList.add('active');
-  // auto-select first avatar in the newly shown tab
   const firstOpt = document.querySelector('#panel-' + tab + ' .avatar-opt');
   if (firstOpt) selectAvatar(firstOpt);
 }
@@ -254,7 +325,18 @@ function selectRegion(card) {
   state.user.region = card.dataset.region;
 }
 
-// kept for legacy compatibility — now handled by obNextStep
+function qsSelectLang(pill) {
+  document.querySelectorAll('#qsLangRow .lang-pill').forEach(p => p.classList.remove('selected'));
+  pill.classList.add('selected');
+  _qsState.language = pill.dataset.lang;
+}
+
+function qsSelectRegion(card) {
+  document.querySelectorAll('#qsRegionGrid .region-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  _qsState.region = card.dataset.region;
+}
+
 function nextStep(step) { obNextStep(); }
 
 function populateNameSuggestions() { renderNameChips(); }
@@ -293,5 +375,4 @@ function onNameInput(val) {
   }
 }
 
-// selectLang / selectRegion for full setup path
 function updateNicknamePreview(v) {}

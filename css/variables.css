@@ -17,7 +17,16 @@
   --radius: 20px;
   --radius-sm: 12px;
   --nav-h: 72px;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
   --glass: rgba(255,255,255,0.04);
   --glow: 0 0 40px rgba(255,107,107,0.15);
+
+  /* FIX: double-fallback for browsers that don't parse env() */
+  --safe-bottom: 0px;
+}
+
+/* FIX: only apply env() where it's actually supported */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  :root {
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }

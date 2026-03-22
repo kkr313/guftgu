@@ -10,24 +10,33 @@
   backdrop-filter: blur(20px);
 }
 
-/* ── Bottom Nav ── */
+/* ── Bottom Nav ──
+   FIX: No longer position:fixed — it sits OUTSIDE #app in the body flex column.
+   body { display:flex; flex-direction:column } so #app takes flex:1 and the nav
+   sits below it without any clipping from overflow:hidden on #app.
+   This fixes Samsung Internet, old Android WebView, UC Browser where
+   position:fixed inside overflow:hidden gets clipped or mis-positioned.
+── */
 .bottom-nav {
-  position: fixed;
-  bottom: 0; left: 50%;
-  transform: translateX(-50%);
+  /* FIX: in-flow, not fixed */
   width: 100%;
   max-width: 420px;
+  flex-shrink: 0;
   height: calc(var(--nav-h) + var(--safe-bottom));
   padding-bottom: var(--safe-bottom);
-  background: rgba(10,11,16,0.95);
+  background: rgba(10,11,16,0.97);
   backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
   border-top: 1px solid var(--border);
-  display: flex;
+  display: none;               /* hidden by default; JS adds .nav-visible */
   align-items: flex-start;
   justify-content: space-around;
   padding-top: 8px;
   z-index: 200;
+  /* FIX: no transform here — transforms create stacking contexts that
+     break z-index stacking on certain mobile GPU renderers */
 }
+
 .nav-item {
   display: flex;
   flex-direction: column;
@@ -171,34 +180,7 @@ input::placeholder, textarea::placeholder {
 .mood-name { font-size: 12px; font-weight: 600; color: var(--text2); }
 .mood-card.selected .mood-name { color: var(--accent); }
 
-/* ── Language Pills ── */
-.lang-pill-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 20px;
-}
-.lang-pill {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 10px 14px;
-  border-radius: 50px;
-  background: var(--bg3);
-  border: 1.5px solid transparent;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  color: var(--text2);
-}
-.lang-pill:active { transform: scale(0.96); }
-.lang-pill.selected {
-  border-color: var(--accent2);
-  color: var(--accent2);
-  background: rgba(78,205,196,0.08);
-}
+/* ── Language Pills — see css/lang-pills.css ── */
 
 /* ── Region Grid ── */
 .region-grid {
@@ -410,7 +392,10 @@ input::placeholder, textarea::placeholder {
 }
 .toggle.on::after { transform: translateX(20px); }
 
-/* ── Toast ── */
+/* ── Toast ──
+   FIX: Toast also lives outside #app now, so position:fixed works fine
+   (no overflow:hidden ancestor to clip it).
+── */
 .toast {
   position: fixed;
   top: 60px;
@@ -429,6 +414,9 @@ input::placeholder, textarea::placeholder {
   transition: all 0.3s;
   pointer-events: none;
   white-space: nowrap;
+  max-width: 420px;
+  width: calc(100% - 48px);
+  text-align: center;
 }
 .toast.show {
   opacity: 1;
