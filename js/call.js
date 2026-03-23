@@ -31,13 +31,11 @@ let isCaller      = false;
 let callListeners = [];
 
 // ─────────────────────────────────────────────────────────────────
-// DURATION HELPER — always accurate regardless of timer element
+// DURATION HELPER
 // ─────────────────────────────────────────────────────────────────
 function _getCallDuration() {
-  // Prefer the live timer element
   const el = document.getElementById('callTimer');
   if (el && el.textContent && el.textContent !== '00:00') return el.textContent;
-  // Fallback: build from state.callSecs
   const secs = state.callSecs || 0;
   const m = Math.floor(secs / 60).toString().padStart(2, '0');
   const s = (secs % 60).toString().padStart(2, '0');
@@ -45,7 +43,7 @@ function _getCallDuration() {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// PAL INFO HELPER — reads current pal from state + call screen
+// PAL INFO HELPER
 // ─────────────────────────────────────────────────────────────────
 function _getCurrentPalInfo() {
   const pal        = state.currentPal;
@@ -137,8 +135,11 @@ function createPC() {
   pc.oniceconnectionstatechange = () => {
     const s = pc.iceConnectionState;
     if (s === 'connected' || s === 'completed') {
+      _txt('callStatus', 'Connected ✓');
       startCallTimer();
-      _watchCallEnded();   // start watching for remote hang-up / block signals
+      _watchCallEnded();
+    } else if (s === 'checking') {
+      _txt('callStatus', 'Connecting...');
     } else if (s === 'disconnected' || s === 'failed' || s === 'closed') {
       if (state.screen === 'screen-call') {
         const p = _getCurrentPalInfo();
@@ -146,7 +147,9 @@ function createPC() {
           saveCallToHistory(p.avatar, p.name, p.mood, _getCallDuration(),
             isCaller ? 'Outgoing' : 'Incoming');
         }
+        if (typeof updateProfileStats === 'function') updateProfileStats();
         showToast('Call ended 👋');
+        _cleanupMatchDoc();
         endCallCleanup();
         goBack();
       }
@@ -158,12 +161,10 @@ function createPC() {
 
 // ─────────────────────────────────────────────────────────────────
 // WATCH FOR REMOTE HANG-UP OR BLOCK
-// Listens for callEnded=true written by the OTHER side.
-// Also checks callBlocked flag to differentiate in history.
 // ─────────────────────────────────────────────────────────────────
 let _callEndedRef = null;
 let _callEndedLsn = null;
-let _iEnded       = false; // true on device that called endCall()
+let _iEnded       = false;
 
 function _watchCallEnded() {
   if (!fbDb || !currentRoomId) return;
@@ -173,7 +174,7 @@ function _watchCallEnded() {
   _callEndedRef = fbDb.ref('rooms/' + currentRoomId + '/callEnded');
   _callEndedLsn = _callEndedRef.on('value', snap => {
     if (!snap.exists() || !snap.val()) return;
-    if (_iEnded) return;                         // I wrote this — ignore
+    if (_iEnded) return;
     if (state.screen !== 'screen-call') return;
 
     _callEndedRef.off('value', _callEndedLsn);
@@ -183,7 +184,6 @@ function _watchCallEnded() {
     const p        = _getCurrentPalInfo();
     const duration = _getCallDuration();
 
-    // Check if the other side also set callBlocked — if so, save as Blocked
     const blockedCheck = fbDb
       ? fbDb.ref('rooms/' + currentRoomId + '/callBlocked').once('value')
       : Promise.resolve({ exists: () => false, val: () => false });
@@ -195,8 +195,10 @@ function _watchCallEnded() {
       if (typeof saveCallToHistory === 'function') {
         saveCallToHistory(p.avatar, p.name, p.mood, duration, histType);
       }
+      if (typeof updateProfileStats === 'function') updateProfileStats();
 
       showToast(wasBlocked ? 'You have been blocked by this user 🚫' : 'Call ended 👋');
+      _cleanupMatchDoc();
       endCallCleanup();
       goBack();
     }).catch(() => {
@@ -204,7 +206,9 @@ function _watchCallEnded() {
         saveCallToHistory(p.avatar, p.name, p.mood, duration,
           isCaller ? 'Outgoing' : 'Incoming');
       }
+      if (typeof updateProfileStats === 'function') updateProfileStats();
       showToast('Call ended 👋');
+      _cleanupMatchDoc();
       endCallCleanup();
       goBack();
     });
@@ -224,6 +228,7 @@ function preferOpus(sdp) {
 
 // ─────────────────────────────────────────────────────────────────
 // CALLER: Create room + offer
+// Returns roomId so matching.js can publish it to Firebase
 // ─────────────────────────────────────────────────────────────────
 async function createRoom(roomId) {
   const roomRef = fbDb.ref('rooms/' + roomId);
@@ -259,6 +264,8 @@ async function createRoom(roomId) {
     if (rtcPc) await rtcPc.addIceCandidate(new RTCIceCandidate(snap.val())).catch(() => {});
   });
   callListeners.push({ ref: calleeCandRef, listener: calleeCandListener, event: 'child_added' });
+
+  return roomId; // needed by matching.js _startCall caller path
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -294,8 +301,7 @@ async function joinRoom(roomId) {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// JOIN ROOM FROM ALREADY-FETCHED SNAPSHOT
-// Used by answerIncomingCall to avoid a second Firebase read.
+// JOIN FROM ALREADY-FETCHED SNAPSHOT (avoids second Firebase read)
 // ─────────────────────────────────────────────────────────────────
 async function _joinRoomFromSnap(roomId, snap) {
   const roomRef = fbDb.ref('rooms/' + roomId);
@@ -324,6 +330,20 @@ async function _joinRoomFromSnap(roomId, snap) {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// MATCH DOC CLEANUP — delete matches/{matchId} after every call end
+// so same two users can rematch cleanly without stale data blocking
+// ─────────────────────────────────────────────────────────────────
+function _cleanupMatchDoc() {
+  if (!fbDb) return;
+  if (typeof currentMatchId !== 'undefined' && currentMatchId) {
+    fbDb.ref('matches/' + currentMatchId + '/webrtcRoomId').off();
+    fbDb.ref('matches/' + currentMatchId).remove().catch(() => {});
+    // currentMatchId is a global in matching.js — reset it here
+    if (typeof window !== 'undefined') window.currentMatchId = null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
 // START VOICE CALL (from chat header)
 // ─────────────────────────────────────────────────────────────────
 async function startVoiceCall(palOverride) {
@@ -333,6 +353,7 @@ async function startVoiceCall(palOverride) {
   _txt('callName',  pal ? pal.name  : 'Unknown');
   _txt('callMood',  pal ? ('Feeling ' + pal.mood + ' ' + (pal.moodEmoji || '')) : '');
   _txt('callTimer', '00:00');
+  _txt('callStatus', 'Connecting...');
   state.callSecs = 0;
   showScreen('screen-call');
 
@@ -346,7 +367,12 @@ async function startVoiceCall(palOverride) {
     const roomId = genRoomId();
     await createRoom(roomId);
   } catch (err) {
-    showToast('Mic error: ' + (err.message || 'Check microphone permissions'));
+    const msg = err.name === 'NotAllowedError'
+      ? 'Please allow microphone access and try again'
+      : 'Mic error: ' + (err.message || 'Check microphone permissions');
+    showToast(msg);
+    endCallCleanup();
+    goBack();
   }
 }
 
@@ -379,6 +405,7 @@ async function directCallByPhone(phoneArg) {
     _txt('callName',  palName);
     _txt('callMood',  '');
     _txt('callTimer', '00:00');
+    _txt('callStatus', 'Ringing...');
     state.callSecs = 0;
     showScreen('screen-call');
 
@@ -397,6 +424,7 @@ async function directCallByPhone(phoneArg) {
       setAvatarEl('callAvatar', p.avatar || 'cat');
       _txt('callName', p.name);
       _txt('callMood', p.mood ? ('Feeling ' + p.mood + ' ' + (p.moodEmoji || '')) : '');
+      _txt('callStatus', 'Connecting...');
       state.currentPal = { avatar: p.avatar || 'cat', name: p.name, mood: p.mood || '', moodEmoji: p.moodEmoji || '', phone };
       calleeProfileRef.off('value', calleeProfileLsn);
     });
@@ -413,11 +441,11 @@ async function directCallByPhone(phoneArg) {
     const _callTimeout = setTimeout(async () => {
       try { await fbDb.ref('callRequests/' + phone).remove(); } catch (_) {}
       if (state.screen === 'screen-call') {
-        // Save as missed call
         const p = _getCurrentPalInfo();
         if (typeof saveCallToHistory === 'function') {
           saveCallToHistory(p.avatar, p.name, p.mood, '00:00', 'Missed');
         }
+        if (typeof updateProfileStats === 'function') updateProfileStats();
         showToast('No answer — they may be offline');
         endCallCleanup();
         goBack();
@@ -428,7 +456,10 @@ async function directCallByPhone(phoneArg) {
     state._directCallTarget  = phone;
 
   } catch (err) {
-    showToast('Call failed: ' + (err.message || 'Try again'));
+    const msg = err.name === 'NotAllowedError'
+      ? 'Please allow microphone access and try again'
+      : 'Call failed: ' + (err.message || 'Try again');
+    showToast(msg);
     endCallCleanup();
     goBack();
   }
@@ -451,18 +482,13 @@ function listenForIncomingCalls() {
     if (!req.roomId || !req.from) return;
 
     // Block check — silently decline if caller is blocked
-    const isBlocked = (typeof _isBlocked === 'function')
-      ? _isBlocked(req.from)
-      : (JSON.parse(localStorage.getItem('guftgu_blocked') || '[]').includes(req.from));
+    const blockedList = JSON.parse(localStorage.getItem('guftgu_blocked') || '[]');
+    const isBlocked   = blockedList.includes(req.from);
 
     if (isBlocked) {
-      // Silently decline — only write callDeclined so caller sees
-      // "User not available" with no hint they are blocked.
       if (fbDb && req.roomId) {
         fbDb.ref('rooms/' + req.roomId + '/callDeclined').set(true).catch(() => {});
-        // Do NOT write callBlocked — caller must not know they are blocked.
       }
-      // Save quietly in our own history
       if (typeof saveCallToHistory === 'function') {
         saveCallToHistory(req.fromAvatar || 'cat', req.fromName || 'Unknown',
           '', '00:00', 'Blocked');
@@ -479,13 +505,10 @@ function listenForIncomingCalls() {
     );
     state._incomingCallRef = ref;
 
-    // ── Watch room for block/cancel WHILE ring overlay is showing ──
-    // If the caller blocks or hangs up before we tap Answer,
-    // auto-dismiss the overlay so we're never sent to a dead room.
+    // Watch room for caller hang-up while ring overlay is showing
     if (fbDb && req.roomId) {
       const rRef = fbDb.ref('rooms/' + req.roomId);
       const rLsn = rRef.on('value', rSnap => {
-        // Room deleted → caller hung up
         if (!rSnap.exists()) {
           rRef.off('value', rLsn);
           _cls('incomingCallOverlay', 'remove', 'show');
@@ -496,24 +519,16 @@ function listenForIncomingCalls() {
           return;
         }
         const d = rSnap.val();
-        // callBlocked or callDeclined set → block/cancel before answer
         if (d.callBlocked || d.callDeclined || d.callEnded) {
           rRef.off('value', rLsn);
           _cls('incomingCallOverlay', 'remove', 'show');
           if (state._pendingIncomingRoom === req.roomId) {
             state._pendingIncomingRoom = null;
-            if (d.callBlocked) {
-              showToast('Call cancelled');
-            } else {
-              showToast('The caller hung up');
-            }
+            showToast(d.callBlocked ? 'Call cancelled' : 'The caller hung up');
           }
-          // Save as missed (ring was shown but no answer)
           if (typeof saveCallToHistory === 'function') {
-            saveCallToHistory(
-              req.fromAvatar || 'cat', req.fromName || 'Unknown',
-              '', '00:00', 'Missed'
-            );
+            saveCallToHistory(req.fromAvatar || 'cat', req.fromName || 'Unknown',
+              '', '00:00', 'Missed');
           }
         }
       });
@@ -534,6 +549,7 @@ function endCall() {
   if (typeof saveCallToHistory === 'function') {
     saveCallToHistory(p.avatar, p.name, p.mood, duration, callType);
   }
+  if (typeof updateProfileStats === 'function') updateProfileStats();
 
   if (state._directCallTimeout) { clearTimeout(state._directCallTimeout); state._directCallTimeout = null; }
   if (fbDb && state._directCallTarget) {
@@ -545,25 +561,20 @@ function endCall() {
     state._incomingCallRef = null;
   }
 
-  // Mark that WE are ending — so _watchCallEnded ignores our own signal
   _iEnded = true;
 
-  // Signal the other side
   if (fbDb && currentRoomId) {
     fbDb.ref('rooms/' + currentRoomId + '/callEnded').set(true).catch(() => {});
   }
 
   showToast('Call ended — ' + duration);
+  _cleanupMatchDoc();
   endCallCleanup();
   goBack();
 }
 
 // ─────────────────────────────────────────────────────────────────
 // BLOCK USER DURING ACTIVE CALL
-// Writes callBlocked=true + callEnded=true so BOTH sides drop.
-// Saves history as 'Blocked' for the blocker.
-// The blocked side sees callEnded + callBlocked via _watchCallEnded
-// and saves their own 'Blocked' entry too.
 // ─────────────────────────────────────────────────────────────────
 function blockFromCall() {
   if (state.screen !== 'screen-call') return;
@@ -571,15 +582,14 @@ function blockFromCall() {
   const p        = _getCurrentPalInfo();
   const duration = _getCallDuration();
 
-  // Block them in local storage + Firebase
   if (typeof blockUser === 'function' && p.phone) {
     blockUser(p.phone, p.name, p.avatar);
   }
 
-  // Save history as Blocked (blocker side)
   if (typeof saveCallToHistory === 'function') {
     saveCallToHistory(p.avatar, p.name, p.mood, duration, 'Blocked');
   }
+  if (typeof updateProfileStats === 'function') updateProfileStats();
 
   if (state._directCallTimeout) { clearTimeout(state._directCallTimeout); state._directCallTimeout = null; }
   if (fbDb && state._directCallTarget) {
@@ -591,8 +601,6 @@ function blockFromCall() {
     state._incomingCallRef = null;
   }
 
-  // Signal BOTH callBlocked AND callEnded so the other side drops immediately
-  // and knows why (blocked vs regular hang-up)
   _iEnded = true;
   if (fbDb && currentRoomId) {
     const roomRef = fbDb.ref('rooms/' + currentRoomId);
@@ -601,12 +609,13 @@ function blockFromCall() {
   }
 
   showToast((p.name || 'User') + " blocked — they can't contact you again 🚫");
+  _cleanupMatchDoc();
   endCallCleanup();
   goBack();
 }
 
 // ─────────────────────────────────────────────────────────────────
-// WATCH FOR CALLEE DECLINING / BLOCKING (used by directCallByPhone)
+// WATCH FOR CALLEE DECLINING / BLOCKING (directCallByPhone)
 // ─────────────────────────────────────────────────────────────────
 let _declinedRef = null;
 let _declinedLsn = null;
@@ -627,11 +636,10 @@ function _watchCallDeclined(roomId, calledPhone) {
     const p        = _getCurrentPalInfo();
     const duration = _getCallDuration();
 
-    // Always save as Missed from caller's perspective — they must never
-    // know whether the receiver declined, is busy, or has them blocked.
     if (typeof saveCallToHistory === 'function') {
       saveCallToHistory(p.avatar, p.name, p.mood, duration, 'Missed');
     }
+    if (typeof updateProfileStats === 'function') updateProfileStats();
     showToast('User not available 📵');
     endCallCleanup();
     goBack();
@@ -661,11 +669,18 @@ function endCallCleanup() {
   callListeners.forEach(({ ref, listener, event }) => ref.off(event, listener));
   callListeners = [];
 
+  // Always clean phoneRooms regardless of currentRoomId state
+  if (fbDb && state.guftguPhone) {
+    fbDb.ref('phoneRooms/' + state.guftguPhone).remove().catch(() => {});
+  }
+
   if (fbDb && currentRoomId) {
     fbDb.ref('rooms/' + currentRoomId).remove().catch(() => {});
-    if (state.guftguPhone) fbDb.ref('phoneRooms/' + state.guftguPhone).remove().catch(() => {});
     currentRoomId = null;
   }
+
+  // Reset call-level flags
+  isCaller = false;
 
   const cs = document.getElementById('callCodeSection');
   if (cs) cs.style.display = 'none';
@@ -717,14 +732,12 @@ function rejectIncomingCall() {
   const roomId = state._pendingIncomingRoom;
   state._pendingIncomingRoom = null;
 
-  // Save as Missed (for the person who got the call and declined)
   const name   = state._pendingIncomingName   || 'Unknown';
   const avatar = state._pendingIncomingAvatar || 'cat';
   if (typeof saveCallToHistory === 'function') {
     saveCallToHistory(avatar, name, '', '00:00', 'Missed');
   }
 
-  // Signal caller screen drops
   if (fbDb && roomId) fbDb.ref('rooms/' + roomId + '/callDeclined').set(true).catch(() => {});
   if (fbDb && state._incomingCallRef) {
     state._incomingCallRef.remove().catch(() => {});
@@ -735,18 +748,16 @@ function rejectIncomingCall() {
 
 // ─────────────────────────────────────────────────────────────────
 // BLOCK FROM INCOMING OVERLAY (before answering)
-// Signals caller: declined + blocked. Saves Blocked in history.
 // ─────────────────────────────────────────────────────────────────
 function blockFromIncoming() {
   _cls('incomingCallOverlay', 'remove', 'show');
 
   const roomId      = state._pendingIncomingRoom;
   const callerPhone = state._pendingIncomingPhone;
-  const callerName  = state._pendingIncomingName  || 'Unknown';
-  const callerAvatar= state._pendingIncomingAvatar|| 'cat';
+  const callerName  = state._pendingIncomingName   || 'Unknown';
+  const callerAvatar= state._pendingIncomingAvatar || 'cat';
   state._pendingIncomingRoom = null;
 
-  // Signal both flags so caller's _watchCallDeclined fires and shows correct message
   if (fbDb && roomId) {
     fbDb.ref('rooms/' + roomId + '/callDeclined').set(true).catch(() => {});
     fbDb.ref('rooms/' + roomId + '/callBlocked').set(true).catch(() => {});
@@ -756,12 +767,10 @@ function blockFromIncoming() {
     state._incomingCallRef = null;
   }
 
-  // Block the caller
   if (typeof blockUser === 'function' && callerPhone) {
     blockUser(callerPhone, callerName, callerAvatar);
   }
 
-  // Save as Blocked in history (they tried to call, we blocked them)
   if (typeof saveCallToHistory === 'function') {
     saveCallToHistory(callerAvatar, callerName, '', '00:00', 'Blocked');
   }
@@ -775,7 +784,6 @@ function blockFromIncoming() {
 async function answerIncomingCall() {
   const roomId = state._pendingIncomingRoom;
 
-  // Hide the incoming overlay immediately so it doesn't linger
   _cls('incomingCallOverlay', 'remove', 'show');
   if (!roomId || !fbDb) return;
 
@@ -789,52 +797,48 @@ async function answerIncomingCall() {
   const callerMood   = state._pendingIncomingMood   || '';
   const callerPhone  = state._pendingIncomingPhone  || null;
 
-  // ── PRE-CHECK: verify room exists and caller hasn't blocked/cancelled ──
-  // Do this BEFORE navigating to screen-call so user never lands on a dead screen.
+  // Pre-check: verify room still exists and caller hasn't hung up
   let roomSnap;
   try {
     roomSnap = await fbDb.ref('rooms/' + roomId).once('value');
   } catch (_) {
     showToast('Call ended before you could answer');
-    return; // stay on current screen
+    return;
   }
 
-  // Room was deleted (caller hung up / blocked before answer)
   if (!roomSnap.exists()) {
     if (typeof saveCallToHistory === 'function') {
       saveCallToHistory(callerAvatar, callerName, callerMood, '00:00', 'Missed');
     }
     showToast('The caller already hung up');
-    return; // stay on current screen — never go to screen-call
+    return;
   }
 
   const roomData = roomSnap.val();
 
-  // Caller blocked us before we answered — drop silently
   if (roomData.callBlocked) {
     if (typeof saveCallToHistory === 'function') {
       saveCallToHistory(callerAvatar, callerName, callerMood, '00:00', 'Blocked');
     }
     showToast('This call is no longer available');
-    // Clean up the room node we won't be using
     fbDb.ref('rooms/' + roomId).remove().catch(() => {});
-    return; // stay on current screen
+    return;
   }
 
-  // Caller declined / ended before we answered
   if (roomData.callDeclined || roomData.callEnded) {
     if (typeof saveCallToHistory === 'function') {
       saveCallToHistory(callerAvatar, callerName, callerMood, '00:00', 'Missed');
     }
     showToast('The caller already hung up');
-    return; // stay on current screen
+    return;
   }
 
-  // ── Room is valid — safe to navigate to call screen now ──
+  // Room valid — navigate to call screen
   setAvatarEl('callAvatar', callerAvatar);
   _txt('callName',  callerName);
   _txt('callMood',  callerMood ? 'Feeling ' + callerMood : '');
   _txt('callTimer', '00:00');
+  _txt('callStatus', 'Connecting...');
   state.callSecs = 0;
 
   state.currentPal = {
@@ -853,7 +857,6 @@ async function answerIncomingCall() {
     });
   } catch (_) {}
 
-  // joinRoom uses the snapshot we already fetched — pass it to avoid a second read
   await _joinRoomFromSnap(roomId, roomSnap);
 }
 
@@ -865,7 +868,7 @@ function toggleCallCtrl(ctrl, activeLabel, defaultLabel) {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// JOIN BY CODE (manual code entry)
+// JOIN BY CODE (manual entry on call screen)
 // ─────────────────────────────────────────────────────────────────
 async function joinCallByCode() {
   const joinEl = document.getElementById('callJoinInput');
@@ -889,4 +892,42 @@ async function lookupPhoneRoom(phone) {
     const snap = await fbDb.ref('phoneRooms/' + phone).once('value');
     return snap.exists() ? snap.val().roomId : null;
   } catch (_) { return null; }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ADD FRIEND FROM ACTIVE CALL
+// ─────────────────────────────────────────────────────────────────
+function addFriendFromCall() {
+  const btn  = document.getElementById('callAddFriendBtn');
+  const text = document.getElementById('callAddFriendText');
+  const pal  = state.currentPal;
+
+  if (!pal) { showToast('No active call'); return; }
+  if (btn && btn.classList.contains('sent')) { showToast('Friend request already sent!'); return; }
+
+  const palPhone = pal.phone || null;
+
+  if (typeof sendFriendRequest === 'function') {
+    sendFriendRequest(palPhone || ('call_' + Date.now()),
+      pal.name || 'Unknown', pal.avatar || 'cat', pal.mood || 'Happy', pal.moodEmoji || '😊');
+  }
+
+  if (btn)  btn.classList.add('sent');
+  if (text) text.textContent = '✓ Request Sent!';
+  showToast('👋 Friend request sent to ' + (pal.name || 'your pal') + '!');
+
+  if (fbDb && palPhone && state.guftguPhone) {
+    fbDb.ref('friendRequests/' + palPhone + '/' + state.guftguPhone).set({
+      from: state.guftguPhone, name: state.user.nickname || 'Anonymous',
+      avatar: state.user.avatar || 'cat', mood: state.user.mood || 'Happy',
+      moodEmoji: state.user.moodEmoji || '😊', timestamp: Date.now(), source: 'call'
+    });
+  }
+}
+
+function resetCallAddFriend() {
+  const btn  = document.getElementById('callAddFriendBtn');
+  const text = document.getElementById('callAddFriendText');
+  if (btn)  btn.classList.remove('sent');
+  if (text) text.textContent = '+ Add Friend';
 }

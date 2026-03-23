@@ -60,8 +60,9 @@ function showScreen(id, back=false) {
 
   // Render dynamic content for specific screens
   if (id === 'screen-history' && typeof renderCallHistory === 'function') renderCallHistory();
-  if (id === 'screen-home' && typeof updateHomeUI === 'function') updateHomeUI();
-  if (id === 'screen-chats' && typeof renderChatsScreen === 'function') renderChatsScreen();
+  if (id === 'screen-home'    && typeof updateHomeUI       === 'function') updateHomeUI();
+  if (id === 'screen-chats'  && typeof renderChatsScreen  === 'function') renderChatsScreen();
+  if (id === 'screen-profile' && typeof updateProfileStats === 'function') updateProfileStats();
 }
 
 function goBack() {
@@ -73,5 +74,3 @@ function showMainScreen(tab) {
   const map = { home:'screen-home', chats:'screen-chats', notifs:'screen-notifs', profile:'screen-profile' };
   showScreen(map[tab] || 'screen-home');
 }
-
-// ═══════════════════════════════════════

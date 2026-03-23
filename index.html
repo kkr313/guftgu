@@ -3608,15 +3608,15 @@
 
           <div class="profile-stats">
             <div class="profile-stat">
-              <div class="stat-value" id="statChats">24</div>
+              <div class="stat-value" id="statChats">0</div>
               <div class="stat-label">Chats</div>
             </div>
             <div class="profile-stat">
-              <div class="stat-value" id="statCalls">11</div>
+              <div class="stat-value" id="statCalls">0</div>
               <div class="stat-label">Calls</div>
             </div>
             <div class="profile-stat">
-              <div class="stat-value" id="statFriends">5</div>
+              <div class="stat-value" id="statFriends">0</div>
               <div class="stat-label">Friends</div>
             </div>
           </div>
@@ -3656,14 +3656,6 @@
               <div class="section-title">Privacy</div>
             </div>
             <div class="setting-item">
-              <div class="setting-icon">👻</div>
-              <div class="setting-info">
-                <div class="setting-name">Anonymous Mode</div>
-                <div class="setting-desc">Hide your avatar from strangers</div>
-              </div>
-              <div class="toggle" onclick="this.classList.toggle('on')"></div>
-            </div>
-            <div class="setting-item">
               <div class="setting-icon">🔔</div>
               <div class="setting-info">
                 <div class="setting-name">Push Notifications</div>
@@ -3687,26 +3679,7 @@
           </div>
 
           <!-- Firebase / Real Calls Setup -->
-          <div class="profile-section">
-            <div class="section-header">
-              <div class="section-title">Voice Calls</div>
-            </div>
-            <div class="setting-item" onclick="openFbSetup()">
-              <div class="setting-icon">🔥</div>
-              <div class="setting-info">
-                <div class="setting-name">Firebase Setup</div>
-                <div class="setting-desc" id="fbSettingDesc">
-                  Not connected — tap to enable real calls
-                </div>
-              </div>
-              <div
-                id="fbSettingBadge"
-                style="font-size: 11px; color: var(--text3); font-weight: 600"
-              >
-                ›
-              </div>
-            </div>
-          </div>
+          
 
           <div class="profile-section" style="margin-bottom: 12px">
             <div class="section-header">
@@ -3735,7 +3708,7 @@
                   Delete Account
                 </div>
                 <div class="setting-desc">
-                  Wipe all data · 30-day recovery window
+                  Wipe all data
                 </div>
               </div>
             </div>
@@ -4307,37 +4280,150 @@
       >
         <div class="modal-sheet">
           <div class="modal-handle"></div>
-          <div class="modal-title" style="color: var(--accent)">
+
+          <!-- Icon -->
+          <div style="text-align: center; margin-bottom: 16px">
+            <div
+              style="
+                width: 56px;
+                height: 56px;
+                border-radius: 16px;
+                background: rgba(255, 107, 107, 0.12);
+                border: 1px solid rgba(255, 107, 107, 0.25);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 26px;
+                margin: 0 auto;
+              "
+            >
+              🗑️
+            </div>
+          </div>
+
+          <!-- Title -->
+          <div
+            class="modal-title"
+            style="color: var(--accent); text-align: center"
+          >
             Delete Account
           </div>
+
+          <!-- What gets deleted -->
           <div
             style="
-              font-size: 13px;
-              color: var(--text2);
-              line-height: 1.7;
+              background: var(--bg3);
+              border: 1px solid var(--border);
+              border-radius: 12px;
+              padding: 14px 16px;
               margin-bottom: 20px;
-              text-align: center;
             "
           >
-            This will <b>erase all your data</b> — from this device and our
-            servers.<br /><br />
-            We keep a backup for <b>30 days</b> in case you change your mind.
-            After that, everything is permanently gone.
-          </div>
-          <div style="display: flex; gap: 12px">
-            <button
-              class="btn btn-ghost"
-              style="flex: 1"
-              onclick="_cls('deleteAccountModal', 'remove', 'show')"
+            <div
+              style="
+                font-size: 12px;
+                font-weight: 700;
+                color: var(--text3);
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                margin-bottom: 10px;
+              "
             >
-              Cancel
-            </button>
+              This will permanently delete
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  font-size: 13px;
+                  color: var(--text2);
+                "
+              >
+                <span style="color: var(--accent)">✕</span> Your profile, avatar
+                &amp; nickname
+              </div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  font-size: 13px;
+                  color: var(--text2);
+                "
+              >
+                <span style="color: var(--accent)">✕</span> Your GuftguPhone
+                number
+              </div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  font-size: 13px;
+                  color: var(--text2);
+                "
+              >
+                <span style="color: var(--accent)">✕</span> All call history
+                &amp; chat data
+              </div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  font-size: 13px;
+                  color: var(--text2);
+                "
+              >
+                <span style="color: var(--accent)">✕</span> Friends list &amp;
+                pending requests
+              </div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  font-size: 13px;
+                  color: var(--text2);
+                "
+              >
+                <span style="color: var(--accent)">✕</span> All data from this
+                browser
+              </div>
+            </div>
+          </div>
+
+          <!-- Warning -->
+          <div
+            style="
+              font-size: 12px;
+              color: var(--text3);
+              text-align: center;
+              margin-bottom: 20px;
+              line-height: 1.6;
+            "
+          >
+            This action is
+            <strong style="color: var(--text2)"
+              >immediate and irreversible</strong
+            >.<br />
+            You cannot recover your GuftguPhone number after deletion.
+          </div>
+
+          <!-- Buttons -->
+          <div style="display: flex; flex-direction: column; gap: 10px">
             <button
+              id="deleteConfirmBtn"
               class="btn"
-              style="flex: 1; background: var(--accent); color: #fff"
+              style="background: var(--accent); color: #fff; border: none"
               onclick="confirmDeleteAccount()"
             >
-              Delete Everything
+              Yes, Delete My Account
+            </button>
+            <button class="btn btn-ghost" onclick="cancelDeleteAccount()">
+              Cancel
             </button>
           </div>
         </div>

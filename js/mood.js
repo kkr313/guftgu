@@ -209,73 +209,95 @@ function pickAvatar(key) {
 // DELETE ACCOUNT MODAL
 // ─────────────────────────────────────────
 function closeDeleteModal(e) {
-  if (e.target.id === 'deleteAccountModal') _cls('deleteAccountModal', 'remove', 'show');
+  if (e && e.target && e.target.id === 'deleteAccountModal')
+    _cls('deleteAccountModal', 'remove', 'show');
+}
+
+function cancelDeleteAccount() {
+  _cls('deleteAccountModal', 'remove', 'show');
 }
 
 function confirmDeleteAccount() {
-  const phone = state.guftguPhone;
+  const phone = String(state.guftguPhone || '');
 
-  // Firebase cleanup
-  if (typeof fbDb !== 'undefined' && fbDb && phone) {
-    const now = new Date().toISOString();
-    const purgeDate = new Date();
-    purgeDate.setDate(purgeDate.getDate() + 30);
-    fbDb.ref('users/' + phone).once('value').then(snap => {
-      if (snap.exists()) {
-        fbDb.ref('deletedAccounts/' + phone).set({
-          data: snap.val(), deletedAt: now, purgeAfter: purgeDate.toISOString()
-        });
-      }
-      ['users','matchQueue','callRequests'].forEach(node => {
-        fbDb.ref(node + '/' + phone).remove();
-      });
-    }).catch(() => {});
+  // Show deleting state on button
+  const btn = document.getElementById('deleteConfirmBtn');
+  if (btn) { btn.textContent = 'Deleting...'; btn.disabled = true; }
+
+  // 1. If user is currently in a call — end it cleanly first
+  if (state.screen === 'screen-call' && typeof endCallCleanup === 'function') {
+    endCallCleanup();
   }
 
-  // Wipe local storage
+  // 2. If user is currently searching — remove from queue
+  if (typeof cleanupQueue === 'function') cleanupQueue();
+
+  // 3. Firebase — delete every path that belongs to this user
+  if (typeof fbDb !== 'undefined' && fbDb && phone) {
+    const paths = [
+      'matchQueue/'      + phone,   // remove from search queue
+      'matchProposals/'  + phone,   // remove pending proposals
+      'phoneRooms/'      + phone,   // remove call routing entry
+      'callRequests/'    + phone,   // remove pending incoming calls
+      'friendRequests/'  + phone,   // remove friend requests received
+      'friendAccepted/'  + phone,   // remove pending accept notifications
+    ];
+
+    // Delete all known personal paths
+    paths.forEach(p => fbDb.ref(p).remove().catch(() => {}));
+
+    // Also clean active match if there is one
+    if (typeof currentMatchId !== 'undefined' && currentMatchId) {
+      fbDb.ref('matches/' + currentMatchId).remove().catch(() => {});
+    }
+
+    // Clean active room if there is one
+    if (typeof currentRoomId !== 'undefined' && currentRoomId) {
+      fbDb.ref('rooms/' + currentRoomId).remove().catch(() => {});
+    }
+  }
+
+  // 4. Wipe everything local
   localStorage.clear();
   sessionStorage.clear();
-  document.cookie.split(';').forEach(c => {
-    const name = c.split('=')[0].trim();
+  document.cookie.split(';').forEach(ck => {
+    const name = ck.split('=')[0].trim();
     document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
   });
-  if ('caches' in window) caches.keys().then(names => names.forEach(n => caches.delete(n)));
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+  if ('caches' in window) {
+    caches.keys().then(names => names.forEach(n => caches.delete(n)));
   }
 
-  // Reset state
+  // 5. Reset all in-memory state
   state.user = { nickname:'', avatar:'cat', mood:'Happy', moodEmoji:'😄',
     language:'Hindi', region:'North', intent:'Just chat' };
   state.guftguPhone = '';
-  state.palcode = '';
-  state.currentPal = null;
-  state.onboardStep = 0;
+  state.palcode     = '';
+  state.currentPal  = null;
+  state.screen      = 'screen-onboard';
+  state.prevScreen  = null;
 
-  // Hide nav + close modal
+  // 6. Close modal + hide nav
   _cls('deleteAccountModal', 'remove', 'show');
   const nav = document.getElementById('mainNav');
   if (nav) { nav.style.display = 'none'; nav.classList.remove('nav-visible'); }
 
-  showToast('Account deleted. All data wiped. 🧹');
-
+  // 7. Navigate back to onboarding
   setTimeout(() => {
-    resetOnboarding();
+    if (typeof resetOnboarding === 'function') resetOnboarding();
     document.querySelectorAll('.screen').forEach(s => {
       s.classList.remove('active', 'exit');
-      s.style.transform = '';
+      s.style.transform  = '';
       s.style.transition = '';
     });
     const ob = document.getElementById('screen-onboard');
     if (ob) {
       ob.style.transition = 'none';
-      ob.style.transform = 'none';
+      ob.style.transform  = 'translateX(0)';
       ob.classList.add('active');
       requestAnimationFrame(() => { ob.style.transition = ''; });
     }
-    state.screen = 'screen-onboard';
-    state.prevScreen = null;
-  }, 900);
+  }, 400);
 }
 
 // ─────────────────────────────────────────
@@ -306,8 +328,7 @@ function acceptFriend(btn) {
     else badge.style.display = 'none';
   }
   showToast('Friend request accepted! 🎉');
-  const sf = document.getElementById('statFriends');
-  if (sf) sf.textContent = parseInt(sf.textContent || '0') + 1;
+  if (typeof updateProfileStats === 'function') updateProfileStats();
 }
 
 function declineFriend(btn) {
