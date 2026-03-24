@@ -67,7 +67,7 @@ body {
   touch-action: pan-y pinch-zoom;
 }
 
-/* Vite wraps everything in #root — inherit body's flex layout */
+/* Vite wraps everything in #root � inherit body's flex layout */
 #root {
   display: flex;
   flex-direction: column;
@@ -88,7 +88,7 @@ body {
   box-shadow: 0 0 100px rgba(0,0,0,0.8);
 }
 
-/* â”€â”€ Noise overlay â”€â”€ */
+/* ── Noise overlay ── */
 body::before {
   content: '';
   position: fixed;
@@ -99,7 +99,7 @@ body::before {
   opacity: 0.4;
 }
 
-/* â”€â”€ Screen system â”€â”€ */
+/* ── Screen system ── */
 .screen {
   position: absolute;
   inset: 0;
@@ -121,18 +121,18 @@ body::before {
   transform: translateX(-60px);
 }
 
-/* â”€â”€ Scrollable content â”€â”€ */
+/* ── Scrollable content ── */
 .scroll-body {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  /* FIX: base padding â€” per-screen overrides below add nav height where needed */
+  /* FIX: base padding — per-screen overrides below add nav height where needed */
   padding-bottom: 16px;
 }
 .scroll-body::-webkit-scrollbar { display: none; }
 
-/* â”€â”€ Screens that use the bottom nav need extra padding â”€â”€ */
+/* ── Screens that use the bottom nav need extra padding ── */
 #screen-home .scroll-body,
 #screen-chats .scroll-body,
 #screen-notifs .scroll-body,
@@ -140,7 +140,7 @@ body::before {
   padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 24px);
 }
 
-/* â”€â”€ Desktop: handled by body flex + max-width on #app â”€â”€ */
+/* ── Desktop: handled by body flex + max-width on #app ── */
 @media (min-width: 480px) {
   body {
     justify-content: center;
@@ -156,7 +156,7 @@ body::before {
 }
 
 /*
-   FIX: No longer position:fixed â€” it sits OUTSIDE #app in the body flex column.
+   FIX: No longer position:fixed — it sits OUTSIDE #app in the body flex column.
    body { display:flex; flex-direction:column } so #app takes flex:1 and the nav
    sits below it without any clipping from overflow:hidden on #app.
    This fixes Samsung Internet, old Android WebView, UC Browser where
@@ -178,7 +178,7 @@ body::before {
   justify-content: space-around;
   padding-top: 8px;
   z-index: 200;
-  /* FIX: no transform here â€” transforms create stacking contexts that
+  /* FIX: no transform here — transforms create stacking contexts that
      break z-index stacking on certain mobile GPU renderers */
 }
 
@@ -214,7 +214,7 @@ body::before {
   justify-content: center;
 }
 
-/* â”€â”€ Buttons â”€â”€ */
+/* ── Buttons ── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -293,7 +293,7 @@ body::before {
 .btn-danger:hover { background: rgba(255,59,48,0.22); }
 .btn-danger:active { transform: scale(0.97); }
 
-/* â”€â”€ Inputs â”€â”€ */
+/* ── Inputs ── */
 input[type=text], textarea {
   width: 100%;
   padding: 14px 18px;
@@ -313,7 +313,7 @@ input::placeholder, textarea::placeholder {
   color: var(--text3);
 }
 
-/* â”€â”€ Section Header â”€â”€ */
+/* ── Section Header ── */
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -334,7 +334,7 @@ input::placeholder, textarea::placeholder {
   cursor: pointer;
 }
 
-/* â”€â”€ Mood Grid â”€â”€ */
+/* ── Mood Grid ── */
 .mood-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -366,9 +366,9 @@ input::placeholder, textarea::placeholder {
 .mood-name { font-size: 12px; font-weight: 600; color: var(--text2); }
 .mood-card.selected .mood-name { color: var(--accent); }
 
-/* â”€â”€ Language Pills â€” see css/lang-pills.css â”€â”€ */
+/* ── Language Pills — see css/lang-pills.css ── */
 
-/* â”€â”€ Region Grid â”€â”€ */
+/* ── Region Grid ── */
 .region-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -386,17 +386,17 @@ input::placeholder, textarea::placeholder {
   gap: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  display: none; /* hidden — replaced by region-orbit */
+  display: none; /* hidden � replaced by region-orbit */
 }
 
-/* ── Region Picker (radial orbit) ── */
+/* -- Region Picker (radial orbit) -- */
 .region-orbit {
   position: relative;
   width: 280px; height: 280px;
   margin: 0 auto 20px;
   flex-shrink: 0;
 }
-/* Center India circle — tricolour gradient */
+/* Center India circle � tricolour gradient */
 .region-center {
   position: absolute;
   top: 50%; left: 50%;
@@ -481,7 +481,7 @@ input::placeholder, textarea::placeholder {
   color: var(--text2); letter-spacing: 0.3px;
 }
 
-/* â”€â”€ Intent Chips â”€â”€ */
+/* ── Intent Chips ── */
 .intent-row {
   display: flex;
   gap: 8px;
@@ -519,7 +519,7 @@ input::placeholder, textarea::placeholder {
 }
 .intent-chip.selected .intent-chip-title { color: var(--accent2); }
 
-/* â”€â”€ Avatar Grid â”€â”€ */
+/* ── Avatar Grid ── */
 .avatar-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -562,7 +562,7 @@ input::placeholder, textarea::placeholder {
   box-shadow: 0 0 16px rgba(78,205,196,0.2);
 }
 
-/* â”€â”€ Avatar Tabs â”€â”€ */
+/* ── Avatar Tabs ── */
 .avatar-tabs {
   display: flex;
   gap: 8px;
@@ -590,7 +590,7 @@ input::placeholder, textarea::placeholder {
 .avatar-panel { display: none; }
 .avatar-panel.active { display: grid; }
 
-/* â”€â”€ Name Chips â”€â”€ */
+/* ── Name Chips ── */
 .name-suggestion {
   display: flex;
   gap: 8px;
@@ -614,7 +614,7 @@ input::placeholder, textarea::placeholder {
   background: rgba(255,107,107,0.08);
 }
 
-/* â”€â”€ Or Divider â”€â”€ */
+/* ── Or Divider ── */
 .or-divider {
   display: flex;
   align-items: center;
@@ -630,7 +630,7 @@ input::placeholder, textarea::placeholder {
   letter-spacing: 0.08em;
 }
 
-/* â”€â”€ Toggle Switch â”€â”€ */
+/* ── Toggle Switch ── */
 .toggle {
   width: 44px;
   height: 24px;
@@ -657,10 +657,10 @@ input::placeholder, textarea::placeholder {
 }
 .toggle.on::after { transform: translateX(20px); }
 
-/* â”€â”€ Toast â”€â”€
+/* ── Toast ──
    FIX: Toast also lives outside #app now, so position:fixed works fine
    (no overflow:hidden ancestor to clip it).
-â”€â”€ */
+── */
 .toast {
   position: fixed;
   top: 60px;
@@ -688,7 +688,7 @@ input::placeholder, textarea::placeholder {
   transform: translateX(-50%) translateY(0);
 }
 
-/* â”€â”€ Modal Overlay â”€â”€ */
+/* ── Modal Overlay ── */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -732,7 +732,7 @@ input::placeholder, textarea::placeholder {
   margin-bottom: 20px;
 }
 
-/* â”€â”€ Setting Item â”€â”€ */
+/* ── Setting Item ── */
 .setting-item {
   display: flex;
   align-items: center;
@@ -758,7 +758,7 @@ input::placeholder, textarea::placeholder {
 .setting-desc { font-size: 12px; color: var(--text2); margin-top: 1px; }
 .setting-arrow { color: var(--text3); }
 
-/* â”€â”€ Step / Section Labels â”€â”€ */
+/* ── Step / Section Labels ── */
 .step-label {
   font-size: 11px;
   font-weight: 700;
@@ -788,7 +788,7 @@ input::placeholder, textarea::placeholder {
   margin-top: 4px;
 }
 
-/* â”€â”€ Online Indicator â”€â”€ */
+/* ── Online Indicator ── */
 .online-dot {
   width: 6px; height: 6px;
   border-radius: 50%;
@@ -808,7 +808,7 @@ input::placeholder, textarea::placeholder {
   font-weight: 600;
 }
 
-/* â”€â”€ Avatar display containers â”€â”€ */
+/* ── Avatar display containers ── */
 .qs-preview-avatar, .profile-avatar,
 .call-avatar-main, .chat-avatar,
 .hist-avatar, .mf-avatar,
@@ -834,9 +834,9 @@ input::placeholder, textarea::placeholder {
 /* screens.css - Screen-specific styles */
 
 /* === ONBOARDING === */
-  /* ═══════════════════════════════════════════
+  /* -------------------------------------------
      ONBOARDING SCREEN
-  ═══════════════════════════════════════════ */
+  ------------------------------------------- */
   #screen-onboard {
     background:var(--bg);
     padding:0;
@@ -896,7 +896,7 @@ input::placeholder, textarea::placeholder {
   .onboard-step { display:none; flex-direction:column; flex:1; min-height:0; }
   .onboard-step.active { display:flex; animation:fadeSlideIn 0.4s ease; }
 
-  /* ── SPLASH HIGHLIGHTS ── */
+  /* -- SPLASH HIGHLIGHTS -- */
   .splash-highlights {
     display:grid; grid-template-columns:1fr 1fr; gap:clamp(6px,1vh,10px);
     margin-bottom:clamp(10px,2vh,22px);
@@ -945,7 +945,7 @@ input::placeholder, textarea::placeholder {
     flex-shrink:0;
   }
 
-  /* ── SPLASH HERO IMAGE ── */
+  /* -- SPLASH HERO IMAGE -- */
   .splash-hero-img {
     flex:1 1 0; display:flex; align-items:center; justify-content:center;
     margin-top:clamp(4px,1vh,12px); min-height:0;
@@ -959,7 +959,7 @@ input::placeholder, textarea::placeholder {
     filter:brightness(0.88);
     pointer-events:none;
     user-select:none;
-    /* Dissolve equally on all 4 borders — center stays clear */
+    /* Dissolve equally on all 4 borders � center stays clear */
     -webkit-mask-image:
       linear-gradient(to right,  transparent, black 15%, black 85%, transparent),
       linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
@@ -970,7 +970,7 @@ input::placeholder, textarea::placeholder {
     mask-composite: intersect;
   }
 
-  /* ── BACK BUTTON (onboarding) ── */
+  /* -- BACK BUTTON (onboarding) -- */
   .ob-back-btn {
     position:absolute; top:52px; left:20px; z-index:20;
     width:36px; height:36px; border-radius:10px;
@@ -991,7 +991,7 @@ input::placeholder, textarea::placeholder {
     border-color:rgba(78,205,196,0.6);
   }
 
-  /* ── PROGRESS STEPS ── */
+  /* -- PROGRESS STEPS -- */
   .ob-progress {
     display:none; flex-direction:column; gap:6px; margin-bottom:20px;
   }
@@ -1054,7 +1054,7 @@ input::placeholder, textarea::placeholder {
     50%     { text-shadow:0 0 8px rgba(255,107,107,0.7), 0 0 20px rgba(255,142,83,0.4); }
   }
 
-  /* ── QUICK-START SPLASH CARD ── */
+  /* -- QUICK-START SPLASH CARD -- */
   .qs-card {
     background:linear-gradient(135deg,rgba(78,205,196,0.08),rgba(255,107,107,0.05));
     border:1px solid rgba(78,205,196,0.2);
@@ -1101,7 +1101,7 @@ input::placeholder, textarea::placeholder {
 
 
 /* === QS PROFILE PREVIEW === */
-  /* ── QUICK-START REGION STEP ── */
+  /* -- QUICK-START REGION STEP -- */
   .qs-profile-preview {
     display:flex; align-items:center; gap:14px;
     background:var(--bg3); border:1px solid var(--border);
@@ -1130,9 +1130,9 @@ input::placeholder, textarea::placeholder {
 
 
 
-  /* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+  /* G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��
      WELCOME / COMPLETION SCREEN
-  ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+  G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G�� */
   #screen-welcome {
     background: var(--bg);
     display:flex; align-items:center; justify-content:center;
@@ -1202,10 +1202,10 @@ input::placeholder, textarea::placeholder {
     animation:fadeSlideIn 0.5s ease 0.65s both;
   }
 
-  /* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
-  /* ═══════════════════════════════════════
+  /* G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��
+  /* ---------------------------------------
      CHATS / FRIENDS SCREEN
-  ═══════════════════════════════════════ */
+  --------------------------------------- */
   #screen-chats .scroll-body { padding:0; padding-bottom:calc(var(--nav-h) + var(--safe-bottom) + 24px); display:flex; flex-direction:column; min-height:100%; }
 
   .chats-header {
@@ -1308,17 +1308,17 @@ input::placeholder, textarea::placeholder {
   .chats-empty-title { font-size:17px; font-weight:700; margin-bottom:6px; }
   .chats-empty-sub { font-size:13px; color:var(--text3); line-height:1.5; max-width:240px; }
 
-  /* ═══════════════════════════════════════
-     HOME SCREEN — clean, real, no dummy data
-  ═══════════════════════════════════════ */
+  /* ---------------------------------------
+     HOME SCREEN � clean, real, no dummy data
+  --------------------------------------- */
   #screen-home .scroll-body { padding:0; padding-bottom:calc(var(--nav-h) + var(--safe-bottom) + 24px); }
 
-  /* ΓöÇΓöÇ Top row: greeting + avatar ΓöÇΓöÇ */
+  /* G��G�� Top row: greeting + avatar G��G�� */
   .home-topbar {
     padding:52px 20px 0;
     display:flex; align-items:center; justify-content:space-between;
   }
-  .home-greeting-wrap {}
+  .home-greeting-wrap { display: flex; flex-direction: column; }
   .home-greeting { font-size:13px; color:var(--text2); font-weight:500; margin-bottom:2px; }
   .home-name { font-size:22px; font-weight:700; }
   .home-avatar-btn {
@@ -1329,28 +1329,44 @@ input::placeholder, textarea::placeholder {
     flex-shrink:0;
   }
 
-  /* ── BIG MATCH BUTTON ── */
+  /* -- BIG MATCH BUTTON -- */
   .home-match-section {
     padding:20px 20px 0;
   }
   .find-btn {
-    width:100%; padding:20px 22px; border-radius:18px;
+    width:100%; padding:22px 24px; border-radius:20px;
     background:linear-gradient(135deg,#FF6B6B 0%,#FF4757 40%,#e84393 100%);
     border:none; color:#fff; font-family:'Sora',sans-serif;
     cursor:pointer;
-    box-shadow:0 8px 32px rgba(255,71,87,0.35), 0 2px 8px rgba(232,67,147,0.2);
+    box-shadow:0 8px 32px rgba(255,71,87,0.4), 0 2px 8px rgba(232,67,147,0.25), inset 0 1px 0 rgba(255,255,255,0.2);
     display:flex; align-items:center; justify-content:space-between; gap:14px;
     transition:all 0.25s ease; position:relative; overflow:hidden;
   }
+  .find-btn::before {
+    content:'';
+    position:absolute; inset:0;
+    border-radius:20px;
+    padding:2px;
+    background:linear-gradient(135deg, rgba(255,255,255,0.3), transparent 50%);
+    -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor;
+    mask-composite:exclude;
+    pointer-events:none;
+  }
   .find-btn-glow {
     position:absolute; top:-50%; left:-50%; width:200%; height:200%;
-    background:radial-gradient(circle at 30% 40%, rgba(255,255,255,0.15) 0%, transparent 60%);
+    background:radial-gradient(circle at 30% 40%, rgba(255,255,255,0.2) 0%, transparent 60%);
     animation:glowShift 4s ease-in-out infinite;
     pointer-events:none;
   }
   @keyframes glowShift {
     0%, 100% { transform:translate(0,0); }
     50% { transform:translate(10%,5%); }
+  }
+  .find-btn:hover {
+    transform:translateY(-2px);
+    box-shadow:0 12px 40px rgba(255,71,87,0.5), 0 4px 12px rgba(232,67,147,0.3);
   }
   .find-btn:active {
     transform:scale(0.97);
@@ -1361,33 +1377,43 @@ input::placeholder, textarea::placeholder {
     position:relative; z-index:1;
   }
   .find-btn-top {
-    display:flex; align-items:center; gap:12px;
+    display:flex; align-items:center; gap:14px;
   }
   .find-btn-icon {
-    width:42px; height:42px; border-radius:12px;
-    background:rgba(255,255,255,0.18); backdrop-filter:blur(4px);
+    width:56px; height:56px; border-radius:16px;
+    background:rgba(255,255,255,0.22); backdrop-filter:blur(8px);
     display:flex; align-items:center; justify-content:center;
     flex-shrink:0;
+    font-size:28px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.3);
+    animation:micPulse 2s ease-in-out infinite;
+  }
+  @keyframes micPulse {
+    0%, 100% { transform:scale(1); }
+    50% { transform:scale(1.05); }
   }
   .find-btn-label {
-    font-size:20px; font-weight:800; letter-spacing:-0.01em;
-    text-shadow:0 1px 3px rgba(0,0,0,0.15);
+    font-size:22px; font-weight:800; letter-spacing:-0.01em;
+    text-shadow:0 2px 4px rgba(0,0,0,0.2);
   }
   .find-btn-sub {
-    font-size:11px; opacity:0.75; font-weight:400; margin-top:4px;
-    margin-left:54px;
+    font-size:12px; opacity:0.85; font-weight:500; margin-top:6px;
+    margin-left:70px;
+    background:rgba(255,255,255,0.15);
+    padding:4px 10px;
+    border-radius:20px;
   }
   .find-btn-arrow {
-    font-size:22px; font-weight:700; opacity:0.7;
+    font-size:26px; font-weight:700; opacity:0.8;
     position:relative; z-index:1;
     animation:arrowPulse 2s ease-in-out infinite;
   }
   @keyframes arrowPulse {
     0%, 100% { transform:translateX(0); opacity:0.7; }
-    50% { transform:translateX(4px); opacity:1; }
+    50% { transform:translateX(6px); opacity:1; }
   }
 
-  /* ── Match preference cards ── */
+  /* -- Match preference cards -- */
   .home-prefs {
     display:grid; grid-template-columns:1fr 1fr; gap:10px;
     padding:16px 20px 0;
@@ -1433,7 +1459,7 @@ input::placeholder, textarea::placeholder {
     line-height:1.4;
   }
 
-  /* ── Auto Connect toggle row ── */
+  /* -- Auto Connect toggle row -- */
   .home-auto-connect {
     display:flex; align-items:center; justify-content:space-between;
     margin:12px 20px 0; padding:10px 14px;
@@ -1462,7 +1488,7 @@ input::placeholder, textarea::placeholder {
     transform:translateX(16px); background:#fff;
   }
 
-  /* ── Call a Friend dial card ── */
+  /* -- Call a Friend dial card -- */
   .home-dial-card {
     margin:14px 20px 0; padding:14px 16px;
     background:var(--bg3); border:1px solid var(--border);
@@ -1503,14 +1529,29 @@ input::placeholder, textarea::placeholder {
     width:44px; height:44px; border-radius:50%;
     background:var(--accent2); border:none; cursor:pointer;
     display:flex; align-items:center; justify-content:center;
-    transition:transform 0.15s, box-shadow 0.2s;
+    transition:transform 0.15s, box-shadow 0.2s, opacity 0.2s;
     box-shadow:0 2px 8px rgba(38,166,154,0.3);
   }
   .dial-call-btn:active {
     transform:scale(0.92);
   }
+  .dial-call-btn.dialing {
+    opacity:0.7;
+    cursor:wait;
+  }
+  .dial-call-btn:disabled {
+    pointer-events:none;
+  }
+  .dial-spinner {
+    animation:dialSpin 1s linear infinite;
+    display:inline-block;
+  }
+  @keyframes dialSpin {
+    from { transform:rotate(0deg); }
+    to { transform:rotate(360deg); }
+  }
 
-  /* ── Section label ── */
+  /* -- Section label -- */
   .home-section { padding:20px 20px 0; }
   .home-section-header {
     display:flex; justify-content:space-between; align-items:center;
@@ -1519,7 +1560,7 @@ input::placeholder, textarea::placeholder {
   .home-section-title { font-size:13px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.1em; }
   .home-section-action { font-size:12px; color:var(--accent); font-weight:600; cursor:pointer; }
 
-  /* ── Empty state ── */
+  /* -- Empty state -- */
   .home-empty {
     display:flex; flex-direction:column; align-items:center;
     justify-content:center;
@@ -1531,7 +1572,7 @@ input::placeholder, textarea::placeholder {
   .home-empty-icon { font-size:40px; margin-bottom:12px; opacity:0.45; }
   .home-empty-text { font-size:13px; color:var(--text3); line-height:1.5; }
 
-  /* ΓöÇΓöÇ Recent chats ΓöÇΓöÇ */
+  /* G��G�� Recent chats G��G�� */
   .chat-item {
     display:flex; align-items:center; gap:14px;
     padding:14px 16px; border-radius:var(--radius-sm);
@@ -1562,7 +1603,7 @@ input::placeholder, textarea::placeholder {
     display:flex; align-items:center; justify-content:center;
   }
 
-  /* ΓöÇΓöÇ Quick-dial pals (online now) ΓöÇΓöÇ */
+  /* G��G�� Quick-dial pals (online now) G��G�� */
   .pal-scroll { display:flex; gap:12px; overflow-x:auto; padding-bottom:6px; }
   .pal-scroll::-webkit-scrollbar { display:none; }
   .pal-bubble {
@@ -1591,7 +1632,7 @@ input::placeholder, textarea::placeholder {
   .pal-bubble:active .pal-ring { transform:scale(0.93); }
   .pal-name { font-size:10px; color:var(--text2); font-weight:600; max-width:54px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-  /* ΓöÇΓöÇ Call history shortcut ΓöÇΓöÇ */
+  /* G��G�� Call history shortcut G��G�� */
   .home-history-row {
     display:flex; gap:8px; padding:16px 20px 0;
   }
@@ -1604,9 +1645,9 @@ input::placeholder, textarea::placeholder {
   }
   .home-pill-btn:active { background:var(--bg2); }
 
-  /* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+  /* G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��
      MATCHING SCREEN
-  ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+  G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G�� */
   #screen-match {
     background:var(--bg);
     overflow:hidden;
@@ -1642,9 +1683,20 @@ input::placeholder, textarea::placeholder {
     border-radius:12px; width:44px; height:44px;
     display:flex; align-items:center; justify-content:center;
     cursor:pointer; z-index:2;
+    transition:box-shadow 0.3s, border-color 0.3s, background 0.3s, transform 0.15s;
+  }
+  .match-back:hover {
+    border-color:rgba(78,205,196,0.45);
+    box-shadow:0 0 14px rgba(78,205,196,0.25), 0 0 6px rgba(78,205,196,0.15);
+    background:rgba(78,205,196,0.08);
+  }
+  .match-back:active {
+    transform:scale(0.92);
+    box-shadow:0 0 18px rgba(78,205,196,0.4), 0 0 8px rgba(78,205,196,0.2);
+    border-color:rgba(78,205,196,0.6);
   }
 
-  /* ── Searching animation ── */
+  /* -- Searching animation -- */
   .search-orbit-wrap {
     position:relative; width:220px; height:220px;
     margin:0 auto 32px;
@@ -1665,7 +1717,7 @@ input::placeholder, textarea::placeholder {
     100% { transform:scale(1.6); opacity:0; }
   }
 
-  /* Center mood emoji — bigger & more vibrant */
+  /* Center mood emoji � bigger & more vibrant */
   .search-center {
     position:absolute;
     top:50%; left:50%; transform:translate(-50%,-50%);
@@ -1683,7 +1735,7 @@ input::placeholder, textarea::placeholder {
     50% { transform:translate(-50%,-50%) scale(1.08); box-shadow:0 0 60px rgba(255,107,107,0.55), 0 0 120px rgba(232,67,147,0.25); }
   }
 
-  /* Orbiting mood emojis — ghost/appear effect */
+  /* Orbiting mood emojis � ghost/appear effect */
   .orbit-track {
     position:absolute; top:50%; left:50%;
     width:0; height:0; z-index:2;
@@ -1761,7 +1813,7 @@ input::placeholder, textarea::placeholder {
     50% { opacity:0.4; transform:scale(0.7); }
   }
 
-  /* Rotating search tips — smooth crossfade */
+  /* Rotating search tips � smooth crossfade */
   .search-tips {
     width:100%; height:22px; margin-bottom:20px;
     position:relative; overflow:hidden;
@@ -1931,9 +1983,9 @@ input::placeholder, textarea::placeholder {
   .rematch-title { font-size:22px; font-weight:700; margin-bottom:4px; }
   .rematch-sub { font-size:14px; color:var(--text2); margin-bottom:20px; text-align:center; }
 
-  /* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+  /* G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��
      CHAT SCREEN
-  ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+  G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G�� */
   #screen-chat {
     background:var(--bg);
     display:flex; flex-direction:column;
@@ -1950,6 +2002,17 @@ input::placeholder, textarea::placeholder {
     background:var(--bg3); border:1px solid var(--border);
     display:flex; align-items:center; justify-content:center;
     cursor:pointer; flex-shrink:0;
+    transition:box-shadow 0.3s, border-color 0.3s, background 0.3s, transform 0.15s;
+  }
+  .chat-header-back:hover {
+    border-color:rgba(78,205,196,0.45);
+    box-shadow:0 0 14px rgba(78,205,196,0.25), 0 0 6px rgba(78,205,196,0.15);
+    background:rgba(78,205,196,0.08);
+  }
+  .chat-header-back:active {
+    transform:scale(0.92);
+    box-shadow:0 0 18px rgba(78,205,196,0.4), 0 0 8px rgba(78,205,196,0.2);
+    border-color:rgba(78,205,196,0.6);
   }
   .chat-header-avatar {
     width:42px; height:42px; border-radius:12px;
@@ -2049,9 +2112,9 @@ input::placeholder, textarea::placeholder {
     cursor:pointer; flex-shrink:0;
   }
 
-  /* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+  /* G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��
      VOICE CALL SCREEN
-  ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+  G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G�� */
   #screen-call {
     background:linear-gradient(180deg,#0D0F18 0%,#0A0B10 100%);
   }
@@ -2071,6 +2134,17 @@ input::placeholder, textarea::placeholder {
     border-radius:12px; width:44px; height:44px;
     display:flex; align-items:center; justify-content:center;
     cursor:pointer;
+    transition:box-shadow 0.3s, border-color 0.3s, background 0.3s, transform 0.15s;
+  }
+  .call-back:hover {
+    border-color:rgba(78,205,196,0.45);
+    box-shadow:0 0 14px rgba(78,205,196,0.25), 0 0 6px rgba(78,205,196,0.15);
+    background:rgba(78,205,196,0.08);
+  }
+  .call-back:active {
+    transform:scale(0.92);
+    box-shadow:0 0 18px rgba(78,205,196,0.4), 0 0 8px rgba(78,205,196,0.2);
+    border-color:rgba(78,205,196,0.6);
   }
   .call-status { font-size:13px; color:var(--accent2); font-weight:600; letter-spacing:0.08em; margin-bottom:40px; }
   .call-avatar-ring {
@@ -2122,9 +2196,9 @@ input::placeholder, textarea::placeholder {
   }
   .call-end:active { transform:scale(0.93); }
 
-  /* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+  /* G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��
      NOTIFICATIONS SCREEN
-  ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+  G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G�� */
   #screen-notifs .scroll-body { padding:60px 20px 0; padding-bottom:calc(var(--nav-h) + var(--safe-bottom) + 24px); }
   .notif-header-text { font-size:26px; font-weight:700; margin-bottom:6px; }
   .notif-sub { font-size:13px; color:var(--text2); margin-bottom:24px; }
@@ -2157,9 +2231,9 @@ input::placeholder, textarea::placeholder {
   .notif-action.accept { background:rgba(78,205,196,0.15); color:var(--accent2); }
   .notif-action.decline { background:var(--bg2); color:var(--text2); }
 
-  /* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+  /* G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��
      PROFILE SCREEN
-  ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+  G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G�� */
   #screen-profile .scroll-body { padding:0; padding-bottom:calc(var(--nav-h) + var(--safe-bottom) + 24px); }
   .profile-hero {
     padding:60px 24px 32px;
@@ -2216,6 +2290,71 @@ input::placeholder, textarea::placeholder {
   .stat-value { font-size:20px; font-weight:700; }
   .stat-label { font-size:11px; color:var(--text2); margin-top:2px; }
 
+  /* Redesigned Stats Grid */
+  .profile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin: 0 24px 24px;
+  }
+  .profile-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+  }
+  .profile-stat-card:hover {
+    border-color: rgba(78, 205, 196, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), 0 0 15px rgba(78, 205, 196, 0.1);
+    transform: translateY(-2px);
+  }
+  .profile-stat-card .stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(78, 205, 196, 0.15), rgba(78, 205, 196, 0.05));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .profile-stat-card .stat-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .profile-stat-card .stat-value {
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--text);
+  }
+  .profile-stat-card .stat-value .stat-unit {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text2);
+    margin-left: 2px;
+  }
+  .profile-stat-card .stat-label {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+  .profile-stat-card.accent {
+    background: linear-gradient(135deg, rgba(78, 205, 196, 0.12), rgba(78, 205, 196, 0.04));
+    border-color: rgba(78, 205, 196, 0.25);
+  }
+  .profile-stat-card.accent .stat-icon {
+    background: linear-gradient(135deg, rgba(78, 205, 196, 0.3), rgba(78, 205, 196, 0.15));
+  }
+  .profile-stat-card.accent .stat-value {
+    color: var(--accent2);
+  }
+
   .profile-section { padding:0 24px; margin-bottom:20px; }
   .setting-item {
     display:flex; align-items:center; gap:14px;
@@ -2246,9 +2385,9 @@ input::placeholder, textarea::placeholder {
   }
   .toggle.on::after { transform:translateX(20px); }
 
-  /* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+  /* G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��
      CALL HISTORY
-  ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+  G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G�� */
   #screen-history .scroll-body { padding:60px 20px 24px; }
   .history-item {
     display:flex; align-items:center; gap:14px;
@@ -2270,9 +2409,9 @@ input::placeholder, textarea::placeholder {
   .hist-type.outgoing { background:rgba(255,107,107,0.1); color:var(--accent); }
   .hist-type.missed { background:rgba(255,59,48,0.1); color:#FF3B30; }
 
-  /* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+  /* G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��
      MOOD MODAL
-  ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+  G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G�� */
   .modal-overlay {
     position:fixed; inset:0; z-index:500;
     background:rgba(0,0,0,0.7); backdrop-filter:blur(8px);
@@ -2293,9 +2432,9 @@ input::placeholder, textarea::placeholder {
   }
   .modal-title { font-size:18px; font-weight:700; margin-bottom:20px; }
 
-  /* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+  /* G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��
      TOAST
-  ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+  G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G�� */
   .toast {
     position:fixed; top:60px; left:50%; transform:translateX(-50%) translateY(-20px);
     background:var(--bg3); border:1px solid var(--border);
@@ -2306,9 +2445,9 @@ input::placeholder, textarea::placeholder {
   }
   .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
-  /* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+  /* G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��
      INCOMING CALL OVERLAY
-  ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+  G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G�� */
   .incoming-call-overlay {
     position:fixed; inset:0; z-index:9000;
     background:rgba(10,11,16,0.97);
@@ -2367,9 +2506,9 @@ input::placeholder, textarea::placeholder {
   .fb-dot { width:8px; height:8px; border-radius:50%; background:var(--accent2); animation:fbPulse 1.4s infinite; }
   @keyframes fbPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
-  /* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+  /* G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��
      CALL CODE BOX
-  ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+  G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G�� */
   .call-code-box {
     background:rgba(78,205,196,0.08); border:1px solid rgba(78,205,196,0.2);
     border-radius:16px; padding:14px 20px; margin-bottom:20px; text-align:center;
@@ -2389,9 +2528,9 @@ input::placeholder, textarea::placeholder {
     color:#0A0B10; font-size:13px; font-weight:700; cursor:pointer; font-family:'Sora',sans-serif;
   }
 
-  /* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+  /* G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��
      ANIMATIONS & UTILS
-  ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
+  G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G�� */
 
   /* Floating avatars around mood icon */
   .mood-floaters {
@@ -2438,7 +2577,7 @@ input::placeholder, textarea::placeholder {
     body { display:flex; align-items:center; justify-content:center; }
   }
 
-  /* Avatar display containers ΓÇö render SVG avatars */
+  /* Avatar display containers G�� render SVG avatars */
   .qs-preview-avatar, .profile-avatar, .call-avatar-main,
   .chat-avatar, .hist-avatar, .mf-avatar, .inc-avatar-wrap,
   #qsPreviewAvatar, #welcomeAvatarBig, #wcAvatar, #profileAvatar,
@@ -2452,7 +2591,7 @@ input::placeholder, textarea::placeholder {
     width:100%; height:100%;
   }
 
-  /* ── Avatar Picker Modal ── */
+  /* -- Avatar Picker Modal -- */
   .modal-sheet-tall { max-height:75vh; overflow-y:auto; }
   .avatar-picker-grid {
     display:grid; grid-template-columns:repeat(4,1fr); gap:12px;
@@ -2469,7 +2608,7 @@ input::placeholder, textarea::placeholder {
   .avatar-picker-item.selected { border-color:var(--accent2); background:rgba(78,205,196,0.12); box-shadow:0 0 16px rgba(78,205,196,0.2); }
   .avatar-picker-item svg { width:100%; height:100%; }
 
-  /* ── Region Modal ── */
+  /* -- Region Modal -- */
   .region-modal-grid {
     display:grid; grid-template-columns:1fr 1fr; gap:10px;
   }
@@ -2482,7 +2621,7 @@ input::placeholder, textarea::placeholder {
   .region-pill:hover { border-color:var(--accent2); }
   .region-pill.selected { border-color:var(--accent2); background:rgba(78,205,196,0.12); color:var(--accent2); }
 
-  /* ── App Info Screen ── */
+  /* -- App Info Screen -- */
   #screen-appinfo {
     background:var(--bg);
   }
@@ -2497,6 +2636,17 @@ input::placeholder, textarea::placeholder {
     background:var(--glass); border:1px solid var(--border);
     display:flex; align-items:center; justify-content:center;
     cursor:pointer;
+    transition:box-shadow 0.3s, border-color 0.3s, background 0.3s, transform 0.15s;
+  }
+  .appinfo-back:hover {
+    border-color:rgba(78,205,196,0.45);
+    box-shadow:0 0 14px rgba(78,205,196,0.25), 0 0 6px rgba(78,205,196,0.15);
+    background:rgba(78,205,196,0.08);
+  }
+  .appinfo-back:active {
+    transform:scale(0.92);
+    box-shadow:0 0 18px rgba(78,205,196,0.4), 0 0 8px rgba(78,205,196,0.2);
+    border-color:rgba(78,205,196,0.6);
   }
   .appinfo-logo { font-size:48px; margin-bottom:8px; }
   .appinfo-name { font-size:28px; font-weight:800; margin-bottom:4px; }
@@ -2532,10 +2682,64 @@ input::placeholder, textarea::placeholder {
     background:var(--glass); color:var(--text3);
   }
   .changelog-date { font-size:12px; color:var(--text3); }
-  .changelog-items { }
+  .changelog-items { display: flex; flex-direction: column; gap: 2px; }
   .changelog-item {
     font-size:12px; color:var(--text2); line-height:1.8;
   }
+
+  /* Contact cards for Help & Report */
+  .appinfo-contact-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .appinfo-contact-card:hover {
+    background: var(--glass);
+    border-color: var(--accent);
+  }
+  .appinfo-contact-card:active {
+    transform: scale(0.98);
+  }
+  .appinfo-contact-icon {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--glass);
+    border-radius: 10px;
+  }
+  .appinfo-contact-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .appinfo-contact-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text1);
+    margin-bottom: 2px;
+  }
+  .appinfo-contact-value {
+    font-size: 12px;
+    color: var(--text2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .appinfo-contact-arrow {
+    font-size: 20px;
+    color: var(--text3);
+    font-weight: 300;
+  }
+
 /* Keyframes & Animations */
 
 @keyframes fadeSlideIn {
@@ -2612,7 +2816,7 @@ input::placeholder, textarea::placeholder {
   100% { transform: scale(0); opacity: 0; }
 }
 
-/* â”€â”€ Mood floaters (home screen) â”€â”€ */
+/* ── Mood floaters (home screen) ── */
 .mood-floaters {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -2639,7 +2843,7 @@ input::placeholder, textarea::placeholder {
 .mood-floater:nth-child(5) { top: 6px;    left: -14px;  animation-delay: 0.3s; }
 .mood-floater:nth-child(6) { top: 6px;    right: -14px; animation-delay: 0.8s; }
 
-/* â”€â”€ Loading dots â”€â”€ */
+/* ── Loading dots ── */
 .loading-dots {
   display: flex;
   gap: 6px;
@@ -2655,7 +2859,7 @@ input::placeholder, textarea::placeholder {
 .loading-dot:nth-child(2) { animation-delay: 0.2s; }
 .loading-dot:nth-child(3) { animation-delay: 0.4s; }
 
-/* â”€â”€ Typing indicator â”€â”€ */
+/* ── Typing indicator ── */
 .typing-indicator {
   display: flex;
   gap: 4px;
@@ -2687,11 +2891,11 @@ input::placeholder, textarea::placeholder {
 .nav-visible {
   display: flex !important;
 }
-/* welcome-fix.css  â€”  No-scroll welcome screen
+/* welcome-fix.css  —  No-scroll welcome screen
    
    Strategy: height:100% + flex column with space-evenly distributes
    whitespace between items. clamp() shrinks text/padding on small
-   screens. Nothing scrolls â€” fits from iPhone SE (568px) to large
+   screens. Nothing scrolls — fits from iPhone SE (568px) to large
    Android (900px+). */
 
 /* Screen: full height, no scroll, flex column */
@@ -2703,7 +2907,7 @@ input::placeholder, textarea::placeholder {
   overflow: hidden !important;
 }
 
-/* â”€â”€ Radial bg absolute â€” won't push content â”€â”€ */
+/* ── Radial bg absolute — won't push content ── */
 .welcome-ob-bg {
   position: absolute;
   inset: 0;
@@ -2715,7 +2919,7 @@ input::placeholder, textarea::placeholder {
   animation: breathe 4s ease-in-out infinite;
 }
 
-/* â”€â”€ Content: fills height, distributes gaps between items â”€â”€ */
+/* ── Content: fills height, distributes gaps between items ── */
 .welcome-ob-content {
   position: relative;
   z-index: 1;
@@ -2731,7 +2935,7 @@ input::placeholder, textarea::placeholder {
   overflow: hidden;
 }
 
-/* â”€â”€ Avatar â”€â”€ */
+/* ── Avatar ── */
 .welcome-ob-avatar {
   font-size: clamp(52px, 11vh, 76px);
   line-height: 1;
@@ -2753,7 +2957,7 @@ input::placeholder, textarea::placeholder {
 }
 #wcAvatar svg { width: 100%; height: 100%; }
 
-/* â”€â”€ Name â”€â”€ */
+/* ── Name ── */
 .welcome-ob-name {
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(22px, 5vw, 34px);
@@ -2763,7 +2967,7 @@ input::placeholder, textarea::placeholder {
   animation: fadeSlideIn 0.4s ease 0.1s both;
 }
 
-/* â”€â”€ Tagline â”€â”€ */
+/* ── Tagline ── */
 .welcome-ob-tagline {
   font-size: clamp(11px, 2.8vw, 14px);
   color: var(--text2);
@@ -2772,7 +2976,7 @@ input::placeholder, textarea::placeholder {
   animation: fadeSlideIn 0.4s ease 0.15s both;
 }
 
-/* â”€â”€ Phone card â”€â”€ */
+/* ── Phone card ── */
 .welcome-ob-phone-wrap {
   background: rgba(78,205,196,0.07);
   border: 1px solid rgba(78,205,196,0.2);
@@ -2799,7 +3003,7 @@ input::placeholder, textarea::placeholder {
 }
 .welcome-ob-phone-hint { font-size: 10px; color: var(--text3); }
 
-/* â”€â”€ Feature pills â”€â”€ */
+/* ── Feature pills ── */
 .welcome-ob-features {
   display: flex;
   gap: 8px;
@@ -2829,7 +3033,7 @@ input::placeholder, textarea::placeholder {
   animation: fadeSlideIn 0.4s ease 0.3s both;
 }
 
-/* â”€â”€ CTA button â€” immediate visibility, no 0.65s delay â”€â”€ */
+/* ── CTA button — immediate visibility, no 0.65s delay ── */
 .welcome-ob-cta {
   animation: fadeSlideIn 0.35s ease 0.05s both;
   flex-shrink: 0;
@@ -2846,9 +3050,9 @@ input::placeholder, textarea::placeholder {
   align-items: center;
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   ONBOARDING â€” buttons always reachable via scroll
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ════════════════════════════════════════════════════════
+   ONBOARDING — buttons always reachable via scroll
+   ════════════════════════════════════════════════════════ */
 .onboard-content {
   position: relative;
   z-index: 1;
@@ -2877,11 +3081,11 @@ input::placeholder, textarea::placeholder {
 }
 
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   AVATAR SIZE FIX â€” smaller profile DP on preview screen
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ═══════════════════════════════════════════════════════════════
+   AVATAR SIZE FIX — smaller profile DP on preview screen
+   ═══════════════════════════════════════════════════════════════ */
 
-/* Reduce avatar: was clamp(70px,14vh,96px) â€” now capped at 72px */
+/* Reduce avatar: was clamp(70px,14vh,96px) — now capped at 72px */
 #wcAvatar {
   width:  clamp(76px, 15vh, 100px);
   height: clamp(76px, 15vh, 100px);
@@ -2893,9 +3097,9 @@ input::placeholder, textarea::placeholder {
 }
 
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   MATCH SCREEN â€” cancel btn + footer gap fix
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ═══════════════════════════════════════════════════════════════
+   MATCH SCREEN — cancel btn + footer gap fix
+   ═══════════════════════════════════════════════════════════════ */
 
 /* Pull footer out of absolute positioning into normal flow */
 .match-footer {
@@ -2925,7 +3129,7 @@ input::placeholder, textarea::placeholder {
   max-width: 340px;
 }
 
-/* match-content wraps #searchState â€” ensure it can push footer to bottom */
+/* match-content wraps #searchState — ensure it can push footer to bottom */
 .match-content {
   display: flex;
   flex-direction: column;
@@ -2936,22 +3140,22 @@ input::placeholder, textarea::placeholder {
   position: relative;
   z-index: 1;
 }
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   modals-fix.css â€” All bottom sheets / popups
+/* ═══════════════════════════════════════════════════════════════════
+   modals-fix.css — All bottom sheets / popups
 
    KEY ARCHITECTURE FIX:
    Modals use position:absolute inside #app (not position:fixed).
    #app has overflow:hidden which clips them to EXACTLY the app width.
-   No max-width calculations needed â€” they match the app by definition.
+   No max-width calculations needed — they match the app by definition.
 
    The overlays stay inside #app in the HTML. dom-fix.js was moving
-   them outside â€” that's now reversed for overlay elements only.
-   (nav/toast still live outside #app â€” they're not overlays)
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   them outside — that's now reversed for overlay elements only.
+   (nav/toast still live outside #app — they're not overlays)
+   ═══════════════════════════════════════════════════════════════════ */
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   OVERLAY BASE â€” position:absolute inside #app
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─────────────────────────────────────────────────────────────────
+   OVERLAY BASE — position:absolute inside #app
+   ───────────────────────────────────────────────────────────────── */
 .modal-overlay,
 .fb-setup-modal,
 .incoming-call-overlay {
@@ -2978,7 +3182,7 @@ input::placeholder, textarea::placeholder {
   pointer-events: all;
 }
 
-/* â”€â”€ Sheet â€” full width of #app, no max-width needed â”€â”€ */
+/* ── Sheet — full width of #app, no max-width needed ── */
 .modal-sheet,
 .fb-setup-sheet {
   width: 100%;                 /* 100% of #app = exactly app width */
@@ -3004,7 +3208,7 @@ input::placeholder, textarea::placeholder {
 }
 .modal-sheet-tall::-webkit-scrollbar { display: none; }
 
-/* â”€â”€ Handle + header â”€â”€ */
+/* ── Handle + header ── */
 .modal-handle {
   width: 36px;
   height: 4px;
@@ -3027,20 +3231,30 @@ input::placeholder, textarea::placeholder {
   width: 30px; height: 30px;
   border-radius: 50%;
   background: rgba(255,255,255,0.06);
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   color: var(--text2);
   font-size: 15px;
-  transition: background 0.2s;
+  transition: background 0.2s, box-shadow 0.3s, border-color 0.3s, transform 0.15s;
   font-family: 'Sora', sans-serif;
 }
-.modal-close:active { background: rgba(255,255,255,0.14); }
+.modal-close:hover {
+  border-color: rgba(78,205,196,0.45);
+  box-shadow: 0 0 12px rgba(78,205,196,0.25), 0 0 5px rgba(78,205,196,0.15);
+  background: rgba(78,205,196,0.08);
+  color: var(--accent2);
+}
+.modal-close:active {
+  transform: scale(0.9);
+  box-shadow: 0 0 16px rgba(78,205,196,0.4), 0 0 6px rgba(78,205,196,0.2);
+  border-color: rgba(78,205,196,0.6);
+}
 .modal-body { padding: 14px 20px 0; }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ─────────────────────────────────────────────────────────────────
    MOOD MODAL
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+   ───────────────────────────────────────────────────────────────── */
 #moodModal .mood-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -3078,11 +3292,11 @@ input::placeholder, textarea::placeholder {
   background: var(--accent);
 }
 
-/* â”€â”€ Language Modal pills â€” see css/lang-pills.css â”€â”€ */
+/* ── Language Modal pills — see css/lang-pills.css ── */
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ─────────────────────────────────────────────────────────────────
    REGION MODAL
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+   ───────────────────────────────────────────────────────────────── */
 #regionModal .region-modal-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -3113,9 +3327,9 @@ input::placeholder, textarea::placeholder {
 .region-card-modal.selected .r-name   { color: var(--accent2); }
 .region-card-modal.selected .r-states { color: rgba(78,205,196,0.55); }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ─────────────────────────────────────────────────────────────────
    AVATAR PICKER MODAL
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+   ───────────────────────────────────────────────────────────────── */
 .avatar-picker-tabs {
   display: flex;
   gap: 6px;
@@ -3187,16 +3401,16 @@ input::placeholder, textarea::placeholder {
 }
 .avatar-picker-item.selected .avatar-picker-item-name { color: var(--accent2); }
 .avatar-picker-item.selected::after {
-  content: 'âœ“';
+  content: '✓';
   position: absolute;
   top: 4px; right: 5px;
   font-size: 9px; font-weight: 700;
   color: var(--accent2);
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ─────────────────────────────────────────────────────────────────
    FIREBASE SETUP MODAL
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+   ───────────────────────────────────────────────────────────────── */
 .fb-setup-sheet {
   border-radius: 24px 24px 0 0;
   padding: 20px 20px calc(24px + var(--safe-bottom));
@@ -3262,9 +3476,9 @@ input::placeholder, textarea::placeholder {
   animation: fbPulse 1.4s infinite;
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ─────────────────────────────────────────────────────────────────
    INCOMING CALL OVERLAY
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+   ───────────────────────────────────────────────────────────────── */
 .inc-label {
   font-size: 11px;
   letter-spacing: 0.14em;
@@ -3311,9 +3525,9 @@ input::placeholder, textarea::placeholder {
   animation: incAnswerPulse 1.2s ease-in-out infinite;
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ─────────────────────────────────────────────────────────────────
    DELETE ACCOUNT MODAL
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+   ───────────────────────────────────────────────────────────────── */
 #deleteAccountModal .modal-body {
   display: flex; flex-direction: column;
   align-items: center; gap: 12px;
@@ -3330,14 +3544,14 @@ input::placeholder, textarea::placeholder {
 .delete-title { font-size: 17px; font-weight: 700; color: var(--accent); }
 .delete-desc  { font-size: 13px; color: var(--text2); line-height: 1.65; max-width: 300px; }
 .delete-actions { display: flex; gap: 10px; width: 100%; }
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ═══════════════════════════════════════════════════════════════
    lang-pills.css
    Single CSS file that styles lang pills consistently in BOTH
    the onboarding steps (3-col compact) and the modal (2-col full).
    Replaces the .lang-pill rules in components.css and modals-fix.css.
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   ═══════════════════════════════════════════════════════════════ */
 
-/* â”€â”€ Base pill (shared everywhere) â”€â”€ */
+/* ── Base pill (shared everywhere) ── */
 .lang-pill {
   display: flex;
   align-items: center;
@@ -3379,7 +3593,7 @@ input::placeholder, textarea::placeholder {
   border-color: transparent var(--accent2) transparent transparent;
 }
 
-/* â”€â”€ ONBOARDING â€” 3 columns, compact â”€â”€ */
+/* ── ONBOARDING — 3 columns, compact ── */
 /* #langGrid = Step 3, #qsLangRow = Quick Start */
 #langGrid,
 #qsLangRow {
@@ -3407,7 +3621,7 @@ input::placeholder, textarea::placeholder {
   font-size: 12px;
 }
 
-/* â”€â”€ MODAL â€” 2 columns, full detail â”€â”€ */
+/* ── MODAL — 2 columns, full detail ── */
 #modalLangGrid,
 #langModal .lang-pill-row {
   display: grid;
@@ -3439,17 +3653,17 @@ input::placeholder, textarea::placeholder {
   font-size: 13px;
   flex: 1;
 }
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ═══════════════════════════════════════════════════════════════
    call-screen-fix.css
    Fixes: avatar not round, layout improvements, Add Friend btn
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   ═══════════════════════════════════════════════════════════════ */
 
-/* â”€â”€ Screen bg â”€â”€ */
+/* ── Screen bg ── */
 #screen-call {
   background: linear-gradient(160deg, #0D0F1A 0%, #0A0B10 100%);
 }
 
-/* â”€â”€ Content layout â€” flex, vertically spaced â”€â”€ */
+/* ── Content layout — flex, vertically spaced ── */
 .call-content {
   position: relative;
   z-index: 1;
@@ -3461,7 +3675,7 @@ input::placeholder, textarea::placeholder {
   overflow: hidden;
 }
 
-/* â”€â”€ Back button â€” round â”€â”€ */
+/* ── Back button — round ── */
 .call-back {
   position: absolute;
   top: 52px;
@@ -3478,9 +3692,18 @@ input::placeholder, textarea::placeholder {
   z-index: 2;
   transition: background 0.2s;
 }
-.call-back:active { background: rgba(255,255,255,0.14); }
+.call-back:hover {
+  border-color: rgba(78,205,196,0.45);
+  box-shadow: 0 0 14px rgba(78,205,196,0.25), 0 0 6px rgba(78,205,196,0.15);
+  background: rgba(78,205,196,0.08);
+}
+.call-back:active {
+  transform: scale(0.92);
+  box-shadow: 0 0 18px rgba(78,205,196,0.4), 0 0 8px rgba(78,205,196,0.2);
+  border-color: rgba(78,205,196,0.6);
+}
 
-/* â”€â”€ Avatar ring â”€â”€ */
+/* ── Avatar ring ── */
 .call-avatar-ring {
   position: relative;
   width: 136px;
@@ -3502,7 +3725,7 @@ input::placeholder, textarea::placeholder {
   animation-delay: 0.7s;
 }
 
-/* FIX: avatar container â€” enforces round clip */
+/* FIX: avatar container — enforces round clip */
 .call-avatar-main {
   position: absolute;
   inset: 0;
@@ -3526,7 +3749,7 @@ input::placeholder, textarea::placeholder {
   display: block;
 }
 
-/* â”€â”€ Name + mood â”€â”€ */
+/* ── Name + mood ── */
 .call-name {
   font-size: 24px;
   font-weight: 700;
@@ -3543,7 +3766,7 @@ input::placeholder, textarea::placeholder {
   text-align: center;
 }
 
-/* â”€â”€ Timer pill â”€â”€ */
+/* ── Timer pill ── */
 .call-timer {
   display: inline-flex;
   align-items: center;
@@ -3571,14 +3794,14 @@ input::placeholder, textarea::placeholder {
   flex-shrink: 0;
 }
 
-/* â”€â”€ Spacer â”€â”€ */
+/* ── Spacer ── */
 .call-spacer {
   flex: 1;
   min-height: 24px;
   max-height: 52px;
 }
 
-/* â”€â”€ Add Friend chip â”€â”€ */
+/* ── Add Friend chip ── */
 .call-add-friend {
   display: inline-flex;
   align-items: center;
@@ -3619,7 +3842,7 @@ input::placeholder, textarea::placeholder {
   color: var(--accent2);
 }
 
-/* â”€â”€ Controls row â”€â”€ */
+/* ── Controls row ── */
 .call-controls {
   display: flex;
   align-items: flex-end;
@@ -3640,7 +3863,7 @@ input::placeholder, textarea::placeholder {
   cursor: pointer;
 }
 
-/* â”€â”€ Mute + Speaker â€” glass pill buttons â”€â”€ */
+/* ── Mute + Speaker — glass pill buttons ── */
 .call-ctrl-btn {
   width: 56px;
   height: 56px;
@@ -3670,7 +3893,7 @@ input::placeholder, textarea::placeholder {
   transform: scale(0.88);
   background: rgba(255,255,255,0.12);
 }
-/* Active state â€” e.g. muted */
+/* Active state — e.g. muted */
 .call-ctrl-btn.active {
   background: rgba(78,205,196,0.18);
   border-color: rgba(78,205,196,0.45);
@@ -3687,7 +3910,7 @@ input::placeholder, textarea::placeholder {
   letter-spacing: 0.02em;
 }
 
-/* â”€â”€ End call â€” larger, prominent â”€â”€ */
+/* ── End call — larger, prominent ── */
 .call-end {
   width: 72px;
   height: 72px;
@@ -3724,7 +3947,7 @@ input::placeholder, textarea::placeholder {
   font-weight: 700;
 }
 
-/* â”€â”€ Switch to chat â”€â”€ */
+/* ── Switch to chat ── */
 .call-switch-chat {
   margin-top: 8px;
   background: rgba(255,255,255,0.04);
@@ -3747,10 +3970,10 @@ input::placeholder, textarea::placeholder {
   background: rgba(255,255,255,0.08);
   transform: scale(0.97);
 }
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ─────────────────────────────────────────────────────────────────
    Friend block button (Req 5)
    Sits inside .friend-meta, hidden until hover on the friend item.
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+   ───────────────────────────────────────────────────────────────── */
 .friend-block-btn {
   display: block;
   background: none;
@@ -3778,10 +4001,10 @@ input::placeholder, textarea::placeholder {
   transform: scale(0.9);
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   Match overlay safety row â€” Block + Report (Req 6)
+/* ─────────────────────────────────────────────────────────────────
+   Match overlay safety row — Block + Report (Req 6)
    Sits below the primary Skip / Connect row.
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+   ───────────────────────────────────────────────────────────────── */
 .mf-safety-row {
   display: flex;
   gap: 12px;
@@ -3812,15 +4035,15 @@ input::placeholder, textarea::placeholder {
   transform: scale(0.95);
 }
 
-/* Connect button disabled state (Req 2 â€” waiting for other side) */
+/* Connect button disabled state (Req 2 — waiting for other side) */
 .mf-accept:disabled {
   cursor: not-allowed;
 }
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ═══════════════════════════════════════════════════════
    blocked-screen.css
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   ═══════════════════════════════════════════════════════ */
 
-/* â”€â”€ Screen base â”€â”€ */
+/* ── Screen base ── */
 #screen-blocked {
   background: var(--bg);
 }
@@ -3831,7 +4054,7 @@ input::placeholder, textarea::placeholder {
 }
 #screen-blocked .scroll-body::-webkit-scrollbar { display: none; }
 
-/* â”€â”€ Page header row â”€â”€ */
+/* ── Page header row ── */
 .blocked-header {
   display: flex;
   align-items: center;
@@ -3849,9 +4072,18 @@ input::placeholder, textarea::placeholder {
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.15s;
+  transition: box-shadow 0.3s, border-color 0.3s, background 0.3s, transform 0.15s;
 }
-.blocked-back-btn:active { background: var(--bg2); }
+.blocked-back-btn:hover {
+  border-color: rgba(78,205,196,0.45);
+  box-shadow: 0 0 14px rgba(78,205,196,0.25), 0 0 6px rgba(78,205,196,0.15);
+  background: rgba(78,205,196,0.08);
+}
+.blocked-back-btn:active {
+  transform: scale(0.92);
+  box-shadow: 0 0 18px rgba(78,205,196,0.4), 0 0 8px rgba(78,205,196,0.2);
+  border-color: rgba(78,205,196,0.6);
+}
 .blocked-page-title {
   font-size: 20px;
   font-weight: 700;
@@ -3869,7 +4101,7 @@ input::placeholder, textarea::placeholder {
   line-height: 1.5;
 }
 
-/* â”€â”€ Blocked user row â”€â”€ */
+/* ── Blocked user row ── */
 .blocked-item {
   display: flex;
   align-items: center;
@@ -3881,7 +4113,7 @@ input::placeholder, textarea::placeholder {
   margin-bottom: 8px;
 }
 
-/* Avatar â€” fixed size, clips SVG neatly */
+/* Avatar — fixed size, clips SVG neatly */
 .blocked-avatar {
   width: 46px;
   height: 46px;
@@ -3940,16 +4172,22 @@ input::placeholder, textarea::placeholder {
   font-weight: 700;
   cursor: pointer;
   font-family: 'Sora', sans-serif;
-  transition: all 0.15s;
+  transition: all 0.2s, box-shadow 0.3s;
   flex-shrink: 0;
   white-space: nowrap;
 }
+.blocked-unblock-btn:hover {
+  border-color: rgba(78, 205, 196, 0.6);
+  box-shadow: 0 0 12px rgba(78,205,196,0.3), 0 0 5px rgba(78,205,196,0.2);
+  background: rgba(78, 205, 196, 0.15);
+}
 .blocked-unblock-btn:active {
   transform: scale(0.94);
-  background: rgba(78, 205, 196, 0.16);
+  background: rgba(78, 205, 196, 0.2);
+  box-shadow: 0 0 16px rgba(78,205,196,0.4), 0 0 6px rgba(78,205,196,0.25);
 }
 
-/* â”€â”€ Empty state â”€â”€ */
+/* ── Empty state ── */
 .blocked-empty {
   display: flex;
   flex-direction: column;
@@ -3979,7 +4217,7 @@ input::placeholder, textarea::placeholder {
   line-height: 1.5;
 }
 
-/* â”€â”€ Block pill on active call screen â”€â”€ */
+/* ── Block pill on active call screen ── */
 .call-block-row {
   display: flex;
   justify-content: center;
@@ -4007,7 +4245,7 @@ input::placeholder, textarea::placeholder {
   background: rgba(255, 59, 48, 0.14);
 }
 
-/* â”€â”€ Call history: Blocked type badge â”€â”€ */
+/* ── Call history: Blocked type badge ── */
 .hist-type.blocked {
   background: rgba(255, 59, 48, 0.1);
   color: #FF3B30;

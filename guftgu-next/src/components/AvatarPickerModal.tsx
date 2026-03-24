@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Avatar from './Avatar';
 import { AVATAR_CATEGORIES } from './Avatar';
 import { S } from '@/lib/strings';
@@ -18,8 +18,35 @@ const TABS = [
 
 export default function AvatarPickerModal({ open, selected, onSelect, onClose }: AvatarPickerModalProps) {
   const [activeTab, setActiveTab] = useState<'animal' | 'people' | 'fantasy'>('animal');
+  const [localSelected, setLocalSelected] = useState(selected);
 
   const avatars = AVATAR_CATEGORIES[activeTab];
+
+  // When tab changes, auto-select first avatar if current selection is not in this tab
+  useEffect(() => {
+    if (!avatars.includes(localSelected as typeof avatars[number])) {
+      setLocalSelected(avatars[0]);
+    }
+  }, [activeTab, avatars, localSelected]);
+
+  // Sync with parent selection when modal opens
+  useEffect(() => {
+    if (open) {
+      setLocalSelected(selected);
+      // Also set the correct tab based on the selected avatar
+      for (const [category, list] of Object.entries(AVATAR_CATEGORIES)) {
+        if (list.includes(selected as never)) {
+          setActiveTab(category as 'animal' | 'people' | 'fantasy');
+          break;
+        }
+      }
+    }
+  }, [open, selected]);
+
+  const handleSelect = (key: string) => {
+    setLocalSelected(key);
+    onSelect(key);
+  };
 
   return (
     <div className={`modal-overlay${open ? ' show' : ''}`} onClick={onClose}>
@@ -45,8 +72,8 @@ export default function AvatarPickerModal({ open, selected, onSelect, onClose }:
             {avatars.map((key) => (
               <div
                 key={key}
-                className={`avatar-picker-item${selected === key ? ' selected' : ''}`}
-                onClick={() => onSelect(key)}
+                className={`avatar-picker-item${localSelected === key ? ' selected' : ''}`}
+                onClick={() => handleSelect(key)}
               >
                 <Avatar avatarKey={key} size={60} />
                 <span className="avatar-picker-item-name">{key}</span>

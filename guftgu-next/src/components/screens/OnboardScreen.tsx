@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import Avatar from '@/components/Avatar';
 import { AVATAR_CATEGORIES } from '@/components/Avatar';
@@ -131,6 +131,27 @@ export default function OnboardScreen() {
   };
 
   const isActive = state.screen === 'screen-onboard';
+
+  // Reset to splash (step 0) when screen becomes active and user has no phone (fresh start / after delete)
+  useEffect(() => {
+    if (isActive && !state.guftguPhone) {
+      // Reset step to splash
+      setStep(0);
+      setMaxStep(0);
+      // Reset Quick Start state
+      reshuffleQS();
+      // Reset Full Onboard state
+      setMood('Happy');
+      setMoodEmoji('😄');
+      setAvatar('cat');
+      setLanguage('Hindi');
+      setRegion('North');
+      setIntent('Just chat');
+      setNickname('');
+      setAvatarTab('animal');
+      setSelectedChip('');
+    }
+  }, [isActive, state.guftguPhone, reshuffleQS]);
 
   // Mobile back button: go to previous onboarding step
   useBackHandler('onboard', () => {

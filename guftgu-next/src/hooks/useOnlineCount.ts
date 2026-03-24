@@ -1,6 +1,6 @@
 /**
- * useOnlineCount — Firebase-backed online user count with fallback.
- * Extracted from HomeScreen for reusability.
+ * useOnlineCount — Firebase-backed online user count.
+ * Counts users with online=true in the users collection
  *
  * Usage:
  *   const onlineCount = useOnlineCount(isActive, dbRef);
@@ -18,17 +18,25 @@ export function useOnlineCount(
     if (!isActive) return;
     const db = dbRef.current;
     if (db) {
-      const qRef = ref(db, 'matchQueue');
-      const unsub = onValue(qRef, (snap) => {
+      // Listen to users collection and count online users
+      const usersRef = ref(db, 'users');
+      const unsub = onValue(usersRef, (snap) => {
         let count = 0;
-        snap.forEach(() => { count++; });
-        const total = count + Math.floor(800 + Math.random() * 400);
+        snap.forEach((child) => {
+          if (child.val()?.online === true) {
+            count++;
+          }
+        });
+        // Show real count (minimum 1 for yourself)
+        const total = Math.max(count, 1);
         setOnlineCount(total.toLocaleString('en-IN') + ' online');
+      }, () => {
+        // Error fallback - show "connecting"
+        setOnlineCount('connecting...');
       });
       return () => unsub();
     } else {
-      const base = 1800 + Math.floor(Math.random() * 1200);
-      setOnlineCount(base.toLocaleString('en-IN') + ' online');
+      setOnlineCount('offline');
     }
   }, [isActive, dbRef]);
 

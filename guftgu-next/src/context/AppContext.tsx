@@ -3,6 +3,7 @@ import React, { createContext, useContext, useReducer, useCallback, useRef, useE
 import { UserData, loadUser, saveUser as persistUser, genGuftguPhone, getCallHistory, saveCallToHistory as persistCall, CallRecord, getFriends, saveFriends, FriendRecord, getPending, savePending, PendingRecord, getBlocked, saveBlocked, BlockedRecord, isBlocked } from '@/lib/storage';
 import { Database, ref, set, remove, onValue, push, get, child, off, onChildAdded } from 'firebase/database';
 import { initFirebase, getDb } from '@/lib/firebase';
+import { registerUser, syncBlockList, setOnlineStatus } from '@/lib/firebase-service';
 import { useBackButtonInit } from '@/hooks/useBackButton';
 
 // ── Types ──────────────────────────────────────────
@@ -10,7 +11,7 @@ export type Screen =
   | 'screen-onboard' | 'screen-welcome' | 'screen-home'
   | 'screen-match' | 'screen-call' | 'screen-chat'
   | 'screen-chats' | 'screen-notifs' | 'screen-profile'
-  | 'screen-history' | 'screen-blocked';
+  | 'screen-history' | 'screen-blocked' | 'screen-appinfo';
 
 export interface PalInfo {
   avatar: string;
@@ -32,6 +33,7 @@ interface AppState {
   autoConnect: boolean;
   toastMsg: string;
   toastVisible: boolean;
+  isRestoring: boolean; // True while checking localStorage on mount
 }
 
 type Action =
@@ -45,7 +47,8 @@ type Action =
   | { type: 'SET_AUTO_CONNECT'; auto: boolean }
   | { type: 'SHOW_TOAST'; msg: string }
   | { type: 'HIDE_TOAST' }
-  | { type: 'RESTORE_USER'; user: UserData; phone: string };
+  | { type: 'RESTORE_USER'; user: UserData; phone: string }
+  | { type: 'FINISH_RESTORE' };
 
 const defaultUser: UserData = {
   nickname: '', avatar: 'cat', mood: 'Happy', moodEmoji: '😄',
@@ -64,6 +67,7 @@ const initialState: AppState = {
   autoConnect: false,
   toastMsg: '',
   toastVisible: false,
+  isRestoring: true, // Start with true - we're checking localStorage
 };
 
 function reducer(state: AppState, action: Action): AppState {
@@ -89,7 +93,9 @@ function reducer(state: AppState, action: Action): AppState {
     case 'HIDE_TOAST':
       return { ...state, toastVisible: false };
     case 'RESTORE_USER':
-      return { ...state, user: { ...defaultUser, ...action.user }, guftguPhone: action.phone };
+      return { ...state, user: { ...defaultUser, ...action.user }, guftguPhone: action.phone, screen: 'screen-home', isRestoring: false };
+    case 'FINISH_RESTORE':
+      return { ...state, isRestoring: false };
     default:
       return state;
   }
@@ -123,16 +129,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Restore user from localStorage on mount
   useEffect(() => {
     const stored = loadUser();
-    if (stored) {
+    if (stored && stored.guftguPhone) {
+      // User exists - restore and go to home
       dispatch({ type: 'RESTORE_USER', user: stored.user, phone: stored.guftguPhone });
-      dispatch({ type: 'SET_SCREEN', screen: 'screen-home' });
+    } else {
+      // No user - stay on onboard but mark restore as done
+      dispatch({ type: 'FINISH_RESTORE' });
     }
   }, []);
 
   // Init Firebase — disabled for offline dev, enable when network available
   useEffect(() => {
     // Skip Firebase init in offline/corporate environments
-    const ENABLE_FIREBASE = false;
+    // Set to true when you want to enable Firebase features
+    const ENABLE_FIREBASE = true;
     if (!ENABLE_FIREBASE) {
       dispatch({ type: 'SET_FIREBASE', connected: false });
       return;
@@ -141,15 +151,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       dbRef.current = db;
       // Test connection
       const connRef = ref(db, '.info/connected');
-      onValue(connRef, (snap) => {
-        if (snap.val() === true) {
-          dispatch({ type: 'SET_FIREBASE', connected: true });
+      const unsubscribe = onValue(connRef, (snap) => {
+        const connected = snap.val() === true;
+        dispatch({ type: 'SET_FIREBASE', connected });
+        // On connect: sync block list and set online
+        if (connected && state.guftguPhone) {
+          syncBlockList(db, state.guftguPhone).catch(() => {});
+          setOnlineStatus(db, state.guftguPhone, true).catch(() => {});
         }
       });
+      // Cleanup on unmount
+      return () => {
+        off(connRef, 'value', unsubscribe as any);
+        if (state.guftguPhone) {
+          setOnlineStatus(db, state.guftguPhone, false).catch(() => {});
+        }
+      };
     }).catch(() => {
       dispatch({ type: 'SET_FIREBASE', connected: false });
     });
-  }, []);
+  }, [state.guftguPhone]);
 
   const showScreen = useCallback((screen: Screen) => {
     dispatch({ type: 'SET_SCREEN', screen });
@@ -182,6 +203,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_USER', user });
     dispatch({ type: 'SET_PHONE', phone });
     persistUser(user, phone);
+    // Register user in Firebase if connected
+    if (dbRef.current) {
+      registerUser(dbRef.current, phone, user).catch(() => {
+        // Silent fail — localStorage is primary storage
+      });
+    }
   }, []);
 
   return (

@@ -6,6 +6,7 @@ import LangModal from '@/components/LangModal';
 import { callTypeClass, getGreeting } from '@/lib/data';
 import { useCallHistory } from '@/hooks/useCallHistory';
 import { useOnlineCount } from '@/hooks/useOnlineCount';
+import { checkUserForCall } from '@/lib/firebase-service';
 import { IconPhone } from '@/lib/icons';
 import { S } from '@/lib/strings';
 
@@ -18,6 +19,7 @@ export default function HomeScreen() {
   const [langModalOpen, setLangModalOpen] = useState(false);
   const [autoConnect, setAutoConnect] = useState(false);
   const [dialInput, setDialInput] = useState('');
+  const [isDialing, setIsDialing] = useState(false);
 
   // Hooks — replace duplicated inline logic
   const callHistory = useCallHistory(isActive);
@@ -27,11 +29,13 @@ export default function HomeScreen() {
   const handleMoodSelect = (mood: string, emoji: string) => {
     saveUserData({ ...u, mood, moodEmoji: emoji }, state.guftguPhone);
     setMoodModalOpen(false);
+    showToast(`Mood set to ${emoji} ${mood}`);
   };
 
   const handleLangSelect = (lang: string) => {
     saveUserData({ ...u, language: lang }, state.guftguPhone);
     setLangModalOpen(false);
+    showToast(`Language set to ${lang}`);
   };
 
   const handleToggleAutoConnect = () => {
@@ -39,10 +43,66 @@ export default function HomeScreen() {
     showToast(!autoConnect ? S.home.autoConnectOn : S.home.autoConnectOff);
   };
 
-  const handleDial = () => {
-    if (!dialInput.trim()) { showToast(S.home.enterNumberToast); return; }
-    showToast(S.home.callingToast(dialInput));
-    // TODO: implement direct call via Firebase
+  const handleDial = async () => {
+    const targetPhone = dialInput.trim();
+    
+    // Empty check
+    if (!targetPhone) {
+      showToast(S.home.enterNumberToast);
+      return;
+    }
+
+    // Can't call yourself
+    if (targetPhone === state.guftguPhone) {
+      showToast(S.home.cantCallSelf);
+      return;
+    }
+
+    // Check Firebase for user existence and online status
+    if (!dbRef?.current) {
+      showToast('❌ Connection error — try again');
+      return;
+    }
+
+    setIsDialing(true);
+    try {
+      const result = await checkUserForCall(dbRef.current, targetPhone);
+
+      if (!result.exists) {
+        showToast(S.home.userNotFound);
+        setIsDialing(false);
+        return;
+      }
+
+      if (!result.online) {
+        showToast(S.home.userOffline);
+        setIsDialing(false);
+        return;
+      }
+
+      // User exists and is online — proceed with call
+      showToast(S.home.connectingTo(result.user?.name || 'User'));
+      
+      // Set the pal and go to call screen
+      dispatch({
+        type: 'SET_PAL',
+        pal: {
+          phone: targetPhone,
+          name: result.user?.name || 'Anonymous',
+          avatar: result.user?.avatar || 'cat',
+          mood: result.user?.mood || '',
+          moodEmoji: result.user?.moodEmoji || '',
+        },
+      });
+      
+      setDialInput('');
+      showScreen('screen-call');
+    } catch (error) {
+      console.error('Dial error:', error);
+      showToast('❌ Something went wrong — try again');
+    } finally {
+      setIsDialing(false);
+    }
   };
 
   return (
@@ -127,9 +187,19 @@ export default function HomeScreen() {
               placeholder={S.home.dialPlaceholder}
               value={dialInput}
               onChange={(e) => setDialInput(e.target.value)}
+              disabled={isDialing}
+              onKeyDown={(e) => e.key === 'Enter' && handleDial()}
             />
-            <button className="dial-call-btn" onClick={handleDial}>
-              <IconPhone size={20} color="#0A0B10" strokeWidth={2.5} />
+            <button 
+              className={`dial-call-btn${isDialing ? ' dialing' : ''}`} 
+              onClick={handleDial}
+              disabled={isDialing}
+            >
+              {isDialing ? (
+                <span className="dial-spinner">⏳</span>
+              ) : (
+                <IconPhone size={20} color="#0A0B10" strokeWidth={2.5} />
+              )}
             </button>
           </div>
         </div>
