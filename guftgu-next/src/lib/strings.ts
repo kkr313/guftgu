@@ -118,7 +118,7 @@ export const S = {
     autoConnectOn: '⚡ Auto Connect on',
     autoConnectOff: 'Auto Connect off',
     callAFriend: '📞 Call a Friend',
-    dialPlaceholder: 'Enter Guftgu number',
+    dialPlaceholder: 'Enter 7 digit guftgu number',
     recentCalls: 'Recent Calls',
     seeAll: 'See All',
     emptyCallsIcon: '📋',

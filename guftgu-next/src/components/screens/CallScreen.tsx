@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '@/context/AppContext';
 import Avatar from '@/components/Avatar';
 import { saveCallToHistory, getFriends, saveFriends, FriendRecord } from '@/lib/storage';
-import { sendFriendRequest, checkIfFriends, checkPendingRequest, blockUserFirebase, cleanupCallData, cancelCall, listenOutgoingCallStatus, listenIncomingCallStatus, acceptFriendRequest, addToFriends } from '@/lib/firebase-service';
+import { sendFriendRequest, checkIfFriends, checkPendingRequest, blockUserFirebase, cleanupCallData, cancelCall, endCall as firebaseEndCall, listenOutgoingCallStatus, listenIncomingCallStatus, acceptFriendRequest, addToFriends, setDirectCallRoomId, watchDirectCallRoomId } from '@/lib/firebase-service';
 import { useTimer } from '@/hooks/useTimer';
 import { IconChevronLeft, IconMic, IconMicOff, IconPhoneEnd, IconSpeaker } from '@/lib/icons';
+import { setMuted as webrtcSetMuted, cleanup as cleanupWebRTC, generateRoomId, createRoom, joinRoom, playCallEndedTone } from '@/lib/webrtc';
 import { S } from '@/lib/strings';
 
 export default function CallScreen() {
@@ -25,6 +26,9 @@ export default function CallScreen() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const ringIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const formattedRef = useRef<string>('00:00'); // Track current duration for callbacks
+  const endingRef = useRef(false); // Guard against double history save
+  const roomWatchCleanupRef = useRef<(() => void) | null>(null); // Cleanup for direct call roomId watcher
+  const ringingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Auto-cancel after 45s
   const { seconds, formatted, start, stop, reset } = useTimer();
 
   // Keep formattedRef in sync with formatted
@@ -74,23 +78,92 @@ export default function CallScreen() {
 
   // Set call status based on whether this is an outgoing or incoming call
   // And listen for status changes
+  // Helper: set up WebRTC for direct call — caller creates room, receiver joins
+  const setupDirectCallWebRTC = useCallback((role: 'caller' | 'receiver', callerPhone: string, receiverPhone: string) => {
+    const db = dbRef.current;
+    if (!db) return;
+
+    const onWebRTCConnected = () => console.log('[CallScreen] WebRTC peer connected');
+    const onWebRTCDisconnected = () => {
+      // Peer disconnected (network drop, browser close) — end the call
+      if (!endingRef.current) {
+        console.log('[CallScreen] WebRTC peer disconnected — ending call');
+        endingRef.current = true;
+        playCallEndedTone();
+        stop();
+        cleanupWebRTC();
+        saveCallToHistory({
+          avatar: pal?.avatar || 'cat',
+          name: pal?.name || 'Unknown',
+          phone: pal?.phone || undefined,
+          mood: pal?.mood || '',
+          duration: formattedRef.current,
+          type: role === 'caller' ? 'Outgoing' : 'Incoming',
+          timestamp: Date.now(),
+          callStartedAt: callStartedAt,
+        });
+        showToast('Call ended');
+        dispatch({ type: 'SET_PAL', pal: null });
+        showScreen('screen-home');
+      }
+    };
+    const onWebRTCError = (err: Error) => {
+      console.error('[CallScreen] WebRTC error:', err);
+      showToast('❌ Audio error: ' + err.message);
+    };
+
+    if (role === 'caller') {
+      // Caller: create WebRTC room → share roomId with receiver
+      const roomId = generateRoomId();
+      console.log('[CallScreen] Caller creating WebRTC room:', roomId);
+      createRoom(db, roomId, onWebRTCConnected, onWebRTCDisconnected, onWebRTCError)
+        .then(() => setDirectCallRoomId(db, callerPhone, receiverPhone, roomId));
+    } else {
+      // Receiver: watch for roomId from caller → join the room
+      console.log('[CallScreen] Receiver watching for WebRTC roomId...');
+      roomWatchCleanupRef.current = watchDirectCallRoomId(db, receiverPhone, callerPhone, (roomId) => {
+        // Got the roomId — clean up the watcher and join the room
+        if (roomWatchCleanupRef.current) { roomWatchCleanupRef.current(); roomWatchCleanupRef.current = null; }
+        console.log('[CallScreen] Receiver joining WebRTC room:', roomId);
+        joinRoom(db, roomId, onWebRTCConnected, onWebRTCDisconnected, onWebRTCError);
+      });
+    }
+  }, [dbRef, pal, callStartedAt, stop, dispatch, showScreen, showToast]);
+
   useEffect(() => {
     console.log('[CallScreen] Call setup effect:', { isActive, palPhone: pal?.phone, isOutgoingCall: pal?.isOutgoingCall, hasDbRef: !!dbRef?.current, guftguPhone: state.guftguPhone });
     
-    // For incoming calls, set connected immediately even before other deps are ready
-    // The connectedAt will be set from AppContext when accepting
+    // Reset ending guard on new call
+    endingRef.current = false;
+
+    // For incoming calls (isOutgoingCall === false), set connected immediately
     if (pal?.phone && pal?.isOutgoingCall === false) {
       console.log('[CallScreen] Incoming call - setting connected immediately');
       setCallStatus('connected');
-      // Use the connectedAt from pal if available, otherwise use current time
       const timestamp = (pal as any).connectedAt || Date.now();
       setConnectedAt(timestamp);
       start(timestamp);
+    }
+
+    // For match-originated calls (isMatchCall), WebRTC already connected — go straight to connected
+    if (pal?.phone && (pal as any).isMatchCall) {
+      console.log('[CallScreen] Match call - setting connected immediately');
+      setCallStatus('connected');
+      setConnectedAt(Date.now());
+      start(Date.now());
     }
     
     if (!isActive || !pal?.phone || !dbRef?.current || !state.guftguPhone) {
       console.log('[CallScreen] Skipping listener setup - missing deps');
       return;
+    }
+
+    // Match calls don't use Firebase call signaling — skip listener setup
+    if ((pal as any).isMatchCall) return;
+
+    // For incoming direct calls — start WebRTC immediately (receiver side)
+    if (pal.isOutgoingCall === false) {
+      setupDirectCallWebRTC('receiver', pal.phone, state.guftguPhone);
     }
 
     let unsubscribeOutgoing: (() => void) | undefined;
@@ -101,21 +174,55 @@ export default function CallScreen() {
       console.log('[CallScreen] Setting ringing state for outgoing call');
       setCallStatus('ringing');
       
+      // Auto-cancel after 45 seconds if no answer
+      ringingTimeoutRef.current = setTimeout(() => {
+        if (endingRef.current) return;
+        console.log('[CallScreen] Ringing timeout — auto-cancelling');
+        endingRef.current = true;
+        if (dbRef.current && state.guftguPhone && pal.phone) {
+          cancelCall(dbRef.current, state.guftguPhone, pal.phone).catch(() => {});
+        }
+        playCallEndedTone();
+        saveCallToHistory({
+          avatar: pal?.avatar || 'cat',
+          name: pal?.name || 'Unknown',
+          phone: pal?.phone || undefined,
+          mood: pal?.mood || '',
+          duration: '00:00',
+          type: 'Outgoing',
+          timestamp: Date.now(),
+          callStartedAt: callStartedAt,
+        });
+        showToast('No answer — call timed out');
+        dispatch({ type: 'SET_PAL', pal: null });
+        showScreen('screen-home');
+      }, 45000);
+
       // Listen for status changes from the receiver
       unsubscribeOutgoing = listenOutgoingCallStatus(
         dbRef.current,
         state.guftguPhone,
         pal.phone,
         (status: 'accepted' | 'declined' | 'cancelled' | 'ended', timestamp?: number) => {
+          // BUG 2 FIX: Skip if we are already ending the call ourselves
+          if (endingRef.current) return;
+
           console.log('[CallScreen] Call status changed:', status, 'connectedAt:', timestamp);
           if (status === 'accepted') {
+            // Clear ringing timeout — call was answered
+            if (ringingTimeoutRef.current) { clearTimeout(ringingTimeoutRef.current); ringingTimeoutRef.current = null; }
             setCallStatus('connected');
             // Use the shared timestamp from Firebase for synchronized timer
             const connectedTime = timestamp || Date.now();
             setConnectedAt(connectedTime);
             start(connectedTime);
             showToast('Call connected! 🎉');
+
+            // BUG 1 FIX: Now establish WebRTC audio (caller creates room)
+            if (state.guftguPhone && pal.phone) setupDirectCallWebRTC('caller', state.guftguPhone, pal.phone);
           } else if (status === 'declined') {
+            if (ringingTimeoutRef.current) { clearTimeout(ringingTimeoutRef.current); ringingTimeoutRef.current = null; }
+            playCallEndedTone();
             // Save as declined outgoing call (they rejected us)
             saveCallToHistory({
               avatar: pal?.avatar || 'cat',
@@ -131,12 +238,16 @@ export default function CallScreen() {
             dispatch({ type: 'SET_PAL', pal: null });
             showScreen('screen-home');
           } else if (status === 'cancelled') {
+            if (ringingTimeoutRef.current) { clearTimeout(ringingTimeoutRef.current); ringingTimeoutRef.current = null; }
+            playCallEndedTone();
             showToast('Call cancelled');
             dispatch({ type: 'SET_PAL', pal: null });
             showScreen('screen-home');
           } else if (status === 'ended') {
             // Other party ended the call - save history
+            playCallEndedTone();
             stop();
+            cleanupWebRTC();
             saveCallToHistory({
               avatar: pal?.avatar || 'cat',
               name: pal?.name || 'Unknown',
@@ -160,9 +271,14 @@ export default function CallScreen() {
         state.guftguPhone,
         pal.phone,
         () => {
-          // Caller ended the call - save history
+          // BUG 2 FIX: Skip if we are already ending the call ourselves
+          if (endingRef.current) return;
+
+          // Caller ended the call - play tone + save history
           console.log('[CallScreen] Caller ended the call');
+          playCallEndedTone();
           stop();
+          cleanupWebRTC();
           saveCallToHistory({
             avatar: pal?.avatar || 'cat',
             name: pal?.name || 'Unknown',
@@ -183,6 +299,10 @@ export default function CallScreen() {
     return () => {
       unsubscribeOutgoing?.();
       unsubscribeIncoming?.();
+      // Clean up ringing timeout
+      if (ringingTimeoutRef.current) { clearTimeout(ringingTimeoutRef.current); ringingTimeoutRef.current = null; }
+      // Clean up roomId watcher if still active
+      if (roomWatchCleanupRef.current) { roomWatchCleanupRef.current(); roomWatchCleanupRef.current = null; }
     };
   }, [isActive, pal?.phone, pal?.isOutgoingCall, dbRef, state.guftguPhone]);
 
@@ -266,37 +386,80 @@ export default function CallScreen() {
   }, [isActive]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const endCall = async () => {
+    // BUG 2 FIX: Set guard BEFORE Firebase cleanup so listeners don't double-save
+    endingRef.current = true;
     stop();
     
-    // Cleanup Firebase call data
-    if (dbRef?.current && state.guftguPhone && pal?.phone) {
+    // Clear ringing timeout if active
+    if (ringingTimeoutRef.current) { clearTimeout(ringingTimeoutRef.current); ringingTimeoutRef.current = null; }
+
+    // Play call-ended tone for audio feedback
+    playCallEndedTone();
+    
+    const isMatch = (pal as any)?.isMatchCall;
+    
+    // For direct calls (not match), signal end via Firebase
+    if (!isMatch && dbRef?.current && state.guftguPhone && pal?.phone) {
       try {
-        await cleanupCallData(dbRef.current, state.guftguPhone, pal.phone);
+        if (callStatus === 'ringing' && pal?.isOutgoingCall) {
+          // UC7: We are the caller and cancelling before the other party answered
+          await cancelCall(dbRef.current, state.guftguPhone, pal.phone);
+        } else {
+          // UC5: Call was connected (or we are the receiver) — signal end to other party
+          await firebaseEndCall(dbRef.current, state.guftguPhone, pal.phone);
+        }
       } catch (e) {
-        console.error('Failed to cleanup call data:', e);
+        console.error('Failed to signal call end:', e);
+        try { await cleanupCallData(dbRef.current, state.guftguPhone, pal.phone); } catch (_) {}
       }
     }
+
+    // Clean up WebRTC resources (for ALL call types)
+    cleanupWebRTC();
     
-    // Determine call type based on who initiated
-    const callType = pal?.isOutgoingCall ? 'Outgoing' : 'Incoming';
+    // Determine call type — match calls and outgoing calls are 'Outgoing', else 'Incoming'
+    const callType = (pal?.isOutgoingCall || isMatch) ? 'Outgoing' : 'Incoming';
+    const duration = callStatus === 'ringing' ? '00:00' : formatted;
     
     saveCallToHistory({
       avatar: pal?.avatar || 'cat',
       name: pal?.name || 'Unknown',
       phone: pal?.phone || undefined,
       mood: pal?.mood || '',
-      duration: formatted,
+      duration,
       type: callType,
       timestamp: Date.now(),
       callStartedAt: callStartedAt,
     });
     dispatch({ type: 'SET_PAL', pal: null });
     showScreen('screen-home');
-    showToast(S.call.callEndedToast(formatted));
+    if (callStatus === 'ringing') {
+      showToast('Call cancelled');
+    } else {
+      showToast(S.call.callEndedToast(duration));
+    }
   };
 
-  const toggleMute = () => setIsMuted(!isMuted);
-  const toggleSpeaker = () => setIsSpeaker(!isSpeaker);
+  const toggleMute = () => {
+    const next = !isMuted;
+    setIsMuted(next);
+    webrtcSetMuted(next); // Actually mute/unmute the mic via WebRTC
+  };
+
+  const toggleSpeaker = () => {
+    // Toggle speaker state — note: Web Audio API has no direct speaker routing,
+    // but we can attempt to use setSinkId on supported browsers
+    const next = !isSpeaker;
+    setIsSpeaker(next);
+    try {
+      const audioEls = document.querySelectorAll('audio');
+      audioEls.forEach((el: any) => {
+        if (el.setSinkId) {
+          el.setSinkId(next ? 'default' : '').catch(() => {});
+        }
+      });
+    } catch (_) { /* setSinkId not supported */ }
+  };
 
   const addFriend = async () => {
     if (addFriendSent || !pal?.phone || !dbRef?.current) return;

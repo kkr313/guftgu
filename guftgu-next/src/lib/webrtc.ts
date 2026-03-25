@@ -319,15 +319,24 @@ export function isMuted(): boolean {
  * End the call and signal to the other party.
  */
 export async function endCall(db: Database | null, blocked = false): Promise<void> {
-  if (db && currentRoomId) {
+  const roomId = currentRoomId; // Save before cleanup nullifies it
+  
+  if (db && roomId) {
     // Signal call ended
-    await set(ref(db, `rooms/${currentRoomId}/callEnded`), true);
+    await set(ref(db, `rooms/${roomId}/callEnded`), true);
     if (blocked) {
-      await set(ref(db, `rooms/${currentRoomId}/callBlocked`), true);
+      await set(ref(db, `rooms/${roomId}/callBlocked`), true);
     }
   }
 
   cleanup();
+
+  // Clean up room data from Firebase after a short delay (let signal propagate first)
+  if (db && roomId) {
+    setTimeout(() => {
+      remove(ref(db, `rooms/${roomId}`)).catch(() => {});
+    }, 3000);
+  }
 }
 
 /**
@@ -338,8 +347,12 @@ export function cleanup(): void {
   callListeners.forEach((cleanup) => cleanup());
   callListeners = [];
 
-  // Close peer connection
+  // Close peer connection — nullify event handlers FIRST to prevent
+  // oniceconnectionstatechange('closed') from firing stale callbacks
   if (peerConnection) {
+    peerConnection.oniceconnectionstatechange = null;
+    peerConnection.ontrack = null;
+    peerConnection.onicecandidate = null;
     peerConnection.close();
     peerConnection = null;
   }
@@ -408,5 +421,41 @@ export function endDemoCall(): void {
   if (localStream) {
     localStream.getTracks().forEach((track) => track.stop());
     localStream = null;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUDIO FEEDBACK
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Play a short "call ended" tone for audio feedback.
+ * Two descending beeps: boop-boop (like a real phone call ending).
+ */
+export function playCallEndedTone(): void {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+    const beep = (freq: number, startAt: number, dur: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.25, ctx.currentTime + startAt);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + startAt + dur);
+      osc.start(ctx.currentTime + startAt);
+      osc.stop(ctx.currentTime + startAt + dur);
+    };
+
+    // Descending two-tone: 480Hz → 380Hz (classic call-ended sound)
+    beep(480, 0, 0.2);
+    beep(380, 0.25, 0.3);
+
+    // Auto-close audio context after tones finish
+    setTimeout(() => ctx.close().catch(() => {}), 800);
+  } catch (_) {
+    // Web Audio API not available — silent fallback
   }
 }

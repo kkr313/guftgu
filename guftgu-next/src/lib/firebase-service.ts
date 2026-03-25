@@ -1403,3 +1403,51 @@ export async function cleanupCallData(
   await remove(ref(db, `calls/${otherPhone}/incoming/${myPhone}`));
   await remove(ref(db, `calls/${otherPhone}/outgoing/${myPhone}`));
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DIRECT CALL — WebRTC ROOM ID EXCHANGE
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Set WebRTC roomId on a direct call so the receiver can join.
+ * Caller writes roomId after creating the WebRTC room.
+ * Path: calls/{receiverPhone}/incoming/{callerPhone}/roomId
+ */
+export async function setDirectCallRoomId(
+  db: Database,
+  callerPhone: string,
+  receiverPhone: string,
+  roomId: string
+): Promise<void> {
+  await set(ref(db, `calls/${receiverPhone}/incoming/${callerPhone}/roomId`), roomId);
+  console.log('[Firebase] Direct call roomId set:', roomId, 'for', receiverPhone);
+}
+
+/**
+ * Watch for WebRTC roomId on a direct call.
+ * Receiver watches for the caller to set the roomId after accepting.
+ * Returns cleanup function.
+ */
+export function watchDirectCallRoomId(
+  db: Database,
+  myPhone: string,
+  callerPhone: string,
+  onRoomId: (roomId: string) => void
+): () => void {
+  const roomIdRef = ref(db, `calls/${myPhone}/incoming/${callerPhone}/roomId`);
+  let cleaned = false;
+
+  const listener = onValue(roomIdRef, (snap) => {
+    if (cleaned) return;
+    if (snap.exists()) {
+      const roomId = snap.val() as string;
+      console.log('[Firebase] Direct call roomId received:', roomId);
+      onRoomId(roomId);
+    }
+  });
+
+  return () => {
+    cleaned = true;
+    off(roomIdRef, 'value', listener);
+  };
+}

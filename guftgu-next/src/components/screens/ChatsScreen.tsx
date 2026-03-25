@@ -8,7 +8,9 @@ import {
   acceptFriendRequest, 
   declineFriendRequest,
   cancelFriendRequest,
-  addToFriends
+  addToFriends,
+  initiateCall,
+  checkUserForCall,
 } from '@/lib/firebase-service';
 import { timeAgo } from '@/lib/data';
 import { S } from '@/lib/strings';
@@ -200,19 +202,39 @@ export default function ChatsScreen() {
     showScreen('screen-chat');
   };
 
-  const callFriend = (f: FriendRecord) => {
-    // Set the pal and go to call screen
-    dispatch({
-      type: 'SET_PAL',
-      pal: {
-        phone: f.phone,
-        name: f.nickname || f.name,
-        avatar: f.avatar,
-        mood: f.mood,
-        moodEmoji: f.moodEmoji,
-      },
-    });
-    showScreen('screen-call');
+  const callFriend = async (f: FriendRecord) => {
+    if (!dbRef?.current || !state.guftguPhone) {
+      showToast('❌ Connection error — try again');
+      return;
+    }
+
+    try {
+      // Check if user is online
+      const result = await checkUserForCall(dbRef.current, f.phone, state.guftguPhone);
+      if (!result.exists) { showToast('User not found'); return; }
+      if (result.blockedByTarget) { showToast('User is not available'); return; }
+      if (!result.online) { showToast(`${f.nickname || f.name} is offline`); return; }
+
+      // Initiate the call in Firebase so the other person gets notified
+      await initiateCall(dbRef.current, state.guftguPhone, state.user, f.phone);
+
+      // Set pal with outgoing flag
+      dispatch({
+        type: 'SET_PAL',
+        pal: {
+          phone: f.phone,
+          name: f.nickname || f.name,
+          avatar: f.avatar,
+          mood: f.mood,
+          moodEmoji: f.moodEmoji,
+          isOutgoingCall: true,
+        },
+      });
+      showScreen('screen-call');
+    } catch (error) {
+      console.error('Call friend error:', error);
+      showToast('❌ Failed to call — try again');
+    }
   };
 
   // ── Unfriend: remove from friends list ──

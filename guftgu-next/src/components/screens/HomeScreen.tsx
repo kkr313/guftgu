@@ -155,6 +155,10 @@ export default function HomeScreen() {
         <div className="home-match-section">
           <button className="find-btn" onClick={() => showScreen('screen-match')}>
             <div className="find-btn-glow" />
+            <div className="find-btn-tap-hint">
+              <span className="tap-hand">👆</span>
+              <span className="tap-ripple" />
+            </div>
             <div className="find-btn-content">
               <div className="find-btn-top">
                 <div className="find-btn-icon">🎙️</div>
