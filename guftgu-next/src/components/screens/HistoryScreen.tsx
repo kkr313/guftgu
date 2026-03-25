@@ -22,7 +22,7 @@ export default function HistoryScreen() {
       </div>
 
       {/* Scrollable content */}
-      <div className="scroll-body" style={{ paddingTop: 90, paddingBottom: 24 }}>
+      <div className="scroll-body" style={{ paddingTop: 110, paddingBottom: 24 }}>
         {calls.length === 0 ? (
           <div className="home-empty">
             <div className="home-empty-icon">{S.history.emptyIcon}</div>

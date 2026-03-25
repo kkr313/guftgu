@@ -63,6 +63,7 @@ export default function OnboardScreen() {
   const [region, setRegion] = useState('North');
   const [intent, setIntent] = useState('Just chat');
   const [nickname, setNickname] = useState('');
+  const [nameError, setNameError] = useState('');
   const [avatarTab, setAvatarTab] = useState<'animal' | 'people' | 'fantasy'>('animal');
   const [nameChips, setNameChips] = useState(() => Array.from({ length: 6 }, genUniqueName));
   const [selectedChip, setSelectedChip] = useState('');
@@ -131,8 +132,9 @@ export default function OnboardScreen() {
   };
 
   const finishOnboard = async () => {
-    if (!nickname || nickname.length < 2) { showToast(S.onboard.toastNickname); return; }
-    if (isProfane(nickname)) { showToast(S.onboard.step4WarningProfane); return; }
+    if (!nickname || nickname.length < 2) { setNameError(S.onboard.toastNickname); return; }
+    if (isProfane(nickname)) { setNameError(S.onboard.step4WarningProfane); return; }
+    setNameError('');
     if (isGeneratingNumber) return;
     
     setIsGeneratingNumber(true);
@@ -386,17 +388,24 @@ export default function OnboardScreen() {
             </div>
             <input
               type="text"
+              className={nameError ? 'input-error shake' : ''}
               placeholder={S.onboard.step4Placeholder}
               value={nickname}
-              onChange={(e) => { setNickname(e.target.value); setSelectedChip(''); }}
+              onChange={(e) => { setNickname(e.target.value); setSelectedChip(''); setNameError(''); }}
               style={{ marginBottom: 8 }}
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
               maxLength={20}
             />
-            <div style={{ fontSize: 11, color: isProfane(nickname) ? '#FF6B6B' : nickname.length >= 2 ? 'var(--accent2)' : 'var(--text3)', marginBottom: 24 }}>
-              {isProfane(nickname)
+            <div style={{
+              fontSize: 11,
+              color: nameError ? '#FF6B6B' : isProfane(nickname) ? '#FF6B6B' : nickname.length >= 2 ? 'var(--accent2)' : 'var(--text3)',
+              marginBottom: 24,
+            }}>
+              {nameError
+                ? nameError
+                : isProfane(nickname)
                 ? S.onboard.step4WarningProfane
                 : nickname.length > 0 && nickname.length < 2
                 ? S.onboard.step4WarningShort

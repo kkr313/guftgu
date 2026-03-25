@@ -209,11 +209,23 @@ export const S = {
 
   /* ─── Notifications Screen ────────────────────────────── */
   notifs: {
+    title: 'Chats',
+    subtitle: 'Your conversations',
+    emptyIcon: '💬',
+    emptyTitle: 'No chats yet',
+    emptySub: 'Start a conversation with a friend — your chats will appear here',
+    deleteToast: 'Chat deleted ✓',
+    deleteConfirm: 'Delete this chat?',
+  },
+
+  /* ─── Notifications (Bell icon) ───────────────────────── */
+  notifications: {
     title: 'Notifications',
-    subtitle: 'Your activity updates',
     emptyIcon: '🔔',
-    emptyTitle: 'No notifications yet',
-    emptySub: 'Friend requests and call alerts will show up here',
+    emptyTitle: 'All caught up!',
+    emptySub: 'You have no new notifications',
+    clearAll: 'Clear all',
+    clearedToast: 'Notifications cleared ✓',
   },
 
   /* ─── Blocked Screen ──────────────────────────────────── */

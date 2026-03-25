@@ -5,6 +5,7 @@ const CALL_HISTORY_KEY = 'guftgu_call_history';
 const FRIENDS_KEY = 'guftgu_friends';
 const PENDING_KEY = 'guftgu_pending';
 const BLOCKED_KEY = 'guftgu_blocked';
+const CONVERSATIONS_KEY = 'guftgu_conversations';
 
 export interface UserData {
   nickname: string;
@@ -59,6 +60,15 @@ export interface BlockedRecord {
   nickname?: string;  // Preserved from friend nickname when blocked
   avatar: string;
   blockedAt: number;
+}
+
+export interface ChatConversation {
+  phone: string;
+  name: string;
+  avatar: string;
+  lastMessage: string;
+  lastMessageTime: number;
+  unreadCount: number;
 }
 
 // Collision-safe ID: timestamp + random suffix
@@ -165,6 +175,20 @@ export function isBlocked(phone: string): boolean {
   return getBlocked().some(e => e.phone === phone);
 }
 
+// Chat Conversations
+export function getChatConversations(): ChatConversation[] {
+  try { return JSON.parse(localStorage.getItem(CONVERSATIONS_KEY) || '[]'); } catch (_) { return []; }
+}
+
+export function saveChatConversations(list: ChatConversation[]): void {
+  try { localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(list)); } catch (_) { /* ignore */ }
+}
+
+export function deleteChatConversation(phone: string): void {
+  const convos = getChatConversations().filter(c => c.phone !== phone);
+  saveChatConversations(convos);
+}
+
 export function clearAllData(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
@@ -172,6 +196,7 @@ export function clearAllData(): void {
     localStorage.removeItem(FRIENDS_KEY);
     localStorage.removeItem(PENDING_KEY);
     localStorage.removeItem(BLOCKED_KEY);
+    localStorage.removeItem(CONVERSATIONS_KEY);
     localStorage.removeItem('guftgu_welcomed');
   } catch (_) { /* ignore */ }
 }

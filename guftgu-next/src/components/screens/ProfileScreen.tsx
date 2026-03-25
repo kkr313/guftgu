@@ -67,6 +67,7 @@ export default function ProfileScreen() {
   const handleLangSelect = (lang: string) => {
     saveUserData({ ...u, language: lang }, state.guftguPhone);
     setLangModalOpen(false);
+    showToast(`Language updated to ${lang}!`);
   };
 
   const handleRegionSelect = (region: string) => {

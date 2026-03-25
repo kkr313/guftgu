@@ -254,7 +254,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const showToast = useCallback((msg: string) => {
     dispatch({ type: 'SHOW_TOAST', msg });
     if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => dispatch({ type: 'HIDE_TOAST' }), 2500);
+    toastTimer.current = setTimeout(() => dispatch({ type: 'HIDE_TOAST' }), 2000);
   }, []);
 
   // Stable ref for current screen — used by popstate handler

@@ -39,21 +39,24 @@ export default function BlockedScreen() {
 
   return (
     <div id="screen-blocked" className={`screen${isActive ? ' active' : ''}`}>
-      <div className="scroll-body">
-        <div className="blocked-header">
+      {/* Fixed header */}
+      <div className="screen-fixed-header blocked-fixed-header">
+        <div className="blocked-header-top">
           <button className="blocked-back-btn" onClick={goBack}>
             <IconChevronLeft />
           </button>
           <div>
-            <div className="blocked-page-title">{S.blocked.title}</div>
+            <div className="screen-fixed-title">{S.blocked.title}</div>
             <div id="blockedCount" style={{ fontSize: 12, color: 'var(--text3)', marginTop: 1 }}>
               {S.blocked.countLabel(blocked.length)}
             </div>
           </div>
         </div>
-        <div className="blocked-subtitle">
-          {S.blocked.subtitle}
-        </div>
+        <div className="blocked-subtitle">{S.blocked.subtitle}</div>
+      </div>
+
+      {/* Scrollable content */}
+      <div className="scroll-body" style={{ paddingTop: 130 }}>
 
         {blocked.length === 0 ? (
           <div className="blocked-empty">
