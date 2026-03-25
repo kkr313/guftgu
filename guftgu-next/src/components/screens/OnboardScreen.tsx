@@ -4,6 +4,7 @@ import Avatar from '@/components/Avatar';
 import { AVATAR_CATEGORIES } from '@/components/Avatar';
 import { MOOD_DATA, LANG_DATA, REGION_DATA, INTENT_DATA, QS_AVATARS, QS_MOODS, genUniqueName, MOOD_EMOJIS } from '@/lib/data';
 import { genGuftguPhone } from '@/lib/storage';
+import { generateUniqueGuftguNumber } from '@/lib/firebase-service';
 import { IconChevronLeft } from '@/lib/icons';
 import { S } from '@/lib/strings';
 import { isProfane } from '@/lib/profanity';
@@ -49,9 +50,10 @@ function RegionOrbit({ selected, onSelect }: { selected: string; onSelect: (r: s
   );
 }
 export default function OnboardScreen() {
-  const { state, showScreen, showToast, saveUserData } = useApp();
+  const { state, showScreen, showToast, saveUserData, dbRef } = useApp();
   const [step, setStep] = useState<ObStep>(0);
   const [maxStep, setMaxStep] = useState(0); // highest step visited
+  const [isGeneratingNumber, setIsGeneratingNumber] = useState(false);
 
   // Full setup state
   const [mood, setMood] = useState('Happy');
@@ -96,26 +98,67 @@ export default function OnboardScreen() {
     setNickname(chips[0]);
   }, []);
 
-  const finishQS = () => {
+  const finishQS = async () => {
     if (!qsLang) { showToast(S.onboard.toastPickLangQs); return; }
-    const phone = genGuftguPhone();
-    saveUserData({
-      nickname: qsName, avatar: qsAvatar, mood: qsMood,
-      moodEmoji: MOOD_EMOJIS[qsMood] || '😊',
-      language: qsLang, region: qsRegion, intent: 'Just chat',
-    }, phone);
-    showScreen('screen-welcome');
+    if (isGeneratingNumber) return;
+    
+    setIsGeneratingNumber(true);
+    try {
+      // Generate unique number from Firebase, fallback to random if no connection
+      const phone = dbRef?.current 
+        ? await generateUniqueGuftguNumber(dbRef.current)
+        : genGuftguPhone();
+      
+      saveUserData({
+        nickname: qsName, avatar: qsAvatar, mood: qsMood,
+        moodEmoji: MOOD_EMOJIS[qsMood] || '😊',
+        language: qsLang, region: qsRegion, intent: 'Just chat',
+      }, phone);
+      showScreen('screen-welcome');
+    } catch (error) {
+      console.error('Error generating number:', error);
+      // Fallback to random generation
+      const phone = genGuftguPhone();
+      saveUserData({
+        nickname: qsName, avatar: qsAvatar, mood: qsMood,
+        moodEmoji: MOOD_EMOJIS[qsMood] || '😊',
+        language: qsLang, region: qsRegion, intent: 'Just chat',
+      }, phone);
+      showScreen('screen-welcome');
+    } finally {
+      setIsGeneratingNumber(false);
+    }
   };
 
-  const finishOnboard = () => {
+  const finishOnboard = async () => {
     if (!nickname || nickname.length < 2) { showToast(S.onboard.toastNickname); return; }
     if (isProfane(nickname)) { showToast(S.onboard.step4WarningProfane); return; }
-    const phone = genGuftguPhone();
-    saveUserData({
-      nickname, avatar, mood, moodEmoji,
-      language, region, intent,
-    }, phone);
-    showScreen('screen-welcome');
+    if (isGeneratingNumber) return;
+    
+    setIsGeneratingNumber(true);
+    try {
+      // Generate unique number from Firebase, fallback to random if no connection
+      const phone = dbRef?.current 
+        ? await generateUniqueGuftguNumber(dbRef.current)
+        : genGuftguPhone();
+      
+      saveUserData({
+        nickname, avatar, mood, moodEmoji,
+        language, region, intent,
+      }, phone);
+      showScreen('screen-welcome');
+    } catch (error) {
+      console.error('Error generating number:', error);
+      // Fallback to random generation
+      const phone = genGuftguPhone();
+      saveUserData({
+        nickname, avatar, mood, moodEmoji,
+        language, region, intent,
+      }, phone);
+      showScreen('screen-welcome');
+    } finally {
+      setIsGeneratingNumber(false);
+    }
   };
 
   const goNext = () => {
@@ -361,8 +404,8 @@ export default function OnboardScreen() {
                 ? S.onboard.step4Good
                 : S.onboard.step4Hint}
             </div>
-            <button className="btn btn-primary" onClick={finishOnboard}>
-              {S.onboard.startGuftgu}
+            <button className="btn btn-primary" onClick={finishOnboard} disabled={isGeneratingNumber}>
+              {isGeneratingNumber ? '⏳ Setting up...' : S.onboard.startGuftgu}
             </button>
             <div className="ob-settings-hint">{S.onboard.step4Hint}</div>
           </div>
@@ -395,8 +438,8 @@ export default function OnboardScreen() {
             </div>
             <div className="step3-section-label">{S.onboard.qsRegionLabel}</div>
             <RegionOrbit selected={qsRegion} onSelect={setQsRegion} />
-            <button className="btn btn-primary" onClick={finishQS}>
-              {S.onboard.qsStartBtn}
+            <button className="btn btn-primary" onClick={finishQS} disabled={isGeneratingNumber}>
+              {isGeneratingNumber ? '⏳ Setting up...' : S.onboard.qsStartBtn}
             </button>
             <div className="ob-settings-hint">{S.onboard.qsSettingsHint}</div>
           </div>

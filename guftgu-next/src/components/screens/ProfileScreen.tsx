@@ -98,28 +98,21 @@ export default function ProfileScreen() {
       // 2. Clear all local storage data
       clearAllData();
 
-      // 3. Reset app state to defaults (phone MUST be cleared first)
-      dispatch({ type: 'SET_PHONE', phone: '' });
-      dispatch({ type: 'SET_USER', user: {
-        nickname: '', avatar: 'cat', mood: 'Happy', moodEmoji: '😄',
-        language: 'Hindi', region: 'North', intent: 'Just chat',
-      }});
-      dispatch({ type: 'SET_PAL', pal: null });
+      // 3. Reset app state completely using LOGOUT action
+      dispatch({ type: 'LOGOUT' });
 
-      // 4. Redirect to splash/onboard screen after a brief delay to ensure state is cleared
+      // 4. Show success toast after state reset
       setTimeout(() => {
-        showScreen('screen-onboard');
         showToast(S.profile.deletedToast);
-      }, 50);
+      }, 100);
     } catch (error) {
       console.error('Delete account error:', error);
       // Still proceed with local cleanup even if Firebase fails
       clearAllData();
-      dispatch({ type: 'SET_PHONE', phone: '' });
+      dispatch({ type: 'LOGOUT' });
       setTimeout(() => {
-        showScreen('screen-onboard');
         showToast(S.profile.deletedToast);
-      }, 50);
+      }, 100);
     }
   };
 

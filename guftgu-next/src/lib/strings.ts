@@ -111,7 +111,7 @@ export const S = {
       afternoon: 'Good afternoon ☀️',
       evening: 'Good evening 🌙',
     },
-    findGuftgu: 'Find a Guftgu',
+    findGuftgu: "Search for a Guftgu",
     mood: 'Mood',
     language: 'Language',
     autoConnect: 'Auto Connect',
@@ -130,6 +130,7 @@ export const S = {
     cantCallSelf: "🚫 You can't call yourself!",
     userNotFound: '❌ User not found — check the number',
     userOffline: '📴 User is offline — try again later',
+    userNotAvailable: '📵 User is not available right now',
     connectingTo: (name: string) => `Connecting to ${name}...`,
   },
 
@@ -170,6 +171,7 @@ export const S = {
     speaker: 'Speaker',
     speakerOn: 'Speaker On',
     switchToChat: '💬 Switch to Chat',
+    chatFriendsOnly: '🔒 Chat is only available for friends',
     block: '🚫 Block',
     userBlocked: 'User blocked',
     callEndedToast: (duration: string) => `Call ended · ${duration}`,
@@ -284,6 +286,8 @@ export const S = {
   /* ─── Bottom Nav ──────────────────────────────────────── */
   nav: {
     home: 'Home',
+    history: 'History',
+    chats: 'Chats',
     friends: 'Friends',
     notifs: 'Notifs',
     profile: 'Profile',

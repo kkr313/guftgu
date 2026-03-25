@@ -1,11 +1,11 @@
 import { useApp } from '@/context/AppContext';
-import { IconHome, IconUsers, IconBell, IconUser } from '@/lib/icons';
+import { IconHome, IconUsers, IconChat, IconUser } from '@/lib/icons';
 import { S } from '@/lib/strings';
 
 const NAV_ITEMS = [
   { id: 'screen-home' as const, label: S.nav.home, icon: <IconHome /> },
   { id: 'screen-chats' as const, label: S.nav.friends, icon: <IconUsers /> },
-  { id: 'screen-notifs' as const, label: S.nav.notifs, icon: <IconBell /> },
+  { id: 'screen-notifs' as const, label: S.nav.chats, icon: <IconChat /> },
   { id: 'screen-profile' as const, label: S.nav.profile, icon: <IconUser /> },
 ];
 

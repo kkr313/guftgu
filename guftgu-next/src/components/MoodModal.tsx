@@ -18,7 +18,7 @@ export default function MoodModal({ open, selected, onSelect, onClose }: MoodMod
           <button className="modal-close" onClick={onClose}>{S.common.close}</button>
         </div>
         <div className="modal-body">
-          <div className="mood-grid" style={{ padding: '0 20px 20px' }}>
+          <div className="mood-grid" style={{ padding: '0 20px 3px' }}>
             {MOOD_DATA.map((m) => (
               <div
                 key={m.mood}

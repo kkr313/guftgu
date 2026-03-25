@@ -22,7 +22,7 @@ export default function RegionModal({ open, selected, onSelect, onClose }: Regio
           <div className="modal-title">{S.modal.regionTitle}</div>
           <button className="modal-close" onClick={onClose}>{S.common.close}</button>
         </div>
-        <div style={{ padding: '0 20px 20px' }}>
+        <div style={{ padding: '0 20px 4px' }}>
           <div className="region-orbit-wrap">
             <div className="region-orbit">
               {/* India center */}

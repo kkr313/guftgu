@@ -14,6 +14,7 @@ import {
   remove,
   onValue,
   onChildAdded,
+  onChildRemoved,
   off,
   push,
   onDisconnect,
@@ -136,7 +137,7 @@ export async function registerUser(
 }
 
 /**
- * Update user's online status
+ * Update user's online status and set up disconnect handler
  */
 export async function setOnlineStatus(
   db: Database,
@@ -145,8 +146,16 @@ export async function setOnlineStatus(
 ): Promise<void> {
   const presenceRef = ref(db, `users/${phone}/online`);
   const lastSeenRef = ref(db, `users/${phone}/lastSeen`);
-  await set(presenceRef, online);
-  if (!online) {
+  
+  if (online) {
+    // Set online and set up disconnect handlers
+    await set(presenceRef, true);
+    // Re-register disconnect handlers in case they were lost
+    onDisconnect(presenceRef).set(false);
+    onDisconnect(lastSeenRef).set(serverTimestamp());
+  } else {
+    // Set offline and update last seen
+    await set(presenceRef, false);
     await set(lastSeenRef, serverTimestamp());
   }
 }
@@ -573,6 +582,7 @@ export function listenFriendAccepted(
 
 /**
  * Block a user — write to Firebase for cross-device sync.
+ * Also ends any active calls with that user.
  */
 export async function blockUserFirebase(
   db: Database,
@@ -598,6 +608,14 @@ export async function blockUserFirebase(
     blockedAt: Date.now(),
   });
   saveBlocked(filtered);
+  
+  // End any active/pending calls with this user
+  await remove(ref(db, `calls/${myPhone}/incoming/${targetPhone}`));
+  await remove(ref(db, `calls/${myPhone}/outgoing/${targetPhone}`));
+  await remove(ref(db, `calls/${targetPhone}/incoming/${myPhone}`));
+  await remove(ref(db, `calls/${targetPhone}/outgoing/${myPhone}`));
+  
+  console.log('[blockUserFirebase] Blocked:', targetPhone, 'and cleaned up calls');
 }
 
 /**
@@ -608,9 +626,14 @@ export async function unblockUserFirebase(
   myPhone: string,
   targetPhone: string
 ): Promise<void> {
+  console.log('[unblockUserFirebase] Unblocking:', targetPhone, 'by:', myPhone);
+  console.log('[unblockUserFirebase] Before - blocked list:', getBlocked());
+  
   await remove(ref(db, `blocked/${myPhone}/${targetPhone}`));
   const filtered = getBlocked().filter((e) => e.phone !== targetPhone);
   saveBlocked(filtered);
+  
+  console.log('[unblockUserFirebase] After - blocked list:', getBlocked());
 }
 
 /**
@@ -783,31 +806,44 @@ export async function deleteUserFromFirebase(
 export interface UserCheckResult {
   exists: boolean;
   online: boolean;
+  blockedByTarget: boolean; // Target user has blocked me
   user: PalInfo | null;
 }
 
 /**
  * Check if a user exists in Firebase and if they are online.
+ * Also checks if target has blocked the caller.
  * Used for direct calling feature.
  */
 export async function checkUserForCall(
   db: Database,
-  phone: string
+  targetPhone: string,
+  myPhone: string
 ): Promise<UserCheckResult> {
   try {
-    const userRef = ref(db, `users/${phone}`);
+    console.log('[checkUserForCall] Target:', targetPhone, 'My:', myPhone);
+    
+    const userRef = ref(db, `users/${targetPhone}`);
     const snap = await get(userRef);
 
     if (!snap.exists()) {
-      return { exists: false, online: false, user: null };
+      console.log('[checkUserForCall] User not found in Firebase');
+      return { exists: false, online: false, blockedByTarget: false, user: null };
     }
+
+    // Check if target has blocked me (target's block list, my phone)
+    const blockRef = ref(db, `blocked/${targetPhone}/${myPhone}`);
+    const blockSnap = await get(blockRef);
+    const blockedByTarget = blockSnap.exists();
+    console.log('[checkUserForCall] Block check path:', `blocked/${targetPhone}/${myPhone}`, 'Blocked:', blockedByTarget);
 
     const data = snap.val();
     return {
       exists: true,
       online: data.online === true,
+      blockedByTarget,
       user: {
-        phone,
+        phone: targetPhone,
         name: data.nickname || 'Anonymous',
         avatar: data.avatar || 'cat',
         mood: data.mood || '',
@@ -818,6 +854,552 @@ export async function checkUserForCall(
     };
   } catch (error) {
     console.error('[Firebase] Error checking user:', error);
-    return { exists: false, online: false, user: null };
+    return { exists: false, online: false, blockedByTarget: false, user: null };
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FRIENDSHIP — Check and manage friend relationships
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Check if two users are friends.
+ * Friendship is stored in both users' friends lists.
+ */
+export async function checkIfFriends(
+  db: Database,
+  myPhone: string,
+  targetPhone: string
+): Promise<boolean> {
+  try {
+    // Check if target is in my friends list
+    const friendRef = ref(db, `friends/${myPhone}/${targetPhone}`);
+    const snap = await get(friendRef);
+    return snap.exists();
+  } catch (error) {
+    console.error('[Firebase] Error checking friendship:', error);
+    return false;
+  }
+}
+
+/**
+ * Check if there's a pending friend request between two users.
+ * Returns: 'none' | 'sent' (I sent to them) | 'received' (they sent to me)
+ */
+export async function checkPendingRequest(
+  db: Database,
+  myPhone: string,
+  targetPhone: string
+): Promise<'none' | 'sent' | 'received'> {
+  try {
+    // Check if I sent a request to them
+    const sentRef = ref(db, `friendRequests/${targetPhone}/${myPhone}`);
+    const sentSnap = await get(sentRef);
+    if (sentSnap.exists()) return 'sent';
+
+    // Check if they sent a request to me
+    const receivedRef = ref(db, `friendRequests/${myPhone}/${targetPhone}`);
+    const receivedSnap = await get(receivedRef);
+    if (receivedSnap.exists()) return 'received';
+
+    return 'none';
+  } catch (error) {
+    console.error('[Firebase] Error checking pending request:', error);
+    return 'none';
+  }
+}
+
+/**
+ * Add user to friends list (mutual - both sides).
+ * Called when a friend request is accepted.
+ */
+export async function addToFriends(
+  db: Database,
+  myPhone: string,
+  myUser: UserData,
+  targetPhone: string,
+  targetName: string,
+  targetAvatar: string,
+  targetMood: string,
+  targetMoodEmoji: string
+): Promise<void> {
+  const now = Date.now();
+  
+  // Add target to my friends
+  await set(ref(db, `friends/${myPhone}/${targetPhone}`), {
+    name: targetName,
+    avatar: targetAvatar,
+    mood: targetMood,
+    moodEmoji: targetMoodEmoji,
+    addedAt: now,
+  });
+
+  // Add me to target's friends
+  await set(ref(db, `friends/${targetPhone}/${myPhone}`), {
+    name: myUser.nickname || 'Anonymous',
+    avatar: myUser.avatar || 'cat',
+    mood: myUser.mood || '',
+    moodEmoji: myUser.moodEmoji || '',
+    addedAt: now,
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REAL-TIME CHAT — Messages between friends
+// ══════════════════════════════════════════════════════════════════════════════
+
+export interface ChatMessage {
+  id: string;
+  from: string;
+  text: string;
+  timestamp: number;
+}
+
+/**
+ * Generate a consistent chat room ID for two users.
+ * Always uses sorted phone numbers so both users get the same room.
+ */
+export function getChatRoomId(phone1: string, phone2: string): string {
+  const sorted = [phone1, phone2].sort();
+  return `chat_${sorted[0]}_${sorted[1]}`;
+}
+
+/**
+ * Send a chat message to a friend.
+ * Returns false if the target is blocked.
+ */
+export async function sendChatMessage(
+  db: Database,
+  myPhone: string,
+  targetPhone: string,
+  text: string
+): Promise<boolean> {
+  // Don't allow chatting with blocked users
+  if (isBlocked(targetPhone)) {
+    console.log('[sendChatMessage] Blocked - cannot send to:', targetPhone);
+    return false;
+  }
+  
+  const roomId = getChatRoomId(myPhone, targetPhone);
+  const messageRef = push(ref(db, `chats/${roomId}/messages`));
+  await set(messageRef, {
+    from: myPhone,
+    text,
+    timestamp: Date.now(),
+  });
+  return true;
+}
+
+/**
+ * Listen for new chat messages in a conversation.
+ * Filters out messages from blocked users.
+ * Returns cleanup function.
+ */
+export function listenChatMessages(
+  db: Database,
+  myPhone: string,
+  targetPhone: string,
+  onMessage: (message: ChatMessage) => void
+): () => void {
+  const roomId = getChatRoomId(myPhone, targetPhone);
+  const messagesRef = ref(db, `chats/${roomId}/messages`);
+  let cleaned = false;
+
+  const listener = onChildAdded(messagesRef, (snap) => {
+    if (cleaned || !snap.exists()) return;
+    const msg = snap.val();
+    
+    // Don't show messages from blocked users
+    if (msg.from !== myPhone && isBlocked(msg.from)) {
+      return;
+    }
+    
+    onMessage({
+      id: snap.key || Date.now().toString(),
+      from: msg.from,
+      text: msg.text,
+      timestamp: msg.timestamp,
+    });
+  });
+
+  return () => {
+    cleaned = true;
+    off(messagesRef, 'child_added', listener);
+  };
+}
+
+/**
+ * Load chat history for a conversation.
+ */
+export async function loadChatHistory(
+  db: Database,
+  myPhone: string,
+  targetPhone: string,
+  limit: number = 50
+): Promise<ChatMessage[]> {
+  const roomId = getChatRoomId(myPhone, targetPhone);
+  const messagesRef = ref(db, `chats/${roomId}/messages`);
+  
+  try {
+    const snap = await get(messagesRef);
+    if (!snap.exists()) return [];
+
+    const messages: ChatMessage[] = [];
+    snap.forEach((child) => {
+      const msg = child.val();
+      messages.push({
+        id: child.key || Date.now().toString(),
+        from: msg.from,
+        text: msg.text,
+        timestamp: msg.timestamp,
+      });
+    });
+
+    // Sort by timestamp and return last N messages
+    return messages
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .slice(-limit);
+  } catch (error) {
+    console.error('[Firebase] Error loading chat history:', error);
+    return [];
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UNIQUE GUFTGU NUMBER GENERATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Generate a random 7-digit Guftgu number.
+ */
+function generateRandomNumber(): string {
+  // Generate 7-digit number (1000000 to 9999999)
+  const num = Math.floor(1000000 + Math.random() * 9000000);
+  return num.toString();
+}
+
+/**
+ * Check if a Guftgu number is already taken in Firebase.
+ */
+export async function isNumberTaken(
+  db: Database,
+  phone: string
+): Promise<boolean> {
+  try {
+    const userRef = ref(db, `users/${phone}`);
+    const snap = await get(userRef);
+    return snap.exists();
+  } catch (error) {
+    console.error('[Firebase] Error checking number:', error);
+    // On error, assume taken for safety
+    return true;
+  }
+}
+
+/**
+ * Generate a unique Guftgu number that doesn't exist in Firebase.
+ * Tries up to maxAttempts times before falling back to timestamp-based.
+ */
+export async function generateUniqueGuftguNumber(
+  db: Database,
+  maxAttempts: number = 10
+): Promise<string> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const candidate = generateRandomNumber();
+    const taken = await isNumberTaken(db, candidate);
+    
+    if (!taken) {
+      console.log(`[Firebase] Generated unique number on attempt ${i + 1}:`, candidate);
+      return candidate;
+    }
+    
+    console.log(`[Firebase] Number ${candidate} already taken, trying again...`);
+  }
+  
+  // Fallback: use timestamp + random to virtually guarantee uniqueness
+  const ts = Date.now().toString().slice(-5);
+  const rand = Math.floor(10 + Math.random() * 90);
+  const fallback = ts + rand.toString();
+  console.log('[Firebase] Using fallback number:', fallback);
+  return fallback;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DIRECT CALL SIGNALING
+// ══════════════════════════════════════════════════════════════════════════════
+
+export interface IncomingCall {
+  from: string;
+  name: string;
+  avatar: string;
+  mood: string;
+  moodEmoji: string;
+  timestamp: number;
+  status: 'ringing' | 'accepted' | 'declined' | 'cancelled' | 'ended';
+}
+
+export interface CallSession {
+  caller: string;
+  callee: string;
+  callerName: string;
+  calleeName: string;
+  callerAvatar: string;
+  calleeAvatar: string;
+  status: 'ringing' | 'accepted' | 'declined' | 'cancelled' | 'ended';
+  startedAt: number;
+  connectedAt?: number;
+  endedAt?: number;
+}
+
+/**
+ * Initiate a call to another user.
+ * Creates an entry in calls/{targetPhone}/incoming/{myPhone}
+ */
+export async function initiateCall(
+  db: Database,
+  myPhone: string,
+  myUser: UserData,
+  targetPhone: string
+): Promise<string> {
+  const callId = `call_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+  
+  const callData: IncomingCall = {
+    from: myPhone,
+    name: myUser.nickname || 'Anonymous',
+    avatar: myUser.avatar || 'cat',
+    mood: myUser.mood || '',
+    moodEmoji: myUser.moodEmoji || '',
+    timestamp: Date.now(),
+    status: 'ringing',
+  };
+
+  console.log('[initiateCall] Sending call data:', callData);
+
+  // Write to target's incoming calls
+  await set(ref(db, `calls/${targetPhone}/incoming/${myPhone}`), callData);
+  
+  // Set up auto-cleanup on disconnect
+  onDisconnect(ref(db, `calls/${targetPhone}/incoming/${myPhone}`)).remove();
+
+  console.log('[Firebase] Call initiated to:', targetPhone);
+  return callId;
+}
+
+/**
+ * Listen for incoming calls.
+ * Returns cleanup function.
+ */
+export function listenIncomingCalls(
+  db: Database,
+  myPhone: string,
+  onIncomingCall: (call: IncomingCall & { callerPhone: string }) => void,
+  onCallRemoved: (callerPhone: string) => void
+): () => void {
+  const incomingRef = ref(db, `calls/${myPhone}/incoming`);
+  let cleaned = false;
+
+  console.log('[listenIncomingCalls] Setting up listener for:', myPhone);
+
+  // Listen for new incoming calls
+  const addedListener = onChildAdded(incomingRef, (snap) => {
+    if (cleaned || !snap.exists()) return;
+    const callerPhone = snap.key!;
+    const callData = snap.val() as IncomingCall;
+    
+    console.log('[listenIncomingCalls] Incoming call from:', callerPhone, 'status:', callData.status);
+    
+    // Only notify for ringing calls
+    if (callData.status === 'ringing') {
+      // Check if caller is blocked
+      const blocked = isBlocked(callerPhone);
+      console.log('[listenIncomingCalls] Is caller blocked?', blocked, 'Blocked list:', getBlocked());
+      
+      if (blocked) {
+        // Silently decline blocked callers
+        console.log('[listenIncomingCalls] Declining blocked caller');
+        remove(snap.ref);
+        return;
+      }
+      onIncomingCall({ ...callData, callerPhone });
+    }
+  });
+
+  // Listen for call removals (cancelled by caller, etc)
+  const removedListener = onChildRemoved(incomingRef, (snap) => {
+    if (cleaned) return;
+    const callerPhone = snap.key!;
+    console.log('[listenIncomingCalls] Call removed from:', callerPhone);
+    onCallRemoved(callerPhone);
+  });
+
+  return () => {
+    cleaned = true;
+    off(incomingRef, 'child_added', addedListener);
+    off(incomingRef, 'child_removed', removedListener);
+  };
+}
+
+/**
+ * Accept an incoming call.
+ * Returns the connected timestamp for synchronized timers.
+ */
+export async function acceptCall(
+  db: Database,
+  myPhone: string,
+  callerPhone: string
+): Promise<number> {
+  const connectedAt = Date.now();
+  
+  // Update call status with connected timestamp
+  await set(ref(db, `calls/${myPhone}/incoming/${callerPhone}/status`), 'accepted');
+  await set(ref(db, `calls/${myPhone}/incoming/${callerPhone}/connectedAt`), connectedAt);
+  
+  // Notify caller that call was accepted with the same timestamp
+  await set(ref(db, `calls/${callerPhone}/outgoing/${myPhone}`), {
+    status: 'accepted',
+    connectedAt: connectedAt,
+    timestamp: connectedAt,
+  });
+  
+  console.log('[Firebase] Call accepted from:', callerPhone, 'at:', connectedAt);
+  return connectedAt;
+}
+
+/**
+ * Decline an incoming call.
+ */
+export async function declineCall(
+  db: Database,
+  myPhone: string,
+  callerPhone: string
+): Promise<void> {
+  // Notify caller that call was declined
+  await set(ref(db, `calls/${callerPhone}/outgoing/${myPhone}`), {
+    status: 'declined',
+    timestamp: Date.now(),
+  });
+  
+  // Remove incoming call
+  await remove(ref(db, `calls/${myPhone}/incoming/${callerPhone}`));
+  
+  console.log('[Firebase] Call declined from:', callerPhone);
+}
+
+/**
+ * Cancel an outgoing call (before answered).
+ */
+export async function cancelCall(
+  db: Database,
+  myPhone: string,
+  targetPhone: string
+): Promise<void> {
+  // Remove the incoming call notification
+  await remove(ref(db, `calls/${targetPhone}/incoming/${myPhone}`));
+  
+  // Clean up any outgoing status
+  await remove(ref(db, `calls/${myPhone}/outgoing/${targetPhone}`));
+  
+  console.log('[Firebase] Call cancelled to:', targetPhone);
+}
+
+/**
+ * End an active call.
+ */
+export async function endCall(
+  db: Database,
+  myPhone: string,
+  otherPhone: string
+): Promise<void> {
+  // Clean up both sides
+  await remove(ref(db, `calls/${myPhone}/incoming/${otherPhone}`));
+  await remove(ref(db, `calls/${otherPhone}/incoming/${myPhone}`));
+  await remove(ref(db, `calls/${myPhone}/outgoing/${otherPhone}`));
+  await remove(ref(db, `calls/${otherPhone}/outgoing/${myPhone}`));
+  
+  console.log('[Firebase] Call ended with:', otherPhone);
+}
+
+/**
+ * Listen for outgoing call status changes (accepted/declined).
+ * When accepted, also returns the connectedAt timestamp for synchronized timers.
+ */
+export function listenOutgoingCallStatus(
+  db: Database,
+  myPhone: string,
+  targetPhone: string,
+  onStatusChange: (status: 'accepted' | 'declined' | 'cancelled' | 'ended', connectedAt?: number) => void
+): () => void {
+  const outgoingRef = ref(db, `calls/${myPhone}/outgoing/${targetPhone}`);
+  let cleaned = false;
+  let hasSeenData = false;
+
+  const listener = onValue(outgoingRef, (snap) => {
+    if (cleaned) return;
+    
+    if (!snap.exists()) {
+      // If we previously had data and now it's gone, the call was ended
+      if (hasSeenData) {
+        console.log('[listenOutgoingCallStatus] Call data removed - call ended');
+        onStatusChange('ended');
+      }
+      return;
+    }
+    
+    hasSeenData = true;
+    const data = snap.val();
+    if (data.status) {
+      onStatusChange(data.status, data.connectedAt);
+    }
+  });
+
+  return () => {
+    cleaned = true;
+    off(outgoingRef, 'value', listener);
+  };
+}
+
+/**
+ * Listen for incoming call status changes (for the receiver).
+ * Detects when the caller ends the call.
+ */
+export function listenIncomingCallStatus(
+  db: Database,
+  myPhone: string,
+  callerPhone: string,
+  onCallEnded: () => void
+): () => void {
+  const incomingRef = ref(db, `calls/${myPhone}/incoming/${callerPhone}`);
+  let cleaned = false;
+  let hasSeenData = false;
+
+  const listener = onValue(incomingRef, (snap) => {
+    if (cleaned) return;
+    
+    if (snap.exists()) {
+      hasSeenData = true;
+    } else if (hasSeenData) {
+      // Data was removed - caller ended the call
+      console.log('[listenIncomingCallStatus] Call data removed - call ended by caller');
+      onCallEnded();
+    }
+  });
+
+  return () => {
+    cleaned = true;
+    off(incomingRef, 'value', listener);
+  };
+}
+
+/**
+ * Clean up call data when call ends.
+ */
+export async function cleanupCallData(
+  db: Database,
+  myPhone: string,
+  otherPhone: string
+): Promise<void> {
+  await remove(ref(db, `calls/${myPhone}/incoming/${otherPhone}`));
+  await remove(ref(db, `calls/${myPhone}/outgoing/${otherPhone}`));
+  await remove(ref(db, `calls/${otherPhone}/incoming/${myPhone}`));
+  await remove(ref(db, `calls/${otherPhone}/outgoing/${myPhone}`));
 }

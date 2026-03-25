@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import Avatar from '@/components/Avatar';
-import { getBlocked, saveBlocked, BlockedRecord } from '@/lib/storage';
+import { getBlocked, BlockedRecord } from '@/lib/storage';
+import { unblockUserFirebase } from '@/lib/firebase-service';
 import { timeAgo } from '@/lib/data';
 import { IconChevronLeft } from '@/lib/icons';
 import { S } from '@/lib/strings';
 
 export default function BlockedScreen() {
-  const { state, goBack, showToast } = useApp();
+  const { state, goBack, showToast, dbRef } = useApp();
   const isActive = state.screen === 'screen-blocked';
   const [blocked, setBlocked] = useState<BlockedRecord[]>([]);
 
@@ -15,11 +16,25 @@ export default function BlockedScreen() {
     if (isActive) setBlocked(getBlocked());
   }, [isActive]);
 
-  const unblock = (phone: string) => {
+  const unblock = async (phone: string) => {
+    // Update UI immediately
     const updated = blocked.filter((b) => b.phone !== phone);
     setBlocked(updated);
-    saveBlocked(updated);
-    showToast(S.blocked.unblockToast);
+    
+    // Remove from Firebase AND localStorage
+    if (dbRef?.current && state.guftguPhone) {
+      try {
+        await unblockUserFirebase(dbRef.current, state.guftguPhone, phone);
+        showToast(S.blocked.unblockToast);
+      } catch (error) {
+        console.error('Failed to unblock:', error);
+        showToast('❌ Failed to unblock');
+        // Revert UI on error
+        setBlocked(getBlocked());
+      }
+    } else {
+      showToast('❌ Connection error');
+    }
   };
 
   return (
@@ -53,7 +68,8 @@ export default function BlockedScreen() {
                 <Avatar avatarKey={b.avatar || 'cat'} size={46} />
               </div>
               <div className="blocked-info">
-                <div className="blocked-name">{b.name}</div>
+                <div className="blocked-name">{b.nickname || b.name}</div>
+                {b.nickname && <div className="blocked-original-name">aka {b.name}</div>}
                 <div className="blocked-phone">#{b.phone}</div>
                 <div className="blocked-when">{b.blockedAt ? timeAgo(b.blockedAt) : 'Unknown'}</div>
               </div>

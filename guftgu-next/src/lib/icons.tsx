@@ -133,3 +133,48 @@ export const IconSend: React.FC<IconProps> = ({
     <polygon points="22 2 15 22 11 13 2 9 22 2" />
   </svg>
 );
+
+/** Block / ban icon — used for blocking users */
+export const IconBlock: React.FC<IconProps> = ({
+  size = 20, color = '#fff', strokeWidth = 2, className, style,
+}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} className={className} style={style}>
+    <circle cx="12" cy="12" r="10" />
+    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+  </svg>
+);
+
+/** Clock / history icon — used in BottomNav for History tab */
+export const IconClock: React.FC<IconProps> = ({
+  size = 22, color = 'currentColor', strokeWidth = 2, className, style,
+}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </svg>
+);
+
+/** Chat bubble icon — used in BottomNav for Chats tab */
+export const IconChat: React.FC<IconProps> = ({
+  size = 22, color = 'currentColor', strokeWidth = 2, className, style,
+}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+  </svg>
+);
+
+/** Unfriend icon — filled person silhouette with minus badge (Flaticon style) */
+export const IconUnfriend: React.FC<IconProps> = ({
+  size = 22, color = 'currentColor', className, style,
+}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} style={style}>
+    {/* Filled person head */}
+    <circle cx="9" cy="6" r="4" fill={color} />
+    {/* Filled person body/shoulders */}
+    <path d="M1 20c0-4 3.6-7 8-7s8 3 8 7" fill={color} />
+    {/* Minus badge circle */}
+    <circle cx="19" cy="6" r="4.5" fill="#e53935" />
+    {/* Minus line inside badge */}
+    <rect x="16.5" y="5.25" width="5" height="1.5" rx="0.75" fill="#fff" />
+  </svg>
+);

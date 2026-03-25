@@ -103,6 +103,7 @@ export function callTypeClass(type: string): string {
   if (t === 'missed') return 'missed';
   if (t === 'incoming') return 'incoming';
   if (t === 'blocked') return 'blocked';
+  if (t === 'declined') return 'declined';
   return 'outgoing';
 }
 

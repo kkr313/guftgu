@@ -83,6 +83,7 @@ body {
   /* FIX: flex:1 + min-height:0 lets the app shrink to make room for the nav */
   flex: 1;
   min-height: 0;
+  height: 100%; /* Explicit height for absolute children */
   position: relative;
   overflow: hidden;
   box-shadow: 0 0 100px rgba(0,0,0,0.8);
@@ -101,24 +102,30 @@ body::before {
 
 /* ── Screen system ── */
 .screen {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(calc(-50% + 100vw));
+  width: 100%;
+  max-width: 420px;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   opacity: 0;
-  transform: translateX(100%);
   transition: all 0.38s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
+  background: var(--bg);
+  /* Note: No z-index here - let modals with position:fixed escape to root stacking context */
 }
 .screen.active {
   opacity: 1;
-  transform: translateX(0);
+  transform: translateX(-50%);
   pointer-events: all;
 }
 .screen.exit {
   opacity: 0;
-  transform: translateX(-60px);
+  transform: translateX(calc(-50% - 60px));
 }
 
 /* ── Scrollable content ── */
@@ -131,6 +138,37 @@ body::before {
   padding-bottom: 16px;
 }
 .scroll-body::-webkit-scrollbar { display: none; }
+
+/* ── Fixed screen header (sticky top bar) ── */
+.screen-fixed-header {
+  position:absolute;
+  top:0; left:0; right:0;
+  z-index:50;
+  display:flex; align-items:center; gap:12px;
+  padding:48px 20px 12px;
+  background:var(--bg);
+  border-bottom:1px solid var(--border);
+}
+.screen-fixed-title {
+  font-size:20px; font-weight:700;
+}
+
+/* ── Fixed tabs below header (for Chats screen) ── */
+.chats-tabs-fixed {
+  position:absolute;
+  top:85px; left:0; right:0;
+  z-index:49;
+  padding:10px 10px;
+  background:var(--bg);
+  border-bottom:1px solid var(--border);
+  display:flex; gap:0;
+  margin:0; 
+}
+.chats-tabs-fixed .chats-tab-inner {
+  display:flex; gap:0; flex:1;
+  background:var(--bg3); border-radius:12px; padding:3px;
+  border:1px solid var(--border);
+}
 
 /* ── Screens that use the bottom nav need extra padding ── */
 #screen-home .scroll-body,
@@ -339,7 +377,7 @@ input::placeholder, textarea::placeholder {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  margin-bottom: 32px;
+  margin-bottom: 0px !important;
 }
 .mood-card {
   background: var(--bg3);
@@ -690,7 +728,7 @@ input::placeholder, textarea::placeholder {
 
 /* ── Modal Overlay ── */
 .modal-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 500;
   background: rgba(0,0,0,0.7);
@@ -712,9 +750,10 @@ input::placeholder, textarea::placeholder {
   background: var(--bg2);
   border-top-left-radius: 28px;
   border-top-right-radius: 28px;
-  padding: 20px 24px 40px;
+  padding: 20px 24px 24px;
   transform: translateY(100%);
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: calc(var(--nav-h) + var(--safe-bottom));
 }
 .modal-overlay.show .modal-sheet {
   transform: translateY(0);
@@ -789,6 +828,11 @@ input::placeholder, textarea::placeholder {
 }
 
 /* ── Online Indicator ── */
+.online-count-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 20px 0;
+}
 .online-dot {
   width: 6px; height: 6px;
   border-radius: 50%;
@@ -1252,8 +1296,47 @@ input::placeholder, textarea::placeholder {
   }
   .friend-avatar svg { width:100%; height:100%; }
   .friend-info { flex:1; min-width:0; }
-  .friend-name { font-size:15px; font-weight:600; margin-bottom:2px; }
+  .friend-name {
+    font-size:15px; font-weight:600; margin-bottom:2px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .friend-original-name {
+    font-size:11px; color:var(--text3); opacity:0.6;
+    font-style:italic; margin-bottom:2px;
+  }
+  .friend-rename-btn {
+    background:none; border:none; cursor:pointer;
+    font-size:12px; padding:0; opacity:0.4;
+    transition:opacity 0.15s;
+  }
+  .friend-rename-btn:hover { opacity:0.8; }
+  .friend-rename-row {
+    display:flex; align-items:center; gap:6px;
+  }
+  .friend-rename-input {
+    flex:1; background:var(--bg3); border:1px solid var(--accent);
+    border-radius:8px; padding:6px 10px;
+    font-family:'Sora',sans-serif; font-size:14px; font-weight:600;
+    color:var(--text1); outline:none;
+    min-width:0;
+  }
+  .friend-rename-input::placeholder { color:var(--text3); opacity:0.5; }
+  .friend-rename-save,
+  .friend-rename-cancel {
+    width:28px; height:28px; border-radius:8px; border:none;
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; cursor:pointer; transition:all 0.15s;
+  }
+  .friend-rename-save {
+    background:rgba(78,205,196,0.15); color:var(--accent2);
+  }
+  .friend-rename-save:hover { background:rgba(78,205,196,0.25); }
+  .friend-rename-cancel {
+    background:var(--bg3); color:var(--text3);
+  }
+  .friend-rename-cancel:hover { background:rgba(255,255,255,0.08); }
   .friend-mood { font-size:12px; color:var(--text3); }
+  .friend-timeline { font-size:10px; color:var(--text3); opacity:0.7; margin-top:3px; }
   .friend-meta {
     text-align:right; flex-shrink:0;
   }
@@ -1261,6 +1344,50 @@ input::placeholder, textarea::placeholder {
   .friend-online {
     width:8px; height:8px; border-radius:50%;
     background:#4ECDC4; margin-left:auto;
+  }
+  
+  /* Friend action buttons */
+  .friend-actions {
+    display:flex; gap:8px; flex-shrink:0;
+  }
+  .friend-action-btn {
+    width:36px; height:36px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; cursor:pointer; border:none;
+    transition:all 0.15s;
+  }
+  .friend-action-btn.chat {
+    background:rgba(78,205,196,0.12);
+    border:1px solid rgba(78,205,196,0.25);
+  }
+  .friend-action-btn.chat:hover {
+    background:rgba(78,205,196,0.2);
+  }
+  .friend-action-btn.call {
+    background:rgba(100,140,255,0.1);
+    border:1px solid rgba(100,140,255,0.2);
+  }
+  .friend-action-btn.call:hover {
+    background:rgba(100,140,255,0.2);
+  }
+  .friend-action-btn.unfriend {
+    background:rgba(255,152,0,0.08);
+    border:1px solid rgba(255,152,0,0.2);
+    color:#9e9e9e;
+  }
+  .friend-action-btn.unfriend:hover {
+    background:rgba(255,152,0,0.18);
+    color:#757575;
+  }
+  .friend-action-btn.block {
+    background:rgba(156,39,176,0.08);
+    border:1px solid rgba(156,39,176,0.18);
+  }
+  .friend-action-btn.block:hover {
+    background:rgba(156,39,176,0.2);
+  }
+  .friend-action-btn:active {
+    transform:scale(0.92);
   }
 
   /* Pending request item */
@@ -1279,6 +1406,7 @@ input::placeholder, textarea::placeholder {
   .pending-info { flex:1; min-width:0; }
   .pending-name { font-size:14px; font-weight:600; margin-bottom:2px; }
   .pending-type { font-size:11px; color:var(--text3); }
+  .pending-timeline { font-size:10px; color:var(--text3); opacity:0.7; margin-top:3px; }
   .pending-actions { display:flex; gap:8px; flex-shrink:0; }
   .pending-btn {
     padding:6px 14px; border-radius:8px; border:none;
@@ -1296,6 +1424,14 @@ input::placeholder, textarea::placeholder {
   .pending-btn.cancel {
     background:var(--bg3); color:var(--text3);
     border:1px solid var(--border);
+  }
+  .pending-btn.block {
+    background:rgba(244,67,54,0.08); color:#f44336;
+    border:1px solid rgba(244,67,54,0.15);
+    padding:6px 10px; font-size:14px;
+  }
+  .pending-btn.block:hover {
+    background:rgba(244,67,54,0.18);
   }
 
   /* Empty states */
@@ -1321,6 +1457,29 @@ input::placeholder, textarea::placeholder {
   .home-greeting-wrap { display: flex; flex-direction: column; }
   .home-greeting { font-size:13px; color:var(--text2); font-weight:500; margin-bottom:2px; }
   .home-name { font-size:22px; font-weight:700; }
+  .home-topbar-actions {
+    display:flex; align-items:center; gap:12px;
+  }
+  .home-notif-btn {
+    width:38px; height:38px; border-radius:12px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--text2);
+    transition:all 0.25s;
+    flex-shrink:0;
+    position:relative;
+  }
+  .home-notif-btn:hover {
+    color:var(--accent);
+    background:rgba(78,205,196,0.1);
+    border-color:rgba(78,205,196,0.3);
+    box-shadow:0 0 12px rgba(78,205,196,0.25);
+  }
+  .home-notif-btn:active {
+    transform:scale(0.92);
+    background:rgba(255,255,255,0.1);
+  }
   .home-avatar-btn {
     width:42px; height:42px; border-radius:13px;
     background:linear-gradient(135deg,#4ECDC4,#26A69A);
@@ -1529,18 +1688,26 @@ input::placeholder, textarea::placeholder {
     width:44px; height:44px; border-radius:50%;
     background:var(--accent2); border:none; cursor:pointer;
     display:flex; align-items:center; justify-content:center;
-    transition:transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+    transition:transform 0.15s, box-shadow 0.2s, opacity 0.2s, background 0.2s;
     box-shadow:0 2px 8px rgba(38,166,154,0.3);
   }
-  .dial-call-btn:active {
+  .dial-call-btn:active:not(:disabled) {
     transform:scale(0.92);
   }
   .dial-call-btn.dialing {
     opacity:0.7;
     cursor:wait;
   }
-  .dial-call-btn:disabled {
-    pointer-events:none;
+  .dial-call-btn:disabled,
+  .dial-call-btn.disabled {
+    background: var(--bg3);
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .dial-call-btn.disabled svg {
+    color: var(--text3) !important;
   }
   .dial-spinner {
     animation:dialSpin 1s linear infinite;
@@ -2088,6 +2255,9 @@ input::placeholder, textarea::placeholder {
     background:rgba(10,11,16,0.95); backdrop-filter:blur(20px);
     flex-shrink:0;
   }
+  .chat-input-bar.disabled {
+    opacity:0.5;
+  }
   .chat-input {
     flex:1; background:var(--bg3); border:1px solid var(--border);
     border-radius:22px; padding:10px 16px;
@@ -2096,6 +2266,10 @@ input::placeholder, textarea::placeholder {
     transition:border 0.2s;
   }
   .chat-input:focus { border-color:rgba(255,107,107,0.3); }
+  .chat-input:disabled {
+    cursor:not-allowed;
+    background:var(--bg2);
+  }
   .chat-send {
     width:42px; height:42px; border-radius:50%;
     background:linear-gradient(135deg,#FF6B6B,#FF4757);
@@ -2105,11 +2279,35 @@ input::placeholder, textarea::placeholder {
     transition:all 0.2s;
   }
   .chat-send:active { transform:scale(0.9); }
+  .chat-send:disabled {
+    opacity:0.4;
+    cursor:not-allowed;
+  }
   .chat-attach {
     width:38px; height:38px; border-radius:50%;
     background:var(--bg3); border:1px solid var(--border);
     display:flex; align-items:center; justify-content:center;
     cursor:pointer; flex-shrink:0;
+  }
+  
+  /* Chat not-friends warning */
+  .chat-not-friends {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:32px 24px; text-align:center;
+    background:rgba(255,107,107,0.06); border:1px dashed rgba(255,107,107,0.2);
+    border-radius:16px; margin:16px;
+  }
+  .chat-not-friends-icon {
+    font-size:40px; margin-bottom:12px; opacity:0.7;
+  }
+  .chat-not-friends-text {
+    font-size:13px; color:var(--text3); line-height:1.6;
+  }
+  
+  /* Chat loading */
+  .chat-loading {
+    display:flex; align-items:center; justify-content:center;
+    padding:40px; color:var(--text3); font-size:14px;
   }
 
   /* G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��
@@ -2146,7 +2344,7 @@ input::placeholder, textarea::placeholder {
     box-shadow:0 0 18px rgba(78,205,196,0.4), 0 0 8px rgba(78,205,196,0.2);
     border-color:rgba(78,205,196,0.6);
   }
-  .call-status { font-size:13px; color:var(--accent2); font-weight:600; letter-spacing:0.08em; margin-bottom:40px; }
+  .call-status { font-size:13px; color:var(--accent2); font-weight:600; letter-spacing:0.08em; margin-top:60px; margin-bottom:40px; }
   .call-avatar-ring {
     position:relative; width:140px; height:140px; margin-bottom:32px;
   }
@@ -2445,9 +2643,8 @@ input::placeholder, textarea::placeholder {
   }
   .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
-  /* G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��
-     INCOMING CALL OVERLAY
-  G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G��G�� */
+  /* OLD INCOMING CALL OVERLAY - DEPRECATED, see new styles below */
+  /*
   .incoming-call-overlay {
     position:fixed; inset:0; z-index:9000;
     background:rgba(10,11,16,0.97);
@@ -2457,6 +2654,7 @@ input::placeholder, textarea::placeholder {
     transition:opacity 0.4s;
   }
   .incoming-call-overlay.show { opacity:1; pointer-events:all; }
+  */
   .inc-label { font-size:13px; letter-spacing:0.12em; color:var(--accent2); font-weight:600; text-transform:uppercase; }
   .inc-avatar { font-size:72px; filter:drop-shadow(0 0 30px rgba(78,205,196,0.4)); animation:callRing 1.8s ease-out infinite; }
   .inc-name { font-size:28px; font-weight:700; font-family:'Cormorant Garamond',serif; }
@@ -3157,8 +3355,7 @@ input::placeholder, textarea::placeholder {
    OVERLAY BASE — position:absolute inside #app
    ───────────────────────────────────────────────────────────────── */
 .modal-overlay,
-.fb-setup-modal,
-.incoming-call-overlay {
+.fb-setup-modal {
   position: absolute;          /* inside #app, clipped by overflow:hidden */
   inset: 0;
   display: flex;
@@ -3173,11 +3370,10 @@ input::placeholder, textarea::placeholder {
   z-index: 500;
 }
 .fb-setup-modal    { z-index: 8900; }
-.incoming-call-overlay { z-index: 9000; align-items: center; flex-direction: column; gap: 14px; padding: 40px 24px calc(40px + var(--safe-bottom)); }
+/* incoming-call-overlay styles moved to end of file */
 
 .modal-overlay.show,
-.fb-setup-modal.show,
-.incoming-call-overlay.show {
+.fb-setup-modal.show {
   opacity: 1;
   pointer-events: all;
 }
@@ -3827,6 +4023,18 @@ input::placeholder, textarea::placeholder {
   border-color: rgba(78,205,196,0.28);
   pointer-events: none;
 }
+.call-add-friend.received {
+  background: rgba(78,205,196,0.15);
+  border-color: rgba(78,205,196,0.5);
+  animation: pulse-accept 1.5s ease-in-out infinite;
+}
+.call-add-friend.received .call-add-friend-text {
+  color: var(--accent2);
+}
+@keyframes pulse-accept {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(78,205,196,0.4); }
+  50% { transform: scale(1.02); box-shadow: 0 0 0 8px rgba(78,205,196,0); }
+}
 .call-add-friend-icon {
   font-size: 16px;
   flex-shrink: 0;
@@ -3839,6 +4047,27 @@ input::placeholder, textarea::placeholder {
   letter-spacing: 0.01em;
 }
 .call-add-friend.sent .call-add-friend-text {
+  color: var(--accent2);
+}
+
+/* ── Friend badge (shown when already friends) ── */
+.call-friend-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 24px;
+  background: rgba(78,205,196,0.12);
+  border: 1.5px solid rgba(78,205,196,0.35);
+  border-radius: 50px;
+  margin-top: 16px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent2);
+  letter-spacing: 0.01em;
+}
+.call-friend-badge span {
   color: var(--accent2);
 }
 
@@ -3969,6 +4198,14 @@ input::placeholder, textarea::placeholder {
 .call-switch-chat:active {
   background: rgba(255,255,255,0.08);
   transform: scale(0.97);
+}
+.call-switch-chat.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(255,255,255,0.02);
+}
+.call-switch-chat.disabled:active {
+  transform: none;
 }
 /* ─────────────────────────────────────────────────────────────────
    Friend block button (Req 5)
@@ -4151,6 +4388,13 @@ input::placeholder, textarea::placeholder {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.blocked-original-name {
+  font-size: 11px;
+  color: var(--text3);
+  opacity: 0.6;
+  font-style: italic;
+  margin-bottom: 2px;
+}
 .blocked-phone {
   font-size: 11px;
   color: var(--text3);
@@ -4250,4 +4494,331 @@ input::placeholder, textarea::placeholder {
   background: rgba(255, 59, 48, 0.1);
   color: #FF3B30;
 }
+
+/* ── Call history: Declined type badge ── */
+.hist-type.declined {
+  background: rgba(255, 149, 0, 0.1);
+  color: #FF9500;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INCOMING CALL MODAL
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.incoming-call-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: linear-gradient(180deg, rgba(10, 11, 16, 0.95) 0%, rgba(13, 15, 24, 0.98) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.incoming-call-modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 32px;
+  text-align: center;
+  width: 100%;
+  max-width: 360px;
+}
+
+/* Avatar container with rings */
+.incoming-avatar-container {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+/* Animated rings - centered on avatar */
+.incoming-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid rgba(78, 205, 196, 0.4);
+  pointer-events: none;
+}
+
+.incoming-ring.ring-1 {
+  width: 110px;
+  height: 110px;
+  animation: incomingRingPulse 2s ease-out infinite;
+  animation-delay: 0s;
+}
+
+.incoming-ring.ring-2 {
+  width: 110px;
+  height: 110px;
+  animation: incomingRingPulse 2s ease-out infinite;
+  animation-delay: 0.5s;
+}
+
+.incoming-ring.ring-3 {
+  width: 110px;
+  height: 110px;
+  animation: incomingRingPulse 2s ease-out infinite;
+  animation-delay: 1s;
+}
+
+@keyframes incomingRingPulse {
+  0% {
+    width: 110px;
+    height: 110px;
+    opacity: 0.8;
+    border-color: rgba(78, 205, 196, 0.6);
+  }
+  100% {
+    width: 200px;
+    height: 200px;
+    opacity: 0;
+    border-color: rgba(78, 205, 196, 0);
+  }
+}
+
+.incoming-call-avatar {
+  position: relative;
+  z-index: 2;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--accent2);
+  box-shadow: 0 0 30px rgba(78, 205, 196, 0.5), 0 0 60px rgba(78, 205, 196, 0.2);
+}
+
+.incoming-call-info {
+  margin-bottom: 40px;
+}
+
+.incoming-call-label {
+  font-size: 13px;
+  color: var(--accent2);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 10px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.incoming-call-name {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.incoming-call-mood {
+  font-size: 15px;
+  color: var(--text3);
+}
+
+.incoming-call-actions {
+  display: flex;
+  gap: 60px;
+  margin-bottom: 32px;
+}
+
+.incoming-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.incoming-btn:active {
+  transform: scale(0.9);
+}
+
+.incoming-btn-icon {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.incoming-btn.decline .incoming-btn-icon {
+  background: linear-gradient(135deg, #FF4757, #FF6B6B);
+  box-shadow: 0 4px 20px rgba(255, 71, 87, 0.5);
+}
+
+.incoming-btn.accept .incoming-btn-icon {
+  background: linear-gradient(135deg, #26A69A, #4ECDC4);
+  box-shadow: 0 4px 20px rgba(78, 205, 196, 0.5);
+  animation: acceptPulse 1.2s ease-in-out infinite;
+}
+
+.incoming-btn svg {
+  color: white;
+}
+
+.incoming-btn span {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text2);
+}
+
+@keyframes acceptPulse {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(78, 205, 196, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 4px 30px rgba(78, 205, 196, 0.7);
+    transform: scale(1.05);
+  }
+}
+
+.incoming-btn.decline span {
+  color: #FF6B6B;
+}
+
+.incoming-btn.accept span {
+  color: var(--accent2);
+}
+
+/* Block caller button */
+.incoming-block-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #FF6B6B;
+  transition: all 0.2s;
+}
+
+.incoming-block-btn:active {
+  transform: scale(0.95);
+  background: rgba(255, 107, 107, 0.15);
+}
+
+/* Call status indicator on CallScreen */
+.call-status.ringing {
+  color: #FFD93D;
+  animation: ringPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes ringPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.call-status.connecting {
+  color: var(--accent2);
+}
+
+/* Calling state - waiting text */
+.call-waiting {
+  font-size: 14px;
+  color: var(--text3);
+  margin-top: 8px;
+  animation: dotPulse 1.5s infinite;
+}
+
+@keyframes dotPulse {
+  0%, 20% { opacity: 0.4; }
+  50% { opacity: 1; }
+  80%, 100% { opacity: 0.4; }
+}
+
+/* Calling avatar ring - more prominent animation */
+.call-avatar-ring.calling .call-ring-anim {
+  border-color: rgba(255, 213, 61, 0.4);
+  animation: callingRing 1.5s ease-out infinite;
+}
+
+.call-avatar-ring.calling .call-ring-anim:nth-child(2) {
+  animation-delay: 0.5s;
+}
+
+.call-avatar-ring.calling .call-ring-anim:nth-child(3) {
+  animation-delay: 1s;
+}
+
+@keyframes callingRing {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+/* Call loading state */
+.call-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  text-align: center;
+}
+
+.call-loading-icon {
+  font-size: 56px;
+  margin-bottom: 20px;
+  animation: callLoadingBounce 1s ease-in-out infinite;
+}
+
+@keyframes callLoadingBounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.call-loading-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.call-loading-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.call-loading-dots span {
+  font-size: 24px;
+  color: var(--accent2);
+  animation: dotBlink 1.4s infinite;
+}
+
+.call-loading-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.call-loading-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes dotBlink {
+  0%, 20% { opacity: 0.2; }
+  40% { opacity: 1; }
+  60%, 100% { opacity: 0.2; }
+}
+
 

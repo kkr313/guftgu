@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import Avatar from '@/components/Avatar';
 import MoodModal from '@/components/MoodModal';
@@ -6,8 +6,9 @@ import LangModal from '@/components/LangModal';
 import { callTypeClass, getGreeting } from '@/lib/data';
 import { useCallHistory } from '@/hooks/useCallHistory';
 import { useOnlineCount } from '@/hooks/useOnlineCount';
-import { checkUserForCall } from '@/lib/firebase-service';
-import { IconPhone } from '@/lib/icons';
+import { checkUserForCall, initiateCall } from '@/lib/firebase-service';
+import { formatRelativeTime, getDisplayName } from '@/lib/storage';
+import { IconPhone, IconBell } from '@/lib/icons';
 import { S } from '@/lib/strings';
 
 export default function HomeScreen() {
@@ -23,7 +24,7 @@ export default function HomeScreen() {
 
   // Hooks — replace duplicated inline logic
   const callHistory = useCallHistory(isActive);
-  const onlineCount = useOnlineCount(isActive, dbRef);
+  const onlineCount = useOnlineCount(isActive, dbRef, state.guftguPhone);
   const greeting = getGreeting();
 
   const handleMoodSelect = (mood: string, emoji: string) => {
@@ -66,24 +67,36 @@ export default function HomeScreen() {
 
     setIsDialing(true);
     try {
-      const result = await checkUserForCall(dbRef.current, targetPhone);
+      console.log('[HomeScreen] Checking user:', targetPhone, 'myPhone:', state.guftguPhone);
+      const result = await checkUserForCall(dbRef.current, targetPhone, state.guftguPhone);
+      console.log('[HomeScreen] Check result:', result);
 
       if (!result.exists) {
+        console.log('[HomeScreen] User not found');
         showToast(S.home.userNotFound);
         setIsDialing(false);
         return;
       }
 
+      // If target has blocked me, show generic "not available" (hide real reason)
+      if (result.blockedByTarget) {
+        console.log('[HomeScreen] Blocked by target');
+        showToast(S.home.userNotAvailable);
+        setIsDialing(false);
+        return;
+      }
+
       if (!result.online) {
+        console.log('[HomeScreen] User offline');
         showToast(S.home.userOffline);
         setIsDialing(false);
         return;
       }
 
-      // User exists and is online — proceed with call
-      showToast(S.home.connectingTo(result.user?.name || 'User'));
+      // User exists and is online — initiate call via Firebase
+      await initiateCall(dbRef.current, state.guftguPhone, state.user, targetPhone);
       
-      // Set the pal and go to call screen
+      // Set the pal info with outgoing call flag
       dispatch({
         type: 'SET_PAL',
         pal: {
@@ -92,11 +105,17 @@ export default function HomeScreen() {
           avatar: result.user?.avatar || 'cat',
           mood: result.user?.mood || '',
           moodEmoji: result.user?.moodEmoji || '',
+          isOutgoingCall: true, // We initiated this call
         },
       });
       
+      showToast(`📞 Calling ${result.user?.name || 'User'}...`);
       setDialInput('');
+      
+      // Go to call screen in "ringing" state
+      // CallScreen will handle listening for accept/decline
       showScreen('screen-call');
+      
     } catch (error) {
       console.error('Dial error:', error);
       showToast('❌ Something went wrong — try again');
@@ -114,13 +133,18 @@ export default function HomeScreen() {
             <div className="home-greeting">{greeting}</div>
             <div className="home-name">Hey, {u.nickname || 'Pal'}</div>
           </div>
-          <div className="home-avatar-btn" onClick={() => showScreen('screen-profile')}>
-            <Avatar avatarKey={u.avatar || 'cat'} size={42} />
+          <div className="home-topbar-actions">
+            <button className="home-notif-btn" onClick={() => showScreen('screen-notifications')}>
+              <IconBell size={20} />
+            </button>
+            <div className="home-avatar-btn" onClick={() => showScreen('screen-profile')}>
+              <Avatar avatarKey={u.avatar || 'cat'} size={42} />
+            </div>
           </div>
         </div>
 
-        {/* Online count */}
-        <div style={{ padding: '8px 20px 0' }}>
+        {/* Online count - right aligned */}
+        <div className="online-count-row">
           <div className="online-pill">
             <div className="online-dot" />
             {onlineCount || '...'}
@@ -186,14 +210,17 @@ export default function HomeScreen() {
               type="text"
               placeholder={S.home.dialPlaceholder}
               value={dialInput}
-              onChange={(e) => setDialInput(e.target.value)}
+              onChange={(e) => setDialInput(e.target.value.replace(/\D/g, '').slice(0, 7))}
               disabled={isDialing}
-              onKeyDown={(e) => e.key === 'Enter' && handleDial()}
+              onKeyDown={(e) => e.key === 'Enter' && dialInput.length >= 7 && handleDial()}
+              maxLength={7}
+              inputMode="numeric"
+              pattern="[0-9]*"
             />
             <button 
-              className={`dial-call-btn${isDialing ? ' dialing' : ''}`} 
+              className={`dial-call-btn${isDialing ? ' dialing' : ''}${dialInput.length < 7 ? ' disabled' : ''}`} 
               onClick={handleDial}
-              disabled={isDialing}
+              disabled={isDialing || dialInput.length < 7}
             >
               {isDialing ? (
                 <span className="dial-spinner">⏳</span>
@@ -222,22 +249,16 @@ export default function HomeScreen() {
                   <Avatar avatarKey={c.avatar || 'cat'} size={28} />
                 </div>
                 <div className="hist-info">
-                  <div className="hist-name">{c.name}</div>
-                  <div className="hist-detail">{c.duration || 'Missed'}</div>
+                  <div className="hist-name">{getDisplayName(c.phone || '', c.name)}</div>
+                  <div className="hist-detail">{c.duration || '00:00'}</div>
                 </div>
                 <div className="hist-meta">
-                  <span className="hist-time">{c.time || ''}</span>
+                  <span className="hist-time">{formatRelativeTime(c.callStartedAt || c.timestamp)}</span>
                   <span className={`hist-type ${callTypeClass(c.type)}`}>{c.type || 'Outgoing'}</span>
                 </div>
               </div>
             ))
           )}
-        </div>
-
-        {/* Bottom pills */}
-        <div className="home-history-row">
-          <div className="home-pill-btn" onClick={() => showScreen('screen-history')}>{S.home.callHistoryPill}</div>
-          <div className="home-pill-btn" onClick={() => showScreen('screen-chats')}>{S.home.friendsPill}</div>
         </div>
       </div>
 

@@ -6,16 +6,18 @@ import CallScreen from '@/components/screens/CallScreen';
 import ChatScreen from '@/components/screens/ChatScreen';
 import ChatsScreen from '@/components/screens/ChatsScreen';
 import NotifsScreen from '@/components/screens/NotifsScreen';
+import NotificationsScreen from '@/components/screens/NotificationsScreen';
 import ProfileScreen from '@/components/screens/ProfileScreen';
 import HistoryScreen from '@/components/screens/HistoryScreen';
 import BlockedScreen from '@/components/screens/BlockedScreen';
 import AboutScreen from '@/components/screens/AboutScreen';
 import BottomNav from '@/components/BottomNav';
 import Toast from '@/components/Toast';
+import IncomingCallModal from '@/components/IncomingCallModal';
 import { useApp } from '@/context/AppContext';
 
 export default function App() {
-  const { state } = useApp();
+  const { state, incomingCall, handleAcceptCall, handleDeclineCall, handleBlockCaller } = useApp();
 
   // Show loading splash while restoring user from localStorage
   if (state.isRestoring) {
@@ -40,6 +42,7 @@ export default function App() {
         <ChatScreen />
         <ChatsScreen />
         <NotifsScreen />
+        <NotificationsScreen />
         <ProfileScreen />
         <HistoryScreen />
         <BlockedScreen />
@@ -47,6 +50,18 @@ export default function App() {
       </div>
       <BottomNav />
       <Toast />
+      
+      {/* Incoming Call Modal */}
+      <IncomingCallModal
+        isOpen={!!incomingCall}
+        callerName={incomingCall?.callerName || ''}
+        callerAvatar={incomingCall?.callerAvatar || 'cat'}
+        callerMood={incomingCall?.callerMood || ''}
+        callerMoodEmoji={incomingCall?.callerMoodEmoji || ''}
+        onAccept={handleAcceptCall}
+        onDecline={handleDeclineCall}
+        onBlock={handleBlockCaller}
+      />
     </>
   );
 }
