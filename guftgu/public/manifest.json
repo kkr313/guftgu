@@ -1,0 +1,30 @@
+{
+  "name": "Guftgu — Anonymous Voice Chat",
+  "short_name": "Guftgu",
+  "description": "Talk freely. No names. No judgments. Just real conversations. बात करो, दिल से",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0A0B10",
+  "background_color": "#0A0B10",
+  "categories": ["social", "communication"],
+  "lang": "en-IN",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Talking",
+      "short_name": "Talk",
+      "url": "/?action=match",
+      "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}
