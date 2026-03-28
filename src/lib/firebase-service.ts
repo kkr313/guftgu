@@ -1,11 +1,3 @@
-/**
- * Firebase Real-Time Service
- * Handles: user registration, presence, match queue, friend sync, block/report, online count
- *
- * ENABLE_FIREBASE flag in AppContext controls whether these services are active.
- * When disabled, the app falls back to localStorage-only + demo matching.
- */
-
 import {
   Database,
   ref,
@@ -200,6 +192,10 @@ export function enterMatchQueue(
   let currentMatchId: string | null = null;
   let cleaned = false;
 
+  let proposedTo: string | null = null;
+
+  let matchAccepted = false;
+
   // Write my entry to queue
   set(myQueueRef, entry).then(() => {
     onDisconnect(myQueueRef).remove();
@@ -207,14 +203,13 @@ export function enterMatchQueue(
 
   // Watch entire queue — look for best match
   queueListener = onValue(queueRef, (snap) => {
-    if (cleaned || !snap.exists()) return;
+    // FIX 1: Stop proposing once we have been matched
+    if (cleaned || currentMatchId || !snap.exists()) return;
 
     const elapsed = Date.now() - searchStart;
     const queue = snap.val() as Record<string, QueueEntry>;
     let best: (QueueEntry & { phone: string }) | null = null;
     let bestPri = -1;
-
-    // Count matchable users for queue count display
     let matchable = 0;
 
     for (const [p, e] of Object.entries(queue)) {
@@ -227,7 +222,6 @@ export function enterMatchQueue(
       const pri = calculatePriority(entry, e, elapsed);
       if (pri === null) continue;
 
-      // Higher score wins; on tie prefer earlier joiner
       if (pri > bestPri || (pri === bestPri && e.ts < (best?.ts ?? Infinity))) {
         best = { ...e, phone: p };
         bestPri = pri;
@@ -240,11 +234,20 @@ export function enterMatchQueue(
     // Only lower phone proposes (prevents duplicate proposals)
     if (phone >= best.phone) return;
 
-    // Check if proposal already exists
-    const proposalPath = `matchProposals/${best.phone}/${phone}`;
-    const proposalRef = ref(db, proposalPath);
+    // FIX 1: If we already proposed to this exact person, skip
+    if (proposedTo === best.phone) return;
+
+    // FIX 1: Cancel the old proposal before sending a new one
+    if (proposedTo) {
+      remove(ref(db, `matchProposals/${proposedTo}/${phone}`)).catch(() => {});
+    }
+
+    proposedTo = best.phone;
+
+    // Check if proposal already exists (extra safety), then send
+    const proposalRef = ref(db, `matchProposals/${best.phone}/${phone}`);
     get(proposalRef).then((ex) => {
-      if (ex.exists()) return;
+      if (ex.exists() || currentMatchId) return; // already matched or proposal exists
       set(proposalRef, {
         from: phone,
         fromEntry: entry,
@@ -254,9 +257,11 @@ export function enterMatchQueue(
     });
   });
 
-  // Listen for incoming proposals
+  // Listen for incoming proposals (callee role)
   proposalListener = onChildAdded(proposalsRef, (snap) => {
-    if (cleaned || !snap.exists()) return;
+    // FIX 2: Guard against multiple simultaneous proposals
+    if (cleaned || currentMatchId || matchAccepted || !snap.exists()) return;
+
     const proposal = snap.val();
     const theirPhone = proposal.from;
     const theirEntry = proposal.fromEntry as QueueEntry;
@@ -269,14 +274,29 @@ export function enterMatchQueue(
     // Verify they're still searching
     const theirQueueRef = ref(db, `matchQueue/${theirPhone}`);
     get(theirQueueRef).then((s) => {
+      // FIX 2: Re-check guards after async gap (race condition window)
       if (!s.exists() || s.val().status !== 'searching') {
         remove(snap.ref);
         return;
       }
 
-      // Create match document
+      // FIX 2: Another proposal may have been processed while we awaited
+      if (currentMatchId || matchAccepted) {
+        remove(snap.ref);
+        return;
+      }
+
+      // Lock immediately before any async work
+      matchAccepted = true;
+
       const matchId = `match_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
       currentMatchId = matchId;
+
+      // FIX 3: Cancel our own outgoing proposal now that we're matched
+      if (proposedTo) {
+        remove(ref(db, `matchProposals/${proposedTo}/${phone}`)).catch(() => {});
+        proposedTo = null;
+      }
 
       const matchData: MatchData = {
         user1: { ...theirEntry, phone: theirPhone },
@@ -289,12 +309,18 @@ export function enterMatchQueue(
       };
 
       set(ref(db, `matches/${matchId}`), matchData).then(() => {
-        // Update both users' queue status
         set(ref(db, `matchQueue/${phone}/status`), 'matched');
         set(ref(db, `matchQueue/${phone}/matchId`), matchId);
         set(ref(db, `matchQueue/${theirPhone}/status`), 'matched');
         set(ref(db, `matchQueue/${theirPhone}/matchId`), matchId);
         remove(snap.ref);
+
+        // FIX 3: Remove all remaining incoming proposals (we're taken)
+        get(proposalsRef).then((allSnap) => {
+          if (allSnap.exists()) {
+            allSnap.forEach((child) => { remove(child.ref); });
+          }
+        });
 
         onMatchFound(
           {
@@ -309,18 +335,31 @@ export function enterMatchQueue(
           matchId,
           'callee'
         );
+      }).catch(() => {
+        // If match creation fails, unlock so we can try again
+        matchAccepted = false;
+        currentMatchId = null;
       });
     });
   });
 
-  // Watch my own queue entry for matchId set by proposer
+  // Watch my own queue entry for matchId set by the proposer (caller role)
   myEntryListener = onValue(myQueueRef, (snap) => {
     if (cleaned || !snap.exists()) return;
     const data = snap.val() as QueueEntry;
+
     if (data.matchId && data.status === 'matched' && data.matchId !== currentMatchId) {
+      // FIX 2: Guard against firing after we already have a match
+      if (matchAccepted) return;
+      matchAccepted = true;
       currentMatchId = data.matchId;
 
-      // I'm the caller — get match data
+      // FIX 3: Cancel our outgoing proposal (we're now the one being matched)
+      if (proposedTo) {
+        remove(ref(db, `matchProposals/${proposedTo}/${phone}`)).catch(() => {});
+        proposedTo = null;
+      }
+
       get(ref(db, `matches/${data.matchId}`)).then((mSnap) => {
         if (!mSnap.exists()) return;
         const match = mSnap.val() as MatchData;
@@ -343,7 +382,7 @@ export function enterMatchQueue(
     }
   });
 
-  // Cleanup function
+  // Cleanup function — now also removes our outgoing proposal
   return () => {
     cleaned = true;
     if (queueListener) off(queueRef, 'value', queueListener);
@@ -351,7 +390,13 @@ export function enterMatchQueue(
     if (myEntryListener) off(myQueueRef, 'value', myEntryListener);
     onDisconnect(myQueueRef).cancel();
     remove(myQueueRef);
-    remove(proposalsRef);
+    remove(proposalsRef); // proposals TO me
+
+    // FIX 3: Also remove proposal I sent to someone else
+    if (proposedTo) {
+      remove(ref(db, `matchProposals/${proposedTo}/${phone}`)).catch(() => {});
+      proposedTo = null;
+    }
   };
 }
 

@@ -1,4 +1,4 @@
-﻿// useMatchEngine - Match-finding logic with Firebase real-time queue + demo fallback
+// useMatchEngine - Match-finding logic with Firebase real-time queue + demo fallback
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '@/context/AppContext';
 import { MOOD_EMOJIS, genUniqueName, pickRandom, formatTime } from '@/lib/data';
@@ -92,6 +92,8 @@ export function useMatchEngine(isActive: boolean) {
     setPal({ name: palInfo.name, avatar: palInfo.avatar, mood: palInfo.mood, moodEmoji: palInfo.moodEmoji, phone: palInfo.phone, language: palInfo.language, region: palInfo.region });
     setSearching(false);
     setMatchFound(true);
+    // Important: we stop looking at the queue once a match is found to prevent multiple proposals/matches
+    if (cleanupQueueRef.current) { cleanupQueueRef.current(); cleanupQueueRef.current = null; }
     startCountdown();
   }, [startCountdown]);
 
@@ -103,7 +105,7 @@ export function useMatchEngine(isActive: boolean) {
     matchEndedRef.current = false;
     matchCallStartedAt.current = null;
     dispatch({ type: 'SET_PAL', pal: { avatar: pal.avatar, name: pal.name, mood: pal.mood, moodEmoji: pal.moodEmoji, phone: pal.phone, isMatchCall: true } as any });
-    if (cleanupQueueRef.current) { cleanupQueueRef.current(); cleanupQueueRef.current = null; }
+    // cleanupQueueRef.current is already called in onMatchFound
     if (cleanupMatchStateRef.current) { cleanupMatchStateRef.current(); cleanupMatchStateRef.current = null; }
     setConnecting(true);
     const onConnected = () => { matchCallStartedAt.current = Date.now(); setConnecting(false); showScreen('screen-call'); };
@@ -135,6 +137,7 @@ export function useMatchEngine(isActive: boolean) {
 
   const startSearch = useCallback(() => {
     const db = dbRef.current;
+    if (cleanupQueueRef.current) { cleanupQueueRef.current(); cleanupQueueRef.current = null; }
     if (!db || !state.firebaseConnected) { demoTimer.current = setTimeout(simulateBotMatch, 3000 + Math.random() * 3000); return; }
     cleanupQueueRef.current = enterMatchQueue(db, state.guftguPhone, u, onMatchFound, (count) => setQueueCount(count));
   }, [dbRef, state.firebaseConnected, state.guftguPhone, u, simulateBotMatch, onMatchFound]);
@@ -175,16 +178,24 @@ export function useMatchEngine(isActive: boolean) {
     if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
     if (db && matchId && !isDemo.current) writeMatchResponse(db, matchId, state.guftguPhone, 'skipped');
     if (cleanupMatchStateRef.current) { cleanupMatchStateRef.current(); cleanupMatchStateRef.current = null; }
+
+    // This triggers the enhanced cleanup which removes outgoing proposals
     if (cleanupQueueRef.current) { cleanupQueueRef.current(); cleanupQueueRef.current = null; }
-    setWaitingForOther(false); setMatchFound(false); setSearching(true);
-    currentMatchId.current = null; currentRole.current = null; isDemo.current = false;
+
+    setWaitingForOther(false);
+    setMatchFound(false);
+    setSearching(true);
+    currentMatchId.current = null;
+    currentRole.current = null;
+    isDemo.current = false;
     setTimeout(startSearch, 500);
   }, [dbRef, state.guftguPhone, startSearch]);
 
   const cancelSearch = useCallback(() => {
-    cleanup();
+    cleanup(); // already calls cleanupQueueRef.current() which runs the new cleanup above
     const db = dbRef.current;
     if (db) {
+      // These are belt-and-suspenders — the cleanup fn above handles proposedTo
       remove(ref(db, 'matchQueue/' + state.guftguPhone));
       remove(ref(db, 'matchProposals/' + state.guftguPhone));
       if (currentMatchId.current) cleanupMatch(db, currentMatchId.current, state.guftguPhone);
