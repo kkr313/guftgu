@@ -128,7 +128,7 @@ export const S = {
     enterNumberToast: 'Enter a Guftgu number',
     callingToast: (num: string) => `Calling ${num}...`,
     cantCallSelf: "🚫 You can't call yourself!",
-    userNotFound: 'User not found — check the number',
+    userNotFound: '❌ User not found — check the number',
     userOffline: '📴 User is offline — try again later',
     userNotAvailable: '📵 User is not available right now',
     connectingTo: (name: string) => `Connecting to ${name}...`,
