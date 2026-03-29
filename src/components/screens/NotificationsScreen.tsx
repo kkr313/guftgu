@@ -1,48 +1,57 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { IconChevronLeft } from '@/lib/icons';
-import { formatRelativeTime } from '@/lib/storage';
+import { NotifRecord, getNotifs, clearAllNotifs, saveNotifs } from '@/lib/storage';
 import { S } from '@/lib/strings';
 
-interface NotifItem {
-  id: string;
-  type: 'call' | 'friend' | 'system';
-  icon: string;
-  text: string;
-  time: number;
-  unread: boolean;
-}
-
-// ── Dummy notifications for UI preview ──
-const DUMMY_NOTIFS: NotifItem[] = [
-  { id: 'n1', type: 'call', icon: '📞', text: '<b>Aarav</b> tried to call you', time: Date.now() - 300000, unread: true },
-  { id: 'n2', type: 'friend', icon: '🤝', text: '<b>Priya</b> accepted your friend request', time: Date.now() - 1800000, unread: true },
-  { id: 'n3', type: 'call', icon: '📵', text: 'You missed a call from <b>Rohan</b>', time: Date.now() - 3600000, unread: true },
-  { id: 'n4', type: 'friend', icon: '👋', text: '<b>Sneha</b> sent you a friend request', time: Date.now() - 7200000, unread: false },
-  { id: 'n5', type: 'system', icon: '🎉', text: 'Welcome to <b>Guftgu</b>! Start matching now', time: Date.now() - 14400000, unread: false },
-  { id: 'n6', type: 'call', icon: '📞', text: '<b>Vikram</b> called you · 4m 23s', time: Date.now() - 28800000, unread: false },
-  { id: 'n7', type: 'friend', icon: '🤝', text: '<b>Ananya</b> accepted your friend request', time: Date.now() - 43200000, unread: false },
-  { id: 'n8', type: 'system', icon: '🔔', text: 'You have <b>3 unread messages</b>', time: Date.now() - 86400000, unread: false },
-  { id: 'n9', type: 'call', icon: '📵', text: 'You missed a call from <b>Diya</b>', time: Date.now() - 172800000, unread: false },
-  { id: 'n10', type: 'friend', icon: '👋', text: '<b>Kabir</b> sent you a friend request', time: Date.now() - 259200000, unread: false },
-  { id: 'n11', type: 'system', icon: '✨', text: 'New feature: <b>Nicknames</b> — rename your friends!', time: Date.now() - 432000000, unread: false },
-  { id: 'n12', type: 'call', icon: '📞', text: '<b>Arjun</b> called you · 12m 05s', time: Date.now() - 604800000, unread: false },
-];
+const TYPE_COLORS: Record<string, string> = {
+  welcome: 'type-system',
+  friend_request: 'type-friend',
+  friend_accepted: 'type-friend',
+  missed_call: 'type-call',
+  app_update: 'type-system',
+};
 
 export default function NotificationsScreen() {
-  const { state, goBack, showToast } = useApp();
+  const { state, goBack, showToast, markNotifsRead } = useApp();
   const isActive = state.screen === 'screen-notifications';
 
-  const [notifs, setNotifs] = useState<NotifItem[]>(DUMMY_NOTIFS);
+  const [notifs, setNotifs] = useState<NotifRecord[]>([]);
 
-  const sortedNotifs = useMemo(
-    () => [...notifs].sort((a, b) => b.time - a.time),
-    [notifs]
-  );
+  // Load + mark as read when screen becomes active
+  useEffect(() => {
+    if (isActive) {
+      setNotifs(getNotifs());
+      markNotifsRead();
+    }
+  }, [isActive, markNotifsRead]);
+
+  // Re-sync when new notifs arrive while screen is open
+  useEffect(() => {
+    const handler = () => {
+      if (isActive) {
+        setNotifs(getNotifs());
+        markNotifsRead();
+      }
+    };
+    window.addEventListener('notifsUpdate', handler);
+    window.addEventListener('callHistoryUpdate', handler);
+    return () => {
+      window.removeEventListener('notifsUpdate', handler);
+      window.removeEventListener('callHistoryUpdate', handler);
+    };
+  }, [isActive, markNotifsRead]);
 
   const clearAll = () => {
+    clearAllNotifs();
     setNotifs([]);
     showToast(S.notifications.clearedToast);
+  };
+
+  const dismissOne = (id: string) => {
+    const updated = notifs.filter(n => n.id !== id);
+    setNotifs(updated);
+    saveNotifs(updated);
   };
 
   return (
@@ -53,7 +62,7 @@ export default function NotificationsScreen() {
           <IconChevronLeft />
         </button>
         <div className="screen-fixed-title">{S.notifications.title}</div>
-        {sortedNotifs.length > 0 && (
+        {notifs.length > 0 && (
           <button className="notif-clear-btn" onClick={clearAll}>
             {S.notifications.clearAll}
           </button>
@@ -62,7 +71,7 @@ export default function NotificationsScreen() {
 
       {/* Scrollable content */}
       <div className="scroll-body" style={{ paddingTop: 110 }}>
-        {sortedNotifs.length === 0 ? (
+        {notifs.length === 0 ? (
           <div className="chats-empty" style={{ marginTop: 40 }}>
             <div className="chats-empty-icon">{S.notifications.emptyIcon}</div>
             <div className="chats-empty-title">{S.notifications.emptyTitle}</div>
@@ -70,12 +79,23 @@ export default function NotificationsScreen() {
           </div>
         ) : (
           <>
-            {sortedNotifs.map(n => (
-              <div key={n.id} className={`notif-item${n.unread ? ' unread' : ''}`}>
-                <div className={`notif-icon type-${n.type}`}>{n.icon}</div>
+            {notifs.map(n => (
+              <div
+                key={n.id}
+                className={`notif-item${n.unread ? ' unread' : ''}`}
+                onClick={() => dismissOne(n.id)}
+              >
+                <div className={`notif-icon ${TYPE_COLORS[n.type] ?? 'type-system'}`}>
+                  {n.icon}
+                </div>
                 <div className="notif-body">
-                  <div className="notif-text" dangerouslySetInnerHTML={{ __html: n.text }} />
-                  <div className="notif-time">{formatRelativeTime(n.time)}</div>
+                  <div className="notif-title">{n.title}</div>
+                  <div className="notif-text" dangerouslySetInnerHTML={{ __html: n.body }} />
+                  <div className="notif-time">
+                    {n.time > 0
+                      ? new Date(n.time).toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })
+                      : 'When you joined'}
+                  </div>
                 </div>
                 {n.unread && <div className="notif-unread-dot" />}
               </div>

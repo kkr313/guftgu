@@ -1,4 +1,5 @@
 // Storage helpers for localStorage persistence
+import { playNotifSound } from './sounds';
 
 const STORAGE_KEY = 'guftgu_user_v1';
 const CALL_HISTORY_KEY = 'guftgu_call_history';
@@ -6,6 +7,7 @@ const FRIENDS_KEY = 'guftgu_friends';
 const PENDING_KEY = 'guftgu_pending';
 const BLOCKED_KEY = 'guftgu_blocked';
 const CONVERSATIONS_KEY = 'guftgu_conversations';
+const NOTIFS_KEY = 'guftgu_notifications';
 
 export interface UserData {
   nickname: string;
@@ -154,11 +156,23 @@ export function saveCallToHistory(record: Omit<CallRecord, 'time'>): void {
     console.log('[saveCallToHistory] Saved:', record.type, 'for', record.phone);
   }
   calls = calls.slice(0, 50);
-  try { 
+  try {
     localStorage.setItem(CALL_HISTORY_KEY, JSON.stringify(calls));
-    // Dispatch event to notify other components
     window.dispatchEvent(new Event('callHistoryUpdate'));
   } catch (_) { /* ignore */ }
+
+  // Auto-create a notification for missed calls
+  if (record.type === 'Missed') {
+    addNotif({
+      type: 'missed_call',
+      icon: '📵',
+      title: 'Missed Call',
+      body: `<b>${record.name || 'Someone'}</b> tried to call you`,
+      time: record.callStartedAt || record.timestamp,
+      unread: true,
+      meta: { phone: record.phone || '', avatar: record.avatar || 'cat' },
+    });
+  }
 }
 
 export function clearCallHistory(): void {
@@ -219,7 +233,10 @@ export function getChatConversations(): ChatConversation[] {
 }
 
 export function saveChatConversations(list: ChatConversation[]): void {
-  try { localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(list)); } catch (_) { /* ignore */ }
+  try {
+    localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(list));
+    window.dispatchEvent(new Event('conversationsUpdate'));
+  } catch (_) { /* ignore */ }
 }
 
 export function deleteChatConversation(phone: string): void {
@@ -231,6 +248,103 @@ export function clearAllConversations(): void {
   try { localStorage.removeItem(CONVERSATIONS_KEY); } catch (_) { /* ignore */ }
 }
 
+/** Sum of unreadCount across all conversations */
+export function getTotalUnreadMessages(): number {
+  return getChatConversations().reduce((acc, c) => acc + (c.unreadCount || 0), 0);
+}
+
+/**
+ * Increment unread count for a conversation.
+ * Call this when a message arrives while the user is NOT inside that chat.
+ */
+export function bumpUnreadCount(phone: string): void {
+  const convos = getChatConversations();
+  const idx = convos.findIndex(c => c.phone === phone);
+  if (idx >= 0) {
+    convos[idx] = { ...convos[idx], unreadCount: (convos[idx].unreadCount || 0) + 1 };
+    saveChatConversations(convos); // auto-dispatches conversationsUpdate
+  }
+}
+
+/** Reset unread count to 0 for a conversation (call when user opens it) */
+export function clearUnreadCount(phone: string): void {
+  const convos = getChatConversations();
+  const idx = convos.findIndex(c => c.phone === phone);
+  if (idx >= 0 && convos[idx].unreadCount > 0) {
+    convos[idx] = { ...convos[idx], unreadCount: 0 };
+    saveChatConversations(convos);
+  }
+}
+
+// ── Notifications ────────────────────────────────────────────
+
+export type NotifType = 'welcome' | 'friend_request' | 'friend_accepted' | 'missed_call' | 'app_update';
+
+export interface NotifRecord {
+  id: string;
+  type: NotifType;
+  icon: string;
+  title: string;
+  body: string;
+  time: number;
+  unread: boolean;
+  meta?: Record<string, string>; // extra data e.g. { phone, avatar }
+}
+
+export function getNotifs(): NotifRecord[] {
+  try { return JSON.parse(localStorage.getItem(NOTIFS_KEY) || '[]'); } catch (_) { return []; }
+}
+
+export function saveNotifs(list: NotifRecord[]): void {
+  try {
+    localStorage.setItem(NOTIFS_KEY, JSON.stringify(list));
+    window.dispatchEvent(new Event('notifsUpdate'));
+  } catch (_) { /* ignore */ }
+}
+
+export function addNotif(notif: Omit<NotifRecord, 'id'>): void {
+  const list = getNotifs();
+  // Prevent duplicates by id prefix
+  const exists = list.some(n => n.type === notif.type &&
+    notif.meta?.phone && n.meta?.phone === notif.meta?.phone &&
+    Math.abs(n.time - notif.time) < 60_000);
+  if (exists) return;
+  const full: NotifRecord = { ...notif, id: `${notif.type}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
+  list.unshift(full);
+  saveNotifs(list.slice(0, 100)); // keep max 100
+  // Play sound when a notification is successfully added
+  if (notif.type !== 'welcome' && notif.type !== 'app_update') {
+    playNotifSound();
+  }
+}
+
+export function getUnreadNotifCount(): number {
+  return getNotifs().filter(n => n.unread).length;
+}
+
+export function markAllNotifsRead(): void {
+  const list = getNotifs().map(n => ({ ...n, unread: false }));
+  saveNotifs(list);
+}
+
+export function clearAllNotifs(): void {
+  try { localStorage.removeItem(NOTIFS_KEY); window.dispatchEvent(new Event('notifsUpdate')); } catch (_) { /* ignore */ }
+}
+
+/** Seed the one-time welcome notification (idempotent). */
+export function seedWelcomeNotif(): void {
+  const list = getNotifs();
+  if (list.some(n => n.type === 'welcome')) return; // already seeded
+  addNotif({
+    type: 'welcome',
+    icon: '🎉',
+    title: 'Welcome to Guftgu!',
+    body: 'Start matching to connect with people across India.',
+    time: Date.now(),
+    unread: true,
+  });
+}
+
 export function clearAllData(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
@@ -239,6 +353,7 @@ export function clearAllData(): void {
     localStorage.removeItem(PENDING_KEY);
     localStorage.removeItem(BLOCKED_KEY);
     localStorage.removeItem(CONVERSATIONS_KEY);
+    localStorage.removeItem(NOTIFS_KEY);
     localStorage.removeItem('guftgu_welcomed');
   } catch (_) { /* ignore */ }
 }

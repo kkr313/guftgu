@@ -1,9 +1,10 @@
-
+// @refresh reset
 import React, { createContext, useContext, useReducer, useCallback, useRef, useEffect, useState } from 'react';
-import { UserData, loadUser, saveUser as persistUser, genGuftguPhone, getCallHistory, saveCallToHistory, CallRecord, getFriends, saveFriends, FriendRecord, getPending, savePending, PendingRecord, getBlocked, saveBlocked, BlockedRecord, isBlocked, getDisplayName } from '@/lib/storage';
-import { Database, ref, set, remove, onValue, push, get, child, off, onChildAdded } from 'firebase/database';
+import { UserData, loadUser, saveUser as persistUser, genGuftguPhone, getCallHistory, saveCallToHistory, CallRecord, getFriends, saveFriends, FriendRecord, getPending, savePending, PendingRecord, getBlocked, saveBlocked, BlockedRecord, isBlocked, getDisplayName, addNotif, getUnreadNotifCount, markAllNotifsRead, seedWelcomeNotif, getTotalUnreadMessages, bumpUnreadCount, clearUnreadCount, getChatConversations, saveChatConversations } from '@/lib/storage';
+import { playMessageSound, playNotifSound, playFriendOnlineSound } from '@/lib/sounds';
+import { Database, ref, set, remove, onValue, push, get, child, off, onChildAdded, DataSnapshot, serverTimestamp } from 'firebase/database';
 import { initFirebase, getDb } from '@/lib/firebase';
-import { registerUser, syncBlockList, setOnlineStatus, listenIncomingCalls, IncomingCall, acceptCall, declineCall, blockUserFirebase } from '@/lib/firebase-service';
+import { registerUser, syncBlockList, setOnlineStatus, listenIncomingCalls, IncomingCall, acceptCall, declineCall, blockUserFirebase, listenFriendRequests, listenFriendAccepted, listenFriendsOnlineStatus, listenChatMessages } from '@/lib/firebase-service';
 import { useBackButtonInit } from '@/hooks/useBackButton';
 
 // ── Types ──────────────────────────────────────────
@@ -32,7 +33,6 @@ interface AppState {
   isMuted: boolean;
   callSecs: number;
   firebaseConnected: boolean;
-  autoConnect: boolean;
   toastMsg: string;
   toastVisible: boolean;
   isRestoring: boolean; // True while checking localStorage on mount
@@ -46,7 +46,6 @@ type Action =
   | { type: 'SET_MUTED'; muted: boolean }
   | { type: 'SET_CALL_SECS'; secs: number }
   | { type: 'SET_FIREBASE'; connected: boolean }
-  | { type: 'SET_AUTO_CONNECT'; auto: boolean }
   | { type: 'SHOW_TOAST'; msg: string }
   | { type: 'HIDE_TOAST' }
   | { type: 'RESTORE_USER'; user: UserData; phone: string }
@@ -67,7 +66,6 @@ const initialState: AppState = {
   isMuted: false,
   callSecs: 0,
   firebaseConnected: false,
-  autoConnect: false,
   toastMsg: '',
   toastVisible: false,
   isRestoring: true, // Start with true - we're checking localStorage
@@ -89,8 +87,6 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, callSecs: action.secs };
     case 'SET_FIREBASE':
       return { ...state, firebaseConnected: action.connected };
-    case 'SET_AUTO_CONNECT':
-      return { ...state, autoConnect: action.auto };
     case 'SHOW_TOAST':
       return { ...state, toastMsg: action.msg, toastVisible: true };
     case 'HIDE_TOAST':
@@ -133,6 +129,12 @@ interface AppContextType {
   handleAcceptCall: () => void;
   handleDeclineCall: () => void;
   handleBlockCaller: () => void;
+  unreadNotifCount: number;
+  markNotifsRead: () => void;
+  unreadMsgCount: number;
+  clearChatUnread: (phone: string) => void;
+  friendsOnline: Record<string, boolean>;
+  friendsLastSeen: Record<string, number | null>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -149,6 +151,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const dbRef = useRef<Database | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [incomingCall, setIncomingCall] = useState<IncomingCallData | null>(null);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(() => getUnreadNotifCount());
+  const [unreadMsgCount, setUnreadMsgCount] = useState(() => getTotalUnreadMessages());
+  const [friendsOnline, setFriendsOnline] = useState<Record<string, boolean>>({});
+  const [friendsLastSeen, setFriendsLastSeen] = useState<Record<string, number | null>>({});
+
+  /** Expose to ChatScreen — clears unread and syncs badge */
+  const clearChatUnread = useCallback((phone: string) => {
+    clearUnreadCount(phone);
+    setUnreadMsgCount(getTotalUnreadMessages());
+  }, []);
+
+  // Keep unread counts in sync with storage events
+  useEffect(() => {
+    const syncNotifs = () => setUnreadNotifCount(getUnreadNotifCount());
+    const syncMsgs = () => setUnreadMsgCount(getTotalUnreadMessages());
+    window.addEventListener('notifsUpdate', syncNotifs);
+    window.addEventListener('callHistoryUpdate', syncNotifs);
+    window.addEventListener('conversationsUpdate', syncMsgs);
+    return () => {
+      window.removeEventListener('notifsUpdate', syncNotifs);
+      window.removeEventListener('callHistoryUpdate', syncNotifs);
+      window.removeEventListener('conversationsUpdate', syncMsgs);
+    };
+  }, []);
+
+  const markNotifsRead = useCallback(() => {
+    markAllNotifsRead();
+    setUnreadNotifCount(0);
+  }, []);
 
   // Restore user from localStorage on mount
   useEffect(() => {
@@ -175,32 +206,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       dbRef.current = db;
       // Test connection
       const connRef = ref(db, '.info/connected');
-      const unsubscribe = onValue(connRef, (snap) => {
+      const unsubscribe = onValue(connRef, (snap: DataSnapshot) => {
         const connected = snap.val() === true;
         dispatch({ type: 'SET_FIREBASE', connected });
         // On connect: sync block list and set online
         if (connected && state.guftguPhone) {
-          syncBlockList(db, state.guftguPhone).catch(() => {});
-          setOnlineStatus(db, state.guftguPhone, true).catch(() => {});
+          syncBlockList(db, state.guftguPhone).catch(() => { });
+          setOnlineStatus(db, state.guftguPhone, true).catch(() => { });
         }
       });
-      
+
       // Handle page unload to mark offline
       const handleBeforeUnload = () => {
         if (state.guftguPhone && db) {
           // Use sendBeacon for reliable offline status on page close
           // Note: Firebase SDK handles this via onDisconnect, but this is a backup
-          setOnlineStatus(db, state.guftguPhone, false).catch(() => {});
+          setOnlineStatus(db, state.guftguPhone, false).catch(() => { });
         }
       };
       window.addEventListener('beforeunload', handleBeforeUnload);
-      
+
       // Cleanup on unmount
       return () => {
         off(connRef, 'value', unsubscribe as any);
         window.removeEventListener('beforeunload', handleBeforeUnload);
         if (state.guftguPhone) {
-          setOnlineStatus(db, state.guftguPhone, false).catch(() => {});
+          setOnlineStatus(db, state.guftguPhone, false).catch(() => { });
         }
       };
     }).catch(() => {
@@ -211,17 +242,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Heartbeat to keep lastSeen updated (every 2 minutes)
   useEffect(() => {
     if (!state.guftguPhone || !state.firebaseConnected || !dbRef.current) return;
-    
+
     const heartbeat = setInterval(() => {
       if (dbRef.current && state.guftguPhone) {
         // Update lastSeen to show we're still active
         const lastSeenRef = ref(dbRef.current, `users/${state.guftguPhone}/lastSeen`);
-        import('firebase/database').then(({ serverTimestamp, set }) => {
-          set(lastSeenRef, serverTimestamp()).catch(() => {});
-        });
+        set(lastSeenRef, serverTimestamp()).catch(() => { });
       }
     }, 2 * 60 * 1000); // Every 2 minutes
-    
+
     return () => clearInterval(heartbeat);
   }, [state.guftguPhone, state.firebaseConnected]);
 
@@ -269,6 +298,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_USER', user });
     dispatch({ type: 'SET_PHONE', phone });
     persistUser(user, phone);
+    // Seed welcome notification on first registration
+    seedWelcomeNotif();
     // Register user in Firebase if connected
     if (dbRef.current) {
       registerUser(dbRef.current, phone, user).catch(() => {
@@ -296,13 +327,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       },
       (callerPhone) => {
         console.log('[App] Call removed from:', callerPhone);
-        // Only process if it's the current incoming call (caller cancelled)
-        // Note: Don't save as missed here - if user declined, handleDeclineCall already saved it
-        // This callback is mainly for cleaning up the modal state
         setIncomingCall((prev) => {
           if (prev?.callerPhone === callerPhone) {
-            // Caller cancelled while we were still ringing - but don't save duplicate
-            // The call was either already handled by user (Declined) or we'll handle it elsewhere
             console.log('[App] Caller cancelled, not saving duplicate entry');
             return null;
           }
@@ -314,6 +340,47 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return cleanup;
   }, [state.guftguPhone, state.firebaseConnected]);
 
+  // Listen for friend requests — create a notification for each
+  useEffect(() => {
+    if (!dbRef.current || !state.guftguPhone || !state.firebaseConnected) return;
+
+    const cleanup = listenFriendRequests(dbRef.current, state.guftguPhone, (req) => {
+      addNotif({
+        type: 'friend_request',
+        icon: '🤝',
+        title: 'New Friend Request',
+        body: `<b>${req.name || 'Someone'}</b> wants to be your friend`,
+        time: req.timestamp || Date.now(),
+        unread: true,
+        meta: { phone: req.phone, avatar: req.avatar || 'cat' },
+      });
+      // Show a toast too
+      showToast(`🤝 Friend request from ${req.name || 'someone'}`);
+    });
+
+    return cleanup;
+  }, [state.guftguPhone, state.firebaseConnected, showToast]);
+
+  // Listen for accepted friend requests — create a notification
+  useEffect(() => {
+    if (!dbRef.current || !state.guftguPhone || !state.firebaseConnected) return;
+
+    const cleanup = listenFriendAccepted(dbRef.current, state.guftguPhone, (friend) => {
+      addNotif({
+        type: 'friend_accepted',
+        icon: '🎉',
+        title: 'Friend Request Accepted',
+        body: `<b>${friend.name || 'Someone'}</b> accepted your friend request`,
+        time: friend.timestamp || Date.now(),
+        unread: true,
+        meta: { phone: friend.phone, avatar: friend.avatar || 'cat' },
+      });
+      showToast(`🎉 ${friend.name || 'Someone'} accepted your request!`);
+    });
+
+    return cleanup;
+  }, [state.guftguPhone, state.firebaseConnected, showToast]);
+
   // Handle accepting incoming call
   const handleAcceptCall = useCallback(async () => {
     console.log('[handleAcceptCall] Starting...', { incomingCall, guftguPhone: state.guftguPhone });
@@ -322,7 +389,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       // acceptCall now returns the connectedAt timestamp
       const connectedAt = await acceptCall(dbRef.current, state.guftguPhone, incomingCall.callerPhone);
-      
+
       const palData = {
         phone: incomingCall.callerPhone,
         name: incomingCall.callerName,
@@ -333,16 +400,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         connectedAt: connectedAt, // For synchronized timer
       };
       console.log('[handleAcceptCall] Setting pal:', palData);
-      
+
       // Clear incoming call modal first
       setIncomingCall(null);
-      
+
       // Set the caller as pal
       dispatch({
         type: 'SET_PAL',
         pal: palData as any, // connectedAt is extra field
       });
-      
+
       // Small delay to ensure state is updated before navigating
       // This helps React batch the updates properly
       requestAnimationFrame(() => {
@@ -363,7 +430,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     try {
       await declineCall(dbRef.current, state.guftguPhone, incomingCall.callerPhone);
-      
+
       // Save as declined incoming call
       saveCallToHistory({
         avatar: incomingCall.callerAvatar || 'cat',
@@ -375,7 +442,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         timestamp: Date.now(),
         callStartedAt: Date.now(),
       });
-      
+
       setIncomingCall(null);
     } catch (error) {
       console.error('Failed to decline call:', error);
@@ -390,7 +457,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       // First decline the call
       await declineCall(dbRef.current, state.guftguPhone, incomingCall.callerPhone);
-      
+
       // Then block the caller
       await blockUserFirebase(
         dbRef.current,
@@ -399,7 +466,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         incomingCall.callerName,
         incomingCall.callerAvatar
       );
-      
+
       // Save as blocked call
       saveCallToHistory({
         avatar: incomingCall.callerAvatar || 'cat',
@@ -411,7 +478,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         timestamp: Date.now(),
         callStartedAt: Date.now(),
       });
-      
+
       setIncomingCall(null);
       showToast('🚫 User blocked');
     } catch (error) {
@@ -421,10 +488,138 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [incomingCall, state.guftguPhone, showToast]);
 
+  // Watch friends' online status — re-subscribe whenever the friends list or
+  // Firebase connection changes. Fire a toast when a friend comes online.
+  const prevOnlineRef = useRef<Record<string, boolean>>({});
+  useEffect(() => {
+    if (!dbRef.current || !state.guftguPhone || !state.firebaseConnected) return;
+
+    const friends = getFriends();
+    if (!friends.length) return;
+
+    const phones = friends.map(f => f.phone);
+
+    const cleanup = listenFriendsOnlineStatus(
+      dbRef.current,
+      phones,
+      (phone, online, lastSeen) => {
+        // Detect transition offline → online and show toast
+        const wasOnline = prevOnlineRef.current[phone];
+        if (online && wasOnline === false) {
+          const friend = getFriends().find(f => f.phone === phone);
+          const name = friend?.nickname || friend?.name || phone;
+          showToast(`🟢 ${name} is now online`);
+          playFriendOnlineSound();
+        }
+        prevOnlineRef.current[phone] = online;
+
+        setFriendsOnline(prev => ({ ...prev, [phone]: online }));
+        setFriendsLastSeen(prev => ({ ...prev, [phone]: lastSeen }));
+      }
+    );
+
+    return cleanup;
+    // Re-subscribe when friends list changes or Firebase reconnects
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.firebaseConnected, state.guftguPhone,
+  // Stringify friend phones so the effect re-runs when a friend is added/removed
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  getFriends().map(f => f.phone).join(',')]);
+
+  // ── Global background message listener ──────────────────────────────────
+  // Keeps a real-time listener open for EVERY friend's conversation so that
+  // when a message arrives and the user is NOT inside that specific chat,
+  // we bump the unread badge and play a notification sound.
+  const screenRef2 = useRef(state.screen);
+  screenRef2.current = state.screen;
+  const currentPalRef = useRef(state.currentPal);
+  currentPalRef.current = state.currentPal;
+
+  useEffect(() => {
+    if (!dbRef.current || !state.guftguPhone || !state.firebaseConnected) return;
+
+    const friends = getFriends();
+    if (!friends.length) return;
+
+    const myPhone = state.guftguPhone;
+    const db = dbRef.current;
+
+    // Track which message IDs we've already processed to avoid double-counting
+    const seenIds = new Set<string>();
+
+    const cleanups: Array<() => void> = [];
+    let initialBatchDone = false;
+
+    // Small delay to let onChildAdded fire its initial historical batch
+    const initTimer = setTimeout(() => { initialBatchDone = true; }, 1500);
+
+    friends.forEach(friend => {
+      const unsub = listenChatMessages(db, myPhone, friend.phone, (msg) => {
+        // Skip own messages
+        if (msg.from === myPhone) return;
+        // Skip already-seen ids
+        if (seenIds.has(msg.id)) return;
+        seenIds.add(msg.id);
+
+        // Skip the initial historical batch — only react to truly new messages
+        if (!initialBatchDone) return;
+
+        const currentScreen = screenRef2.current;
+        const currentPal = currentPalRef.current;
+
+        const isInsideThisChat =
+          currentScreen === 'screen-chat' && currentPal?.phone === friend.phone;
+
+        if (!isInsideThisChat) {
+          // Update conversation preview + bump unread count
+          const convos = getChatConversations();
+          const idx = convos.findIndex(c => c.phone === friend.phone);
+          if (idx >= 0) {
+            convos[idx] = {
+              ...convos[idx],
+              lastMessage: msg.text,
+              lastMessageTime: msg.timestamp,
+              unreadCount: (convos[idx].unreadCount || 0) + 1,
+            };
+          } else {
+            convos.unshift({
+              phone: friend.phone,
+              name: friend.nickname || friend.name,
+              avatar: friend.avatar,
+              lastMessage: msg.text,
+              lastMessageTime: msg.timestamp,
+              unreadCount: 1,
+            });
+          }
+          saveChatConversations(convos);
+          // Sync badge count from storage
+          setUnreadMsgCount(getTotalUnreadMessages());
+          // Play notification sound
+          playMessageSound();
+          // Show a toast
+          const name = friend.nickname || friend.name;
+          showToast(`💬 ${name}: ${msg.text.slice(0, 40)}`);
+        }
+      });
+      cleanups.push(unsub);
+    });
+
+    return () => {
+      clearTimeout(initTimer);
+      cleanups.forEach(fn => fn());
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.firebaseConnected, state.guftguPhone,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  getFriends().map(f => f.phone).join(',')]);
+
   return (
-    <AppContext.Provider value={{ 
+    <AppContext.Provider value={{
       state, dispatch, showScreen, goBack, showToast, saveUserData, dbRef,
-      incomingCall, handleAcceptCall, handleDeclineCall, handleBlockCaller
+      incomingCall, handleAcceptCall, handleDeclineCall, handleBlockCaller,
+      unreadNotifCount, markNotifsRead,
+      unreadMsgCount, clearChatUnread,
+      friendsOnline, friendsLastSeen,
     }}>
       {children}
     </AppContext.Provider>

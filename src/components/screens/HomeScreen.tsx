@@ -12,13 +12,12 @@ import { IconPhone, IconBell } from '@/lib/icons';
 import { S } from '@/lib/strings';
 
 export default function HomeScreen() {
-  const { state, dispatch, showScreen, showToast, saveUserData, dbRef } = useApp();
+  const { state, dispatch, showScreen, showToast, saveUserData, dbRef, unreadNotifCount } = useApp();
   const isActive = state.screen === 'screen-home';
   const u = state.user;
 
   const [moodModalOpen, setMoodModalOpen] = useState(false);
   const [langModalOpen, setLangModalOpen] = useState(false);
-  const [autoConnect, setAutoConnect] = useState(false);
   const [dialInput, setDialInput] = useState('');
   const [isDialing, setIsDialing] = useState(false);
 
@@ -37,11 +36,6 @@ export default function HomeScreen() {
     saveUserData({ ...u, language: lang }, state.guftguPhone);
     setLangModalOpen(false);
     showToast(`Language set to ${lang}`);
-  };
-
-  const handleToggleAutoConnect = () => {
-    setAutoConnect(!autoConnect);
-    showToast(!autoConnect ? S.home.autoConnectOn : S.home.autoConnectOff);
   };
 
   const handleDial = async () => {
@@ -140,8 +134,13 @@ export default function HomeScreen() {
             <div className="home-name">Hey, {u.nickname || 'Pal'}</div>
           </div>
           <div className="home-topbar-actions">
-            <button className="home-notif-btn" onClick={() => showScreen('screen-notifications')}>
+            <button className="home-notif-btn" onClick={() => showScreen('screen-notifications')} style={{ position: 'relative' }}>
               <IconBell size={20} />
+              {unreadNotifCount > 0 && (
+                <span className="nav-badge" style={{ top: 0, right: 0 }} aria-label={`${unreadNotifCount} unread`}>
+                  {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
+                </span>
+              )}
             </button>
             <div className="home-avatar-btn" onClick={() => showScreen('screen-profile')}>
               <Avatar avatarKey={u.avatar || 'cat'} size={42} />
@@ -199,14 +198,6 @@ export default function HomeScreen() {
         </div>
         <div className="home-pref-hint">Tap a card to change your match preferences</div>
 
-        {/* Auto connect */}
-        <div className="home-auto-connect" onClick={handleToggleAutoConnect}>
-          <div className="hac-left">
-            <div className="hac-icon">⚡</div>
-            <div className="hac-text">{S.home.autoConnect}</div>
-          </div>
-          <div className={`hac-toggle${autoConnect ? ' on' : ''}`} />
-        </div>
 
         {/* Call a friend dial */}
         <div className="home-dial-card">

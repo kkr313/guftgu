@@ -11,13 +11,14 @@ import {
   addToFriends,
   initiateCall,
   checkUserForCall,
+  blockUserFirebase,
 } from '@/lib/firebase-service';
 import { timeAgo } from '@/lib/data';
 import { S } from '@/lib/strings';
 import { IconUnfriend } from '@/lib/icons';
 
 export default function ChatsScreen() {
-  const { state, dispatch, showScreen, showToast, dbRef } = useApp();
+  const { state, dispatch, showScreen, showToast, dbRef, friendsOnline, friendsLastSeen } = useApp();
   const isActive = state.screen === 'screen-chats';
 
   const [tab, setTab] = useState<'friends' | 'pending'>('friends');
@@ -26,46 +27,20 @@ export default function ChatsScreen() {
   const [editingPhone, setEditingPhone] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
 
-  // Sort: newest first (latest addedAt / timestamp on top)
-  const sortedFriends = useMemo(() => [...friends].sort((a, b) => b.addedAt - a.addedAt), [friends]);
+  // Sort: online friends first, then newest first
+  const sortedFriends = useMemo(() => [...friends].sort((a, b) => {
+    const aOnline = friendsOnline[a.phone] ? 1 : 0;
+    const bOnline = friendsOnline[b.phone] ? 1 : 0;
+    if (bOnline !== aOnline) return bOnline - aOnline; // online first
+    return b.addedAt - a.addedAt;
+  }), [friends, friendsOnline]);
   const sortedPending = useMemo(() => [...pending].sort((a, b) => b.timestamp - a.timestamp), [pending]);
 
-  // ── Dummy data for UI preview ──
-  const DUMMY_FRIENDS: FriendRecord[] = [
-    { phone: '1000001', name: 'Aarav', avatar: 'cat', mood: 'Happy', moodEmoji: '😄', addedAt: Date.now() - 86400000 },
-    { phone: '1000002', name: 'Priya', avatar: 'dog', mood: 'Chill', moodEmoji: '😎', addedAt: Date.now() - 172800000 },
-    { phone: '1000003', name: 'Rohan', avatar: 'panda', mood: 'Excited', moodEmoji: '🤩', addedAt: Date.now() - 259200000 },
-    { phone: '1000004', name: 'Sneha', avatar: 'bunny', mood: 'Sleepy', moodEmoji: '😴', addedAt: Date.now() - 345600000 },
-    { phone: '1000005', name: 'Vikram', avatar: 'fox', mood: 'Bored', moodEmoji: '😑', addedAt: Date.now() - 432000000 },
-    { phone: '1000006', name: 'Ananya', avatar: 'koala', mood: 'Curious', moodEmoji: '🤔', addedAt: Date.now() - 518400000 },
-    { phone: '1000007', name: 'Kabir', avatar: 'penguin', mood: 'Energetic', moodEmoji: '⚡', addedAt: Date.now() - 604800000 },
-    { phone: '1000008', name: 'Diya', avatar: 'owl', mood: 'Romantic', moodEmoji: '🥰', addedAt: Date.now() - 691200000 },
-    { phone: '1000009', name: 'Arjun', avatar: 'tiger', mood: 'Angry', moodEmoji: '😤', addedAt: Date.now() - 777600000 },
-    { phone: '1000010', name: 'Meera', avatar: 'bear', mood: 'Sad', moodEmoji: '😢', addedAt: Date.now() - 864000000 },
-  ];
-  const DUMMY_PENDING: PendingRecord[] = [
-    { phone: '2000001', name: 'Ishaan', avatar: 'lion', mood: 'Happy', moodEmoji: '😄', direction: 'incoming', timestamp: Date.now() - 3600000 },
-    { phone: '2000002', name: 'Kavya', avatar: 'deer', mood: 'Shy', moodEmoji: '🙈', direction: 'incoming', timestamp: Date.now() - 7200000 },
-    { phone: '2000003', name: 'Rahul', avatar: 'wolf', mood: 'Chill', moodEmoji: '😎', direction: 'outgoing', timestamp: Date.now() - 10800000 },
-    { phone: '2000004', name: 'Nisha', avatar: 'unicorn', mood: 'Dreamy', moodEmoji: '✨', direction: 'incoming', timestamp: Date.now() - 14400000 },
-    { phone: '2000005', name: 'Aditya', avatar: 'dragon', mood: 'Fired up', moodEmoji: '🔥', direction: 'outgoing', timestamp: Date.now() - 18000000 },
-    { phone: '2000006', name: 'Riya', avatar: 'hamster', mood: 'Playful', moodEmoji: '🐹', direction: 'incoming', timestamp: Date.now() - 21600000 },
-    { phone: '2000007', name: 'Siddharth', avatar: 'monkey', mood: 'Funny', moodEmoji: '🤣', direction: 'outgoing', timestamp: Date.now() - 25200000 },
-    { phone: '2000008', name: 'Tanvi', avatar: 'cat', mood: 'Peaceful', moodEmoji: '🕊️', direction: 'incoming', timestamp: Date.now() - 28800000 },
-    { phone: '2000009', name: 'Harsh', avatar: 'tiger', mood: 'Confident', moodEmoji: '💪', direction: 'incoming', timestamp: Date.now() - 32400000 },
-    { phone: '2000010', name: 'Pooja', avatar: 'bunny', mood: 'Grateful', moodEmoji: '🙏', direction: 'outgoing', timestamp: Date.now() - 36000000 },
-    { phone: '2000011', name: 'Devesh', avatar: 'owl', mood: 'Studious', moodEmoji: '📚', direction: 'incoming', timestamp: Date.now() - 39600000 },
-    { phone: '2000012', name: 'Simran', avatar: 'penguin', mood: 'Dancing', moodEmoji: '💃', direction: 'incoming', timestamp: Date.now() - 43200000 },
-  ];
-
-  // Load local data on mount + merge dummy data for preview
+  // Load real data from localStorage on screen activation
   useEffect(() => {
     if (isActive) {
-      const realFriends = getFriends();
-      const realPending = getPending();
-      // Always use dummy data for UI preview during development
-      setFriends(realFriends.length > 0 ? realFriends : DUMMY_FRIENDS);
-      setPending(DUMMY_PENDING);
+      setFriends(getFriends());
+      setPending(getPending());
     }
   }, [isActive]);
 
@@ -249,41 +224,74 @@ export default function ChatsScreen() {
     setFriends(updated);
     saveFriends(updated);
     showToast(`${f.nickname || f.name} has been removed from friends list`);
-    // TODO: Remove from Firebase when real implementation
   };
 
   // ── Block from friends: move to blocked list + remove from friends ──
-  const blockFromFriends = (f: FriendRecord) => {
-    // Remove from friends
+  const blockFromFriends = async (f: FriendRecord) => {
+    // Remove from friends locally
     const updatedFriends = friends.filter(x => x.phone !== f.phone);
     setFriends(updatedFriends);
     saveFriends(updatedFriends);
 
-    // Add to blocked (preserve nickname)
-    const blocked = getBlocked();
-    if (!blocked.some(b => b.phone === f.phone)) {
-      const newBlocked: BlockedRecord = { phone: f.phone, name: f.name, nickname: f.nickname, avatar: f.avatar, blockedAt: Date.now() };
-      saveBlocked([...blocked, newBlocked]);
+    // Block on Firebase (handles localStorage too)
+    if (dbRef?.current && state.guftguPhone) {
+      try {
+        await blockUserFirebase(dbRef.current, state.guftguPhone, f.phone, f.name, f.avatar);
+      } catch (error) {
+        console.error('Failed to block on Firebase:', error);
+        // Fallback: save to localStorage only
+        const blocked = getBlocked();
+        if (!blocked.some(b => b.phone === f.phone)) {
+          const newBlocked: BlockedRecord = { phone: f.phone, name: f.name, nickname: f.nickname, avatar: f.avatar, blockedAt: Date.now() };
+          saveBlocked([...blocked, newBlocked]);
+        }
+      }
+    } else {
+      // Offline fallback: save to localStorage
+      const blocked = getBlocked();
+      if (!blocked.some(b => b.phone === f.phone)) {
+        const newBlocked: BlockedRecord = { phone: f.phone, name: f.name, nickname: f.nickname, avatar: f.avatar, blockedAt: Date.now() };
+        saveBlocked([...blocked, newBlocked]);
+      }
     }
     showToast(`🚫 ${f.nickname || f.name} has been blocked`);
-    // TODO: Block on Firebase when real implementation
   };
 
-  // ── Block from pending: move to blocked list + remove from pending ──
-  const blockFromPending = (p: PendingRecord) => {
-    // Remove from pending
+  // ── Block from pending: decline request + block + remove from pending ──
+  const blockFromPending = async (p: PendingRecord) => {
+    // Remove from pending locally
     const updatedPending = pending.filter(x => x.phone !== p.phone);
     setPending(updatedPending);
     savePending(updatedPending);
 
-    // Add to blocked
-    const blocked = getBlocked();
-    if (!blocked.some(b => b.phone === p.phone)) {
-      const newBlocked: BlockedRecord = { phone: p.phone, name: p.name, avatar: p.avatar, blockedAt: Date.now() };
-      saveBlocked([...blocked, newBlocked]);
+    // Block on Firebase (handles localStorage too)
+    if (dbRef?.current && state.guftguPhone) {
+      try {
+        // First decline/cancel the friend request
+        if (p.direction === 'incoming') {
+          await declineFriendRequest(dbRef.current, state.guftguPhone, p.phone);
+        } else {
+          await cancelFriendRequest(dbRef.current, state.guftguPhone, p.phone);
+        }
+        await blockUserFirebase(dbRef.current, state.guftguPhone, p.phone, p.name, p.avatar);
+      } catch (error) {
+        console.error('Failed to block on Firebase:', error);
+        // Fallback: save to localStorage only
+        const blocked = getBlocked();
+        if (!blocked.some(b => b.phone === p.phone)) {
+          const newBlocked: BlockedRecord = { phone: p.phone, name: p.name, avatar: p.avatar, blockedAt: Date.now() };
+          saveBlocked([...blocked, newBlocked]);
+        }
+      }
+    } else {
+      // Offline fallback: save to localStorage
+      const blocked = getBlocked();
+      if (!blocked.some(b => b.phone === p.phone)) {
+        const newBlocked: BlockedRecord = { phone: p.phone, name: p.name, avatar: p.avatar, blockedAt: Date.now() };
+        saveBlocked([...blocked, newBlocked]);
+      }
     }
     showToast(`🚫 ${p.name} has been blocked`);
-    // TODO: Block on Firebase when real implementation
   };
 
   // ── Rename friend: start editing ──
@@ -347,8 +355,13 @@ export default function ChatsScreen() {
             ) : (
               sortedFriends.map((f) => (
                 <div key={f.phone} className="friend-item">
-                  <div className="friend-avatar">
+                  <div className="friend-avatar" style={{ position: 'relative' }}>
                     <Avatar avatarKey={f.avatar || 'cat'} size={48} />
+                    {/* Presence dot */}
+                    <span
+                      className={`friend-presence-dot${friendsOnline[f.phone] ? ' online' : ' offline'}`}
+                      title={friendsOnline[f.phone] ? 'Online' : friendsLastSeen[f.phone] ? `Last seen ${formatRelativeTime(friendsLastSeen[f.phone]!)}` : 'Offline'}
+                    />
                   </div>
                   <div className="friend-info">
                     {editingPhone === f.phone ? (
@@ -373,7 +386,16 @@ export default function ChatsScreen() {
                         </div>
                         {f.nickname && <div className="friend-original-name">aka {f.name}</div>}
                         <div className="friend-mood">{f.moodEmoji} {f.mood}</div>
-                        <div className="friend-timeline">🤝 Friends {formatRelativeTime(f.addedAt)}</div>
+                        <div className="friend-status-row">
+                          {friendsOnline[f.phone]
+                            ? <span className="friend-online-label">🟢 Online now</span>
+                            : <span className="friend-offline-label">
+                                {friendsLastSeen[f.phone]
+                                  ? `Last seen ${formatRelativeTime(friendsLastSeen[f.phone]!)}`
+                                  : 'Offline'}
+                              </span>
+                          }
+                        </div>
                       </>
                     )}
                   </div>

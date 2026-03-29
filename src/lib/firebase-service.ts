@@ -1500,3 +1500,43 @@ export function watchDirectCallRoomId(
     off(roomIdRef, 'value', listener);
   };
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FRIEND PRESENCE — Real-time online/offline status for friends list
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Watch the online status of multiple friends in real-time.
+ * Creates one Firebase listener per friend phone.
+ * @param db         Realtime Database instance
+ * @param phones     Array of friend phone numbers to watch
+ * @param onChange   Called whenever any friend's status changes
+ * @returns          Cleanup function — unsubscribes all listeners
+ */
+export function listenFriendsOnlineStatus(
+  db: Database,
+  phones: string[],
+  onChange: (phone: string, online: boolean, lastSeen: number | null) => void
+): () => void {
+  if (!phones.length) return () => {};
+
+  const cleanups: Array<() => void> = [];
+
+  for (const phone of phones) {
+    const userRef = ref(db, `users/${phone}`);
+
+    const listener = onValue(userRef, (snap) => {
+      if (!snap.exists()) {
+        onChange(phone, false, null);
+        return;
+      }
+      const data = snap.val() as { online?: boolean; lastSeen?: number };
+      onChange(phone, data.online === true, data.lastSeen ?? null);
+    });
+
+    cleanups.push(() => off(userRef, 'value', listener));
+  }
+
+  return () => cleanups.forEach((fn) => fn());
+}
+

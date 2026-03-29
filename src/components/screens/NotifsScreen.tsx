@@ -1,28 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import Avatar from '@/components/Avatar';
-import { ChatConversation, getChatConversations, saveChatConversations, deleteChatConversation, clearAllConversations, formatRelativeTime, getDisplayName } from '@/lib/storage';
+import { ChatConversation, getChatConversations, deleteChatConversation, clearAllConversations, formatRelativeTime, getDisplayName } from '@/lib/storage';
 import { S } from '@/lib/strings';
-import { IconTrash, IconAlertTriangle } from '@/lib/icons';
+import { IconTrash } from '@/lib/icons';
 
-// ── Dummy conversations for UI preview ──
-const DUMMY_CONVERSATIONS: ChatConversation[] = [
-  { phone: '1000001', name: 'Aarav', avatar: 'cat', lastMessage: 'Haha that was hilarious 😂', lastMessageTime: Date.now() - 120000, unreadCount: 3 },
-  { phone: '1000002', name: 'Priya', avatar: 'dog', lastMessage: 'Sure, let me check and get back to you', lastMessageTime: Date.now() - 1800000, unreadCount: 0 },
-  { phone: '1000003', name: 'Rohan', avatar: 'panda', lastMessage: 'Bro did you watch that match? 🏏', lastMessageTime: Date.now() - 3600000, unreadCount: 1 },
-  { phone: '1000006', name: 'Ananya', avatar: 'koala', lastMessage: 'Thanks for the help! 🙏', lastMessageTime: Date.now() - 7200000, unreadCount: 0 },
-  { phone: '1000005', name: 'Vikram', avatar: 'fox', lastMessage: 'Kya scene hai aaj?', lastMessageTime: Date.now() - 14400000, unreadCount: 0 },
-  { phone: '1000004', name: 'Sneha', avatar: 'bunny', lastMessage: 'Good night 🌙', lastMessageTime: Date.now() - 36000000, unreadCount: 0 },
-  { phone: '1000008', name: 'Diya', avatar: 'owl', lastMessage: 'Send me that song name na', lastMessageTime: Date.now() - 86400000, unreadCount: 2 },
-  { phone: '1000007', name: 'Kabir', avatar: 'penguin', lastMessage: 'Let\'s plan something this weekend', lastMessageTime: Date.now() - 172800000, unreadCount: 0 },
-  { phone: '1000009', name: 'Arjun', avatar: 'tiger', lastMessage: 'GG bhai 🎮', lastMessageTime: Date.now() - 259200000, unreadCount: 0 },
-  { phone: '1000010', name: 'Meera', avatar: 'bear', lastMessage: 'Take care ❤️', lastMessageTime: Date.now() - 432000000, unreadCount: 0 },
-  { phone: '2000001', name: 'Ishaan', avatar: 'lion', lastMessage: 'Kal milte hain!', lastMessageTime: Date.now() - 604800000, unreadCount: 0 },
-  { phone: '2000002', name: 'Kavya', avatar: 'deer', lastMessage: 'Hehe okay 😄', lastMessageTime: Date.now() - 864000000, unreadCount: 0 },
-];
 
 export default function NotifsScreen() {
-  const { state, dispatch, showScreen, showToast } = useApp();
+  const { state, dispatch, showScreen, showToast, friendsOnline } = useApp();
   const isActive = state.screen === 'screen-notifs';
 
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
@@ -34,12 +19,20 @@ export default function NotifsScreen() {
     [conversations]
   );
 
-  // Load conversations on mount
+  // Load real conversations from localStorage on screen activation
   useEffect(() => {
     if (isActive) {
-      const real = getChatConversations();
-      setConversations(real.length > 0 ? real : DUMMY_CONVERSATIONS);
+      setConversations(getChatConversations());
     }
+  }, [isActive]);
+
+  // Refresh when a new message updates the conversation list
+  useEffect(() => {
+    const handler = () => {
+      if (isActive) setConversations(getChatConversations());
+    };
+    window.addEventListener('conversationsUpdate', handler);
+    return () => window.removeEventListener('conversationsUpdate', handler);
   }, [isActive]);
 
   // Open chat with a conversation
@@ -94,8 +87,12 @@ export default function NotifsScreen() {
                 <div key={conv.phone} className="convo-item">
                   {/* Clickable area: avatar + info */}
                   <div className="convo-tap-area" onClick={() => openChat(conv)}>
-                    <div className="convo-avatar">
+                    <div className="convo-avatar" style={{ position: 'relative' }}>
                       <Avatar avatarKey={conv.avatar} size={48} />
+                      {/* Show presence dot for friends */}
+                      {friendsOnline[conv.phone] !== undefined && (
+                        <span className={`friend-presence-dot${friendsOnline[conv.phone] ? ' online' : ' offline'}`} />
+                      )}
                     </div>
                     <div className="convo-info">
                       <div className="convo-name-row">

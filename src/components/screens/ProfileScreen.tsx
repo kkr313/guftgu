@@ -21,7 +21,6 @@ export default function ProfileScreen() {
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
-  const [notificationsOn, setNotificationsOn] = useState(true);
   const [blockedCount, setBlockedCount] = useState(0);
   
   // Stats
@@ -218,17 +217,6 @@ export default function ProfileScreen() {
         <div className="profile-section">
           <div className="section-header">
             <div className="section-title">{S.profile.sectionPrivacy}</div>
-          </div>
-          <div className="setting-item">
-            <div className="setting-icon">{S.profile.settingNotifIcon}</div>
-            <div className="setting-info">
-              <div className="setting-name">{S.profile.settingNotif}</div>
-              <div className="setting-desc">{S.profile.settingNotifDesc}</div>
-            </div>
-            <div
-              className={`toggle${notificationsOn ? ' on' : ''}`}
-              onClick={() => setNotificationsOn(!notificationsOn)}
-            />
           </div>
           <div className="setting-item" onClick={() => showScreen('screen-blocked')}>
             <div className="setting-icon">{S.profile.settingBlockedIcon}</div>

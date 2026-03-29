@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useApp } from '@/context/AppContext';
 import Avatar from '@/components/Avatar';
-import { getFriends } from '@/lib/storage';
+import { getFriends, getChatConversations, saveChatConversations, ChatConversation, bumpUnreadCount, formatRelativeTime } from '@/lib/storage';
+import { playMessageSound } from '@/lib/sounds';
 import { 
   sendChatMessage, 
   listenChatMessages, 
@@ -23,7 +24,7 @@ interface DisplayMessage {
 }
 
 export default function ChatScreen() {
-  const { state, dispatch, showScreen, showToast, goBack, dbRef } = useApp();
+  const { state, dispatch, showScreen, showToast, goBack, dbRef, clearChatUnread, friendsOnline, friendsLastSeen } = useApp();
   const isActive = state.screen === 'screen-chat';
   const pal = state.currentPal;
   const myUser = state.user;
@@ -65,6 +66,9 @@ export default function ChatScreen() {
       setLoading(true);
       return;
     }
+
+    // Clear unread badge when screen opens
+    clearChatUnread(pal!.phone);
 
     // Check friendship locally first
     const localFriends = getFriends();
@@ -120,9 +124,34 @@ export default function ChatScreen() {
     }
   }, [isActive, pal?.phone, state.guftguPhone, dbRef]);
 
+  /** Persist conversation to localStorage so the Chats tab (NotifsScreen) shows real data */
+  const updateConversationList = useCallback((lastMessage: string) => {
+    if (!pal?.phone) return;
+    const convos = getChatConversations();
+    const existing = convos.findIndex(c => c.phone === pal!.phone);
+    const updated: ChatConversation = {
+      phone: pal!.phone,
+      name: pal!.name,
+      avatar: pal!.avatar,
+      lastMessage,
+      lastMessageTime: Date.now(),
+      unreadCount: existing >= 0 ? convos[existing].unreadCount : 0,
+    };
+    if (existing >= 0) {
+      convos[existing] = updated;
+    } else {
+      convos.unshift(updated);
+    }
+    saveChatConversations(convos);
+    window.dispatchEvent(new Event('conversationsUpdate'));
+  }, [pal]);
+
   // Listen for new messages in real-time
   useEffect(() => {
     if (!isActive || !pal?.phone || !dbRef?.current || !state.guftguPhone) return;
+
+    let initialBatchDone = false;
+    const initTimer = setTimeout(() => { initialBatchDone = true; }, 1000);
 
     const unsub = listenChatMessages(
       dbRef.current,
@@ -140,16 +169,32 @@ export default function ChatScreen() {
           time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
         setMessages(prev => [...prev, displayMsg]);
+
+        // Update conversation list for incoming messages (outgoing handled in sendMessage)
+        if (msg.from !== state.guftguPhone) {
+          updateConversationList(msg.text);
+          if (initialBatchDone) {
+            // Always play a sound when a genuinely new message arrives in this open chat
+            playMessageSound();
+          }
+          // Note: bumpUnreadCount is NOT called here because:
+          // 1. When chat is active (isActive=true), there are no unread messages
+          // 2. When chat is not active, the global background listener in AppContext handles it
+        }
       }
     );
 
-    return () => unsub();
+    return () => {
+      clearTimeout(initTimer);
+      unsub();
+    };
   }, [isActive, pal?.phone, dbRef, state.guftguPhone]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
 
   const sendMessage = async () => {
     const text = input.trim();
@@ -166,6 +211,8 @@ export default function ChatScreen() {
       const success = await sendChatMessage(dbRef.current, state.guftguPhone, pal.phone, text);
       if (!success) {
         showToast('🚫 Cannot message blocked user');
+      } else {
+        updateConversationList(text);
       }
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -192,8 +239,15 @@ export default function ChatScreen() {
         <div className="chat-header-info">
           <div className="chat-header-name">{pal.name}</div>
           <div className="chat-header-status">
-            <div className="online-dot" />
-            {pal.moodEmoji} {pal.mood}
+            {pal.phone && friendsOnline[pal.phone]
+              ? <><div className="online-dot" /> Online</>
+              : pal.phone && friendsLastSeen[pal.phone]
+                ? <span style={{ color: 'var(--text-3)', fontSize: '0.78rem' }}>
+                    Last seen {formatRelativeTime(friendsLastSeen[pal.phone]!)}
+                  </span>
+                : <span style={{ color: 'var(--text-3)', fontSize: '0.78rem' }}>Offline</span>
+            }
+            {' '}{pal.moodEmoji} {pal.mood}
           </div>
         </div>
         <div className="chat-header-actions">

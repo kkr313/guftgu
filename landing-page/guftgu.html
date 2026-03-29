@@ -1,0 +1,2216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guftgu — Anonymous Voice Chat for India | बात करो, दिल से</title>
+  <meta name="description" content="Guftgu is India's first fully anonymous voice & chat app. No phone number. No name. No trace. Talk to strangers who truly listen — in Hindi, English, Bengali, Tamil & 6 more languages." />
+  <meta name="keywords" content="anonymous voice chat india, guftgu app, anonymous chat hindi, voice chat strangers, india chat app, anonymous calling, omegle india, stranger chat india, hindi voice chat" />
+  <meta name="author" content="Guftgu" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://guftgu.app/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://guftgu.app/" />
+  <meta property="og:title" content="Guftgu — Speak Freely. Connect Deeply." />
+  <meta property="og:description" content="India's most anonymous voice chat. No signup. No name. 9 languages. Real conversations." />
+  <meta property="og:image" content="https://guftgu.app/og-image.jpg" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Guftgu — Anonymous Voice Chat for India" />
+  <meta name="twitter:description" content="Talk freely. No names. No judgments. Just real conversations. बात करो, दिल से" />
+
+  <!-- Schema.org -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "MobileApplication",
+    "name": "Guftgu",
+    "description": "Fully anonymous voice and chat app for India. Connect with strangers in 9 Indian languages.",
+    "applicationCategory": "SocialNetworkingApplication",
+    "operatingSystem": "Web, Android, iOS",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" },
+    "inLanguage": ["hi", "en", "bn", "ta", "te", "mr", "kn", "pa"],
+    "availableOnDevice": "Mobile",
+    "url": "https://guftgu.app"
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ═══════════════════════════════════════════════════
+   GUFTGU — Full Landing Page CSS
+   Includes: base, nav, hero, features, how-it-works,
+   languages, safety, testimonials, cta, footer,
+   mockup scene (phone + float cards + animations)
+   ═══════════════════════════════════════════════════ */
+
+/* ── CSS VARIABLES ── */
+:root {
+  --bg: #0A0B10;
+  --bg2: #10121A;
+  --bg3: #181A24;
+  --card: rgba(24,26,36,0.85);
+  --border: rgba(255,255,255,0.07);
+  --accent: #FF6B6B;
+  --accent2: #4ECDC4;
+  --accent3: #FFE66D;
+  --text: #F0F1F5;
+  --text2: #8B8FA8;
+  --text3: #555870;
+  --radius: 20px;
+  --glass: rgba(255,255,255,0.04);
+}
+
+/* ── RESET ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Sora', sans-serif;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* ── NOISE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity: 0.5;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+
+/* ══════════════════════════════════════════════════
+   NAV
+══════════════════════════════════════════════════ */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 900;
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(10,11,16,0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  transition: all 0.3s;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.nav-logo-icon {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 4px 16px rgba(255,107,107,0.35);
+}
+
+.nav-logo-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav-links a {
+  color: var(--text2);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--accent2); }
+
+.nav-cta {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  color: #fff !important;
+  padding: 10px 22px;
+  border-radius: 50px;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 16px rgba(255,107,107,0.35);
+  transition: all 0.2s !important;
+}
+
+.nav-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(255,107,107,0.5) !important;
+  color: #fff !important;
+}
+
+
+/* ══════════════════════════════════════════════════
+   HERO
+══════════════════════════════════════════════════ */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 120px 40px 80px;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 70% at 20% 20%, rgba(255,107,107,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 60% at 80% 80%, rgba(78,205,196,0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 60% 30%, rgba(255,107,107,0.06) 0%, transparent 50%);
+  animation: heroBreathe 8s ease-in-out infinite;
+}
+
+@keyframes heroBreathe {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.03); }
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 900px;
+  text-align: center;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: rgba(78,205,196,0.1);
+  border: 1px solid rgba(78,205,196,0.25);
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+  animation: fadeSlideUp 0.8s ease both;
+}
+
+.hero-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent2);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(52px, 8vw, 100px);
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: -2px;
+  margin-bottom: 12px;
+  animation: fadeSlideUp 0.8s ease 0.1s both;
+}
+
+.hero-title span {
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 50%, #FFE66D 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-tagline-hindi {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(22px, 3.5vw, 36px);
+  font-style: italic;
+  color: var(--text2);
+  margin-bottom: 24px;
+  animation: fadeSlideUp 0.8s ease 0.2s both;
+}
+
+.hero-sub {
+  font-size: clamp(14px, 2vw, 18px);
+  color: var(--text2);
+  max-width: 600px;
+  margin: 0 auto 48px;
+  line-height: 1.7;
+  font-weight: 400;
+  animation: fadeSlideUp 0.8s ease 0.3s both;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 64px;
+  animation: fadeSlideUp 0.8s ease 0.4s both;
+}
+
+/* ── BUTTONS ── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 36px;
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF4757 40%, #e84393 100%);
+  color: #fff;
+  border-radius: 50px;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 32px rgba(255,71,87,0.4);
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(255,71,87,0.55); }
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 36px;
+  background: var(--glass);
+  border: 1px solid rgba(78,205,196,0.3);
+  color: var(--accent2);
+  border-radius: 50px;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.25s;
+}
+
+.btn-secondary:hover {
+  background: rgba(78,205,196,0.1);
+  border-color: rgba(78,205,196,0.6);
+  transform: translateY(-2px);
+}
+
+/* ── HERO STATS ── */
+.hero-stats {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  flex-wrap: wrap;
+  animation: fadeSlideUp 0.8s ease 0.5s both;
+}
+
+.hero-stat { text-align: center; }
+
+.hero-stat-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 36px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+.hero-stat-label {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.hero-divider {
+  width: 1px;
+  height: 40px;
+  background: var(--border);
+  align-self: center;
+}
+
+
+/* ══════════════════════════════════════════════════
+   MOCKUP SCENE — Phone + Float Cards
+══════════════════════════════════════════════════ */
+
+/* Section wrapper */
+.hero-mockup-section {
+  position: relative;
+  padding: 80px 40px 120px;
+  display: flex;
+  justify-content: center;
+  overflow: visible;
+}
+
+/* ── SCENE WRAPPER ── */
+.mockup-scene {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 1100px;
+  z-index: 1;
+  gap: 0;
+}
+
+/* ── GLOW PLATFORM ── */
+.glow-platform {
+  position: absolute;
+  bottom: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 340px;
+  height: 80px;
+  background: radial-gradient(ellipse, rgba(78,205,196,0.25) 0%, rgba(255,107,107,0.1) 40%, transparent 70%);
+  filter: blur(20px);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* ── PHONE WRAP ── */
+.phone-wrap {
+  position: relative;
+  z-index: 10;
+  filter:
+    drop-shadow(0 60px 80px rgba(0,0,0,0.8))
+    drop-shadow(0 0 60px rgba(78,205,196,0.12))
+    drop-shadow(0 0 120px rgba(255,107,107,0.08));
+  animation: phoneFloat 7s ease-in-out infinite;
+}
+
+@keyframes phoneFloat {
+  0%,100% { transform: translateY(0) rotate(-0.5deg); }
+  33%     { transform: translateY(-14px) rotate(0.5deg); }
+  66%     { transform: translateY(-7px) rotate(-0.3deg); }
+}
+
+/* ── PHONE BODY ── */
+.phone {
+  width: 300px;
+  background: #0C0D14;
+  border-radius: 46px;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Glass sheen */
+.phone::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(160deg, rgba(255,255,255,0.04) 0%, transparent 60%);
+  border-radius: 46px 46px 0 0;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* ── DYNAMIC ISLAND ── */
+.dynamic-island {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 30px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.di-camera {
+  width: 10px; height: 10px;
+  background: #111;
+  border-radius: 50%;
+  border: 1.5px solid #222;
+  position: relative;
+}
+
+.di-camera::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 5px; height: 5px;
+  background: #1a1a2e;
+  border-radius: 50%;
+}
+
+.di-light {
+  width: 7px; height: 7px;
+  background: radial-gradient(circle, rgba(255,107,107,0.8), rgba(232,67,147,0.6));
+  border-radius: 50%;
+  animation: diPulse 2s ease-in-out infinite;
+}
+
+@keyframes diPulse {
+  0%,100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 8px rgba(255,107,107,0.6); }
+}
+
+/* ── SCREEN ── */
+.screen {
+  padding: 62px 18px 24px;
+  min-height: 640px;
+  position: relative;
+  background: linear-gradient(180deg, #0C0D14 0%, #0E1018 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+/* Ambient top glow inside screen */
+.screen::before {
+  content: '';
+  position: absolute;
+  top: -80px; left: 50%;
+  transform: translateX(-50%);
+  width: 220px; height: 180px;
+  background: radial-gradient(ellipse, rgba(78,205,196,0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ── STATUS BAR ── */
+.screen-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
+  font-size: 9.5px;
+  color: var(--text3);
+  font-weight: 600;
+  position: relative;
+  z-index: 2;
+}
+
+.signal-bars { display: flex; gap: 2px; align-items: flex-end; }
+.signal-bar { width: 3px; background: var(--text3); border-radius: 1px; }
+.signal-bar:nth-child(1) { height: 5px; }
+.signal-bar:nth-child(2) { height: 8px; }
+.signal-bar:nth-child(3) { height: 11px; background: var(--accent2); }
+.signal-bar:nth-child(4) { height: 14px; background: var(--accent2); }
+
+/* ── HEADER ROW ── */
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 2;
+}
+
+.greeting-text { font-size: 10px; color: var(--text3); font-weight: 500; }
+.name-text { font-size: 15px; font-weight: 700; margin-top: 1px; }
+
+.avatar-btn {
+  width: 36px; height: 36px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, rgba(78,205,196,0.2), rgba(38,166,154,0.15));
+  border: 1.5px solid rgba(78,205,196,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  position: relative;
+}
+
+/* ── ONLINE PILL ── */
+.online-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(78,205,196,0.08);
+  border: 1px solid rgba(78,205,196,0.18);
+  border-radius: 20px;
+  padding: 5px 11px;
+  font-size: 9px;
+  color: var(--accent2);
+  font-weight: 600;
+  align-self: flex-end;
+  position: relative;
+  z-index: 2;
+}
+
+.online-dot {
+  width: 5px; height: 5px;
+  background: var(--accent2);
+  border-radius: 50%;
+  animation: dotPulse 2s infinite;
+}
+
+@keyframes dotPulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.6); }
+}
+
+/* ── FIND BUTTON ── */
+.find-btn {
+  border-radius: 18px;
+  padding: 15px 16px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF4757 45%, #e84393 100%);
+  box-shadow:
+    0 8px 28px rgba(255,71,87,0.5),
+    0 2px 8px rgba(232,67,147,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.find-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 25% 35%, rgba(255,255,255,0.18) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+/* Find btn shimmer sweep */
+.find-btn::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%  { left: -100%; }
+  40% { left: 120%; }
+  100%{ left: 120%; }
+}
+
+/* Tap ripple on find button */
+.tap-ripple {
+  position: absolute;
+  right: 16px; top: 50%;
+  transform: translateY(-50%);
+  width: 28px; height: 28px;
+  border: 1.5px solid rgba(255,255,255,0.5);
+  border-radius: 50%;
+  animation: rippleOut 2.5s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes rippleOut {
+  0%   { width: 20px; height: 20px; opacity: 0.8; }
+  100% { width: 50px; height: 50px; opacity: 0; transform: translateY(-50%) translateX(0); }
+}
+
+.find-icon-box {
+  width: 44px; height: 44px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 6px rgba(0,0,0,0.2);
+  animation: micBounce 3s ease-in-out infinite;
+}
+
+@keyframes micBounce {
+  0%,100% { transform: scale(1); }
+  50%     { transform: scale(1.08); }
+}
+
+.find-text { position: relative; z-index: 1; flex: 1; }
+.find-label { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+.find-sub {
+  font-size: 9px; color: rgba(255,255,255,0.75); margin-top: 3px;
+  background: rgba(255,255,255,0.12);
+  display: inline-block; padding: 2px 8px; border-radius: 20px;
+}
+
+.find-arrow {
+  font-size: 18px; color: rgba(255,255,255,0.8);
+  position: relative; z-index: 1;
+  animation: arrowPulse 2s ease-in-out infinite;
+}
+
+@keyframes arrowPulse {
+  0%,100% { transform: translateX(0); opacity: 0.7; }
+  50%     { transform: translateX(5px); opacity: 1; }
+}
+
+/* ── PREF CARDS ── */
+.pref-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.pref-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  padding: 11px 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pref-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,107,107,0.04), rgba(78,205,196,0.04));
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.pref-card:hover { border-color: rgba(255,255,255,0.12); }
+.pref-card:hover::before { opacity: 1; }
+
+.pref-icon-wrap {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(255,107,107,0.12), rgba(78,205,196,0.08));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.pref-info { flex: 1; min-width: 0; }
+.pref-label { font-size: 7.5px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: .09em; }
+.pref-value { font-size: 12px; font-weight: 700; margin-top: 1px; }
+.pref-edit { font-size: 11px; color: var(--text3); opacity: 0.5; }
+
+/* ── SECTION HEADER (inside phone) ── */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Note: .section-title inside phone is tiny, scoped to phone screen */
+.screen .section-title {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  font-family: 'Sora', sans-serif;
+  letter-spacing: .12em;
+  margin-bottom: 0;
+}
+
+.section-see-all {
+  font-size: 9px;
+  color: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ── CALL ITEMS ── */
+.call-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 11px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.055);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.call-item::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+}
+
+.call-item.incoming::before { background: var(--accent2); }
+.call-item.outgoing::before { background: var(--accent); }
+
+.call-avatar {
+  width: 36px; height: 36px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.call-avatar-ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: 14px;
+  border: 1.5px solid transparent;
+}
+
+.call-item.incoming .call-avatar-ring { border-color: rgba(78,205,196,0.35); }
+.call-item.outgoing .call-avatar-ring { border-color: rgba(255,107,107,0.35); }
+
+.call-info { flex: 1; min-width: 0; }
+.call-name { font-size: 11.5px; font-weight: 700; }
+.call-meta { font-size: 9px; color: var(--text3); margin-top: 2px; display: flex; align-items: center; gap: 5px; }
+.call-duration { color: var(--text2); }
+
+.call-badge {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.badge-inc { background: rgba(78,205,196,0.12); color: var(--accent2); }
+.badge-out { background: rgba(255,107,107,0.12); color: var(--accent); }
+
+/* ── ANIMATED NOTIFICATION STRIPS ── */
+.match-found-strip {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(135deg, rgba(78,205,196,0.08), rgba(78,205,196,0.04));
+  border-top: 1px solid rgba(78,205,196,0.2);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: stripSlide 12s ease-in-out infinite;
+}
+
+@keyframes stripSlide {
+  0%,30%   { transform: translateY(0); opacity: 1; }
+  38%,62%  { transform: translateY(60px); opacity: 0; }
+  70%,100% { transform: translateY(60px); opacity: 0; }
+}
+
+.match-found-strip2 {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(135deg, rgba(255,107,107,0.08), rgba(232,67,147,0.04));
+  border-top: 1px solid rgba(255,107,107,0.2);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: stripSlide2 12s ease-in-out infinite;
+  opacity: 0;
+  transform: translateY(60px);
+}
+
+@keyframes stripSlide2 {
+  0%,38%   { transform: translateY(60px); opacity: 0; }
+  46%,84%  { transform: translateY(0); opacity: 1; }
+  92%,100% { transform: translateY(60px); opacity: 0; }
+}
+
+.strip-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: dotPulse 1.5s infinite;
+}
+
+.strip-text { font-size: 10px; font-weight: 700; flex: 1; }
+.strip-action {
+  font-size: 9px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── AMBIENT RINGS around phone ── */
+.ambient-rings {
+  position: absolute;
+  inset: -80px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.ambient-ring {
+  position: absolute;
+  border-radius: 46px;
+  border: 1px solid;
+  pointer-events: none;
+}
+
+.ar1 {
+  inset: 50px;
+  border-color: rgba(255,107,107,0.08);
+  animation: ambientPulse 4s ease-in-out infinite;
+}
+
+.ar2 {
+  inset: 20px;
+  border-color: rgba(78,205,196,0.06);
+  animation: ambientPulse 4s ease-in-out 1.3s infinite;
+}
+
+.ar3 {
+  inset: -10px;
+  border-color: rgba(255,230,109,0.04);
+  animation: ambientPulse 4s ease-in-out 2.6s infinite;
+}
+
+@keyframes ambientPulse {
+  0%,100% { opacity: 0.5; transform: scale(1); }
+  50%     { opacity: 1; transform: scale(1.01); }
+}
+
+/* ── FLOATING INFO CARDS ── */
+.float-cards {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.float-card {
+  position: absolute;
+  background: rgba(18,20,30,0.92);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 12px 16px;
+  backdrop-filter: blur(16px);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(255,255,255,0.05);
+  white-space: nowrap;
+}
+
+.fc-icon {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.fc-label { font-size: 10px; color: var(--text3); }
+.fc-value { font-size: 13px; font-weight: 700; margin-top: 1px; }
+
+.fc1 {
+  top: 12%; left: -160px;
+  animation: fcFloat1 6s ease-in-out infinite;
+  border-color: rgba(78,205,196,0.2);
+}
+
+.fc2 {
+  top: 35%; right: -165px;
+  animation: fcFloat2 7s ease-in-out 0.5s infinite;
+  border-color: rgba(255,107,107,0.2);
+}
+
+.fc3 {
+  top: 58%; left: -175px;
+  animation: fcFloat3 5.5s ease-in-out 1s infinite;
+  border-color: rgba(255,230,109,0.2);
+}
+
+.fc4 {
+  bottom: 15%; right: -155px;
+  animation: fcFloat1 6.5s ease-in-out 2s infinite;
+  border-color: rgba(167,120,255,0.2);
+}
+
+@keyframes fcFloat1 {
+  0%,100% { transform: translateY(0) translateX(0); }
+  50%     { transform: translateY(-12px) translateX(4px); }
+}
+
+@keyframes fcFloat2 {
+  0%,100% { transform: translateY(0) translateX(0); }
+  50%     { transform: translateY(-8px) translateX(-4px); }
+}
+
+@keyframes fcFloat3 {
+  0%,100% { transform: translateY(0) translateX(0); }
+  50%     { transform: translateY(-15px) translateX(3px); }
+}
+
+/* Connector line placeholder (optional decorative use) */
+.connector-line {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.25;
+}
+
+
+/* ══════════════════════════════════════════════════
+   LANGUAGE MARQUEE STRIP
+══════════════════════════════════════════════════ */
+.lang-strip {
+  overflow: hidden;
+  padding: 20px 0;
+  background: linear-gradient(90deg, rgba(78,205,196,0.08), rgba(255,107,107,0.05), rgba(78,205,196,0.08));
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin: 60px 0 0;
+}
+
+.lang-strip-inner {
+  display: flex;
+  gap: 48px;
+  animation: marquee 20s linear infinite;
+  width: max-content;
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.lang-strip-item {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+
+/* ══════════════════════════════════════════════════
+   SHARED SECTION STYLES
+══════════════════════════════════════════════════ */
+section { padding: 100px 40px; }
+
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-label::before {
+  content: '';
+  width: 30px; height: 2px;
+  background: var(--accent);
+}
+
+/* Global section title (outside phone) */
+.section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(36px, 5vw, 60px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  margin-bottom: 20px;
+}
+
+.section-sub {
+  font-size: 16px;
+  color: var(--text2);
+  max-width: 500px;
+  line-height: 1.7;
+}
+
+
+/* ══════════════════════════════════════════════════
+   FEATURES
+══════════════════════════════════════════════════ */
+#features {
+  background: var(--bg2);
+  position: relative;
+  overflow: hidden;
+}
+
+#features::before {
+  content: '';
+  position: absolute;
+  top: -200px; right: -200px;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(78,205,196,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  max-width: 1200px;
+  margin: 60px auto 0;
+}
+
+.feature-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+  backdrop-filter: blur(20px);
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(255,107,107,0.03), rgba(78,205,196,0.03));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.feature-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.15); }
+.feature-card:hover::before { opacity: 1; }
+
+.feature-icon {
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  margin-bottom: 20px;
+}
+
+.fi-red    { background: rgba(255,107,107,0.12); }
+.fi-teal   { background: rgba(78,205,196,0.12); }
+.fi-yellow { background: rgba(255,230,109,0.12); }
+.fi-purple { background: rgba(167,120,255,0.12); }
+.fi-blue   { background: rgba(100,140,255,0.12); }
+.fi-orange { background: rgba(255,152,0,0.12); }
+
+.feature-title { font-size: 17px; font-weight: 700; margin-bottom: 10px; }
+.feature-desc { font-size: 13px; color: var(--text2); line-height: 1.65; }
+
+.feature-card.featured {
+  grid-column: span 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(255,107,107,0.08), rgba(232,67,147,0.05));
+  border-color: rgba(255,107,107,0.2);
+}
+
+.feature-card.featured .feature-icon { width: 80px; height: 80px; font-size: 40px; }
+.feature-card.featured .feature-title { font-size: 24px; font-family: 'Cormorant Garamond', serif; font-weight: 600; }
+.feature-card.featured .feature-desc { font-size: 15px; }
+
+
+/* ══════════════════════════════════════════════════
+   HOW IT WORKS
+══════════════════════════════════════════════════ */
+#how-it-works { position: relative; }
+
+.steps-container {
+  max-width: 1100px;
+  margin: 60px auto 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  position: relative;
+}
+
+.steps-container::before {
+  content: '';
+  position: absolute;
+  top: 36px;
+  left: 12.5%; right: 12.5%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  z-index: 0;
+}
+
+.step {
+  text-align: center;
+  padding: 0 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.step-num {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF6B6B, #e84393);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 800; color: #fff;
+  margin: 0 auto 24px;
+  box-shadow: 0 8px 30px rgba(255,107,107,0.4);
+  font-family: 'Cormorant Garamond', serif;
+}
+
+.step:nth-child(2) .step-num { background: linear-gradient(135deg, #e84393, #9333ea); box-shadow: 0 8px 30px rgba(232,67,147,0.4); }
+.step:nth-child(3) .step-num { background: linear-gradient(135deg, #9333ea, #4ECDC4); box-shadow: 0 8px 30px rgba(147,51,234,0.4); }
+.step:nth-child(4) .step-num { background: linear-gradient(135deg, #4ECDC4, #26A69A); box-shadow: 0 8px 30px rgba(78,205,196,0.4); }
+
+.step-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.step-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+
+/* ══════════════════════════════════════════════════
+   LANGUAGES
+══════════════════════════════════════════════════ */
+#languages { background: var(--bg2); text-align: center; }
+
+.lang-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  max-width: 700px;
+  margin: 48px auto 0;
+}
+
+.lang-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s;
+  cursor: default;
+}
+
+.lang-pill:hover {
+  border-color: rgba(78,205,196,0.4);
+  background: rgba(78,205,196,0.06);
+  color: var(--accent2);
+  transform: translateY(-2px);
+}
+
+.lang-flag { font-size: 20px; }
+.lang-native { font-size: 11px; color: var(--text3); font-weight: 400; }
+
+
+/* ══════════════════════════════════════════════════
+   SAFETY
+══════════════════════════════════════════════════ */
+#safety { position: relative; overflow: hidden; }
+
+#safety::after {
+  content: '';
+  position: absolute;
+  bottom: -100px; left: -100px;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,107,107,0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.safety-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.safety-items { display: flex; flex-direction: column; gap: 20px; }
+
+.safety-item {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  padding: 22px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 0.2s;
+}
+
+.safety-item:hover { border-color: rgba(78,205,196,0.25); transform: translateX(4px); }
+
+.safety-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+  width: 52px; height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(78,205,196,0.1);
+  border-radius: 14px;
+}
+
+.safety-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.safety-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+.safety-visual {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.safety-shield {
+  width: 280px; height: 320px;
+  background: linear-gradient(160deg, rgba(78,205,196,0.08), rgba(78,205,196,0.02));
+  border: 2px solid rgba(78,205,196,0.2);
+  border-radius: 50% 50% 60% 60% / 40% 40% 60% 60%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 100px;
+  animation: shieldPulse 4s ease-in-out infinite;
+  position: relative;
+}
+
+@keyframes shieldPulse {
+  0%, 100% { box-shadow: 0 0 40px rgba(78,205,196,0.1); }
+  50%      { box-shadow: 0 0 80px rgba(78,205,196,0.25); }
+}
+
+.shield-ring {
+  position: absolute;
+  border-radius: 50% 50% 60% 60% / 40% 40% 60% 60%;
+  border: 1px solid rgba(78,205,196,0.1);
+}
+
+.shield-ring-1 { inset: -20px; animation: ringExpand 3s ease-out infinite; }
+.shield-ring-2 { inset: -40px; animation: ringExpand 3s ease-out 1s infinite; }
+.shield-ring-3 { inset: -60px; animation: ringExpand 3s ease-out 2s infinite; }
+
+@keyframes ringExpand {
+  0%   { opacity: 0.6; transform: scale(0.95); }
+  100% { opacity: 0;   transform: scale(1.05); }
+}
+
+
+/* ══════════════════════════════════════════════════
+   TESTIMONIALS
+══════════════════════════════════════════════════ */
+#testimonials { background: var(--bg2); text-align: center; }
+
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  max-width: 1100px;
+  margin: 60px auto 0;
+}
+
+.testimonial {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  text-align: left;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.testimonial::before {
+  content: '"';
+  position: absolute;
+  top: -10px; right: 20px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 120px;
+  color: rgba(255,107,107,0.06);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.testimonial:hover { transform: translateY(-4px); border-color: rgba(255,107,107,0.2); }
+
+.testimonial-text {
+  font-size: 14px; color: var(--text2);
+  line-height: 1.7; margin-bottom: 20px;
+  position: relative;
+}
+
+.testimonial-author { display: flex; align-items: center; gap: 12px; }
+
+.testimonial-avatar {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+
+.testimonial-name { font-size: 14px; font-weight: 700; }
+.testimonial-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.stars { color: #FFE66D; font-size: 13px; margin-bottom: 14px; }
+
+
+/* ══════════════════════════════════════════════════
+   CTA
+══════════════════════════════════════════════════ */
+#cta { text-align: center; position: relative; overflow: hidden; }
+
+#cta::before {
+  content: '';
+  position: absolute;
+  top: -200px; left: 50%;
+  transform: translateX(-50%);
+  width: 800px; height: 800px;
+  background: radial-gradient(ellipse, rgba(255,107,107,0.1) 0%, rgba(78,205,196,0.05) 40%, transparent 70%);
+  pointer-events: none;
+  animation: heroBreathe 6s ease-in-out infinite;
+}
+
+.cta-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.cta-phone-num {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(78,205,196,0.08);
+  border: 1px solid rgba(78,205,196,0.2);
+  border-radius: 16px;
+  padding: 12px 24px;
+  margin: 32px auto;
+  font-size: 22px; font-weight: 700;
+  color: var(--accent2);
+  letter-spacing: 0.15em;
+}
+
+.cta-hint { font-size: 12px; color: var(--text3); margin-top: 8px; }
+
+
+/* ══════════════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════════════ */
+footer {
+  padding: 60px 40px 40px;
+  border-top: 1px solid var(--border);
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  gap: 48px;
+}
+
+.footer-brand-desc {
+  font-size: 13px; color: var(--text3);
+  line-height: 1.7; margin-top: 16px;
+  max-width: 260px;
+}
+
+.footer-col-title {
+  font-size: 11px; font-weight: 700; color: var(--text2);
+  text-transform: uppercase; letter-spacing: 0.12em;
+  margin-bottom: 20px;
+}
+
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.footer-links a { color: var(--text3); text-decoration: none; font-size: 13px; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+
+.footer-bottom {
+  max-width: 1200px;
+  margin: 48px auto 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px; color: var(--text3);
+}
+
+.footer-bottom-links { display: flex; gap: 24px; }
+.footer-bottom-links a { color: var(--text3); text-decoration: none; transition: color 0.2s; }
+.footer-bottom-links a:hover { color: var(--text); }
+
+
+/* ══════════════════════════════════════════════════
+   SCROLL REVEAL ANIMATION
+══════════════════════════════════════════════════ */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
+/* ══════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .float-card { display: none; }
+}
+
+@media (max-width: 768px) {
+  nav { padding: 16px 20px; }
+  .nav-links { display: none; }
+
+  section { padding: 70px 24px; }
+  .hero { padding: 100px 24px 60px; }
+
+  .hero-stats { gap: 20px; }
+  .hero-divider { display: none; }
+
+  .steps-container { grid-template-columns: 1fr 1fr; gap: 30px; }
+  .steps-container::before { display: none; }
+
+  .safety-grid { grid-template-columns: 1fr; }
+  .safety-visual { display: none; }
+
+  .testimonials-grid { grid-template-columns: 1fr; }
+
+  .feature-card.featured { grid-column: span 1; display: block; }
+
+  .footer-inner { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .footer-bottom { flex-direction: column; gap: 16px; text-align: center; }
+
+  /* Phone mockup responsive */
+  .hero-mockup-section { padding: 60px 24px 80px; }
+  .phone { width: 260px; }
+  .screen { min-height: 560px; }
+}
+
+@media (max-width: 480px) {
+  .features-grid { grid-template-columns: 1fr; }
+  .steps-container { grid-template-columns: 1fr; }
+  .hero-title { letter-spacing: -1px; }
+  .footer-inner { grid-template-columns: 1fr; }
+  .phone { width: 270px; }
+}
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-icon">🎙️</div>
+    <span class="nav-logo-text">Guftgu</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how-it-works">How it works</a></li>
+    <li><a href="#languages">Languages</a></li>
+    <li><a href="#safety">Safety</a></li>
+    <li><a href="https://guftgu-fun.netlify.app/" target="_blank" class="nav-cta">Start Talking</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-badge">🇮🇳 Made for India &nbsp;·&nbsp; 100% Anonymous</div>
+
+    <h1 class="hero-title">
+      <span>Guftgu</span>
+    </h1>
+    <p class="hero-tagline-hindi">बात करो, दिल से — Speak freely, connect deeply</p>
+
+    <p class="hero-sub">
+      India's first fully anonymous voice & chat app. No phone number. No name. No trace.
+      Talk to strangers who truly listen — in the language you love.
+    </p>
+
+    <div class="hero-actions">
+      <a href="https://guftgu-fun.netlify.app/" target="_blank" class="btn-primary">
+        🎙️ Start Talking Free
+      </a>
+      <a href="#how-it-works" class="btn-secondary">
+        How it works →
+      </a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num">9+</div>
+        <div class="hero-stat-label">Languages</div>
+      </div>
+      <div class="hero-divider"></div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">30+</div>
+        <div class="hero-stat-label">Avatars</div>
+      </div>
+      <div class="hero-divider"></div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">0</div>
+        <div class="hero-stat-label">Data Collected</div>
+      </div>
+      <div class="hero-divider"></div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">∞</div>
+        <div class="hero-stat-label">Real Conversations</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PHONE MOCKUP -->
+<div class="mockup-scene">
+ 
+  <!-- floating cards LEFT -->
+  <div class="float-cards" style="pointer-events:none;position:absolute;inset:0;">
+ 
+    <div class="float-card fc1">
+      <div class="fc-icon" style="background:rgba(78,205,196,0.12);">🔒</div>
+      <div>
+        <div class="fc-label">Privacy</div>
+        <div class="fc-value" style="color:var(--accent2);">100% Anonymous</div>
+      </div>
+    </div>
+ 
+    <div class="float-card fc2">
+      <div class="fc-icon" style="background:rgba(255,107,107,0.12);">📞</div>
+      <div>
+        <div class="fc-label">Technology</div>
+        <div class="fc-value" style="color:var(--accent);">WebRTC Calls</div>
+      </div>
+    </div>
+ 
+    <div class="float-card fc3">
+      <div class="fc-icon" style="background:rgba(255,230,109,0.12);">⚡</div>
+      <div>
+        <div class="fc-label">Wait time</div>
+        <div class="fc-value" style="color:var(--accent3);">&lt;30 seconds</div>
+      </div>
+    </div>
+ 
+    <div class="float-card fc4">
+      <div class="fc-icon" style="background:rgba(167,120,255,0.12);">🎭</div>
+      <div>
+        <div class="fc-label">Avatars</div>
+        <div class="fc-value" style="color:#A778FF;">30+ Characters</div>
+      </div>
+    </div>
+ 
+  </div>
+ 
+  <!-- PHONE -->
+  <div class="phone-wrap">
+    <div class="ambient-rings">
+      <div class="ambient-ring ar1"></div>
+      <div class="ambient-ring ar2"></div>
+      <div class="ambient-ring ar3"></div>
+    </div>
+ 
+    <div class="phone">
+      <div class="dynamic-island">
+        <div class="di-camera"></div>
+        <div class="di-light"></div>
+      </div>
+ 
+      <div class="screen">
+ 
+        <!-- Status bar -->
+        <div class="screen-status">
+          <span style="font-weight:700;font-size:11px;">9:41</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div class="signal-bars">
+              <div class="signal-bar"></div>
+              <div class="signal-bar"></div>
+              <div class="signal-bar"></div>
+              <div class="signal-bar"></div>
+            </div>
+            <svg width="14" height="10" viewBox="0 0 24 16" fill="none">
+              <path d="M1 8C3.5 4 7.5 2 12 2s8.5 2 11 6" stroke="rgba(85,88,112,1)" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M4 11c2-2.5 4.8-4 8-4s6 1.5 8 4" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M7.5 14c1.2-1.5 2.8-2.3 4.5-2.3s3.3.8 4.5 2.3" stroke="var(--accent2)" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+            <svg width="22" height="11" viewBox="0 0 22 11" fill="none">
+              <rect x="0.5" y="0.5" width="18" height="10" rx="2.5" stroke="rgba(85,88,112,0.5)" stroke-width="1"/>
+              <rect x="1.5" y="1.5" width="12" height="8" rx="1.5" fill="var(--accent2)"/>
+              <path d="M20 3.5v4c.83-.4 1.5-1.17 1.5-2s-.67-1.6-1.5-2z" fill="rgba(85,88,112,0.6)"/>
+            </svg>
+          </div>
+        </div>
+ 
+        <!-- Header -->
+        <div class="header-row">
+          <div class="greeting-block">
+            <div class="greeting-text">Good evening 🌙</div>
+            <div class="name-text">Hey, SilentTiger42</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:13px;">🔔</div>
+            <div class="avatar-btn">🦊</div>
+          </div>
+        </div>
+ 
+        <!-- Online pill -->
+        <div class="online-pill">
+          <div class="online-dot"></div>
+          1,247 online now
+        </div>
+ 
+        <!-- Find button -->
+        <div class="find-btn">
+          <div class="find-icon-box">🎙️</div>
+          <div class="find-text">
+            <div class="find-label">Find a Guftgu</div>
+            <div class="find-sub">Hindi · Happy · Just chat</div>
+          </div>
+          <div class="find-arrow">→</div>
+          <div class="tap-ripple"></div>
+        </div>
+ 
+        <!-- Prefs -->
+        <div class="pref-row">
+          <div class="pref-card">
+            <div class="pref-icon-wrap">😄</div>
+            <div class="pref-info">
+              <div class="pref-label">Mood</div>
+              <div class="pref-value">Happy</div>
+            </div>
+            <div class="pref-edit">✎</div>
+          </div>
+          <div class="pref-card">
+            <div class="pref-icon-wrap">🌐</div>
+            <div class="pref-info">
+              <div class="pref-label">Language</div>
+              <div class="pref-value">Hindi</div>
+            </div>
+            <div class="pref-edit">✎</div>
+          </div>
+        </div>
+ 
+        <!-- Recent calls -->
+        <div class="section-header">
+          <div class="section-title">Recent Calls</div>
+          <div class="section-see-all">See All →</div>
+        </div>
+ 
+        <div class="call-item incoming">
+          <div class="call-avatar" style="background:rgba(255,107,107,0.12);">
+            🦊
+            <div class="call-avatar-ring"></div>
+          </div>
+          <div class="call-info">
+            <div class="call-name">WildFox99</div>
+            <div class="call-meta">
+              <span class="call-duration">12:34</span>
+              <span>·</span>
+              <span>Hindi</span>
+              <span>·</span>
+              <span>2m ago</span>
+            </div>
+          </div>
+          <div class="call-badge badge-inc">Incoming</div>
+        </div>
+ 
+        <div class="call-item outgoing">
+          <div class="call-avatar" style="background:rgba(78,205,196,0.12);">
+            🐼
+            <div class="call-avatar-ring"></div>
+          </div>
+          <div class="call-info">
+            <div class="call-name">CalmPanda21</div>
+            <div class="call-meta">
+              <span class="call-duration">5:17</span>
+              <span>·</span>
+              <span>Bengali</span>
+              <span>·</span>
+              <span>1h ago</span>
+            </div>
+          </div>
+          <div class="call-badge badge-out">Outgoing</div>
+        </div>
+ 
+        <!-- Animated notification strip -->
+        <div class="match-found-strip">
+          <div class="strip-dot" style="background:var(--accent2);"></div>
+          <div class="strip-text" style="color:var(--accent2);">Match found! QuietOwl wants to talk</div>
+          <div class="strip-action" style="background:rgba(78,205,196,0.15);color:var(--accent2);">Connect</div>
+        </div>
+ 
+        <div class="match-found-strip2">
+          <div class="strip-dot" style="background:var(--accent);"></div>
+          <div class="strip-text" style="color:var(--accent);">🎙️ Incoming call from BraveWolf88</div>
+          <div class="strip-action" style="background:rgba(255,107,107,0.15);color:var(--accent);">Accept</div>
+        </div>
+ 
+      </div><!-- /screen -->
+    </div><!-- /phone -->
+ 
+    <div class="glow-platform"></div>
+  </div><!-- /phone-wrap -->
+ 
+</div><!-- /mockup-scene -->
+
+<!-- LANGUAGE STRIP -->
+<div class="lang-strip">
+  <div class="lang-strip-inner">
+    <div class="lang-strip-item">🇮🇳 हिन्दी (Hindi)</div>
+    <div class="lang-strip-item">🌐 English</div>
+    <div class="lang-strip-item">🪷 বাংলা (Bengali)</div>
+    <div class="lang-strip-item">🌸 ଓଡ଼ିଆ (Odia)</div>
+    <div class="lang-strip-item">🌺 தமிழ் (Tamil)</div>
+    <div class="lang-strip-item">🌼 తెలుగు (Telugu)</div>
+    <div class="lang-strip-item">🏵️ मराठी (Marathi)</div>
+    <div class="lang-strip-item">☘️ ಕನ್ನಡ (Kannada)</div>
+    <div class="lang-strip-item">🌻 ਪੰਜਾਬੀ (Punjabi)</div>
+    <div class="lang-strip-item">🎋 भोजपुरी (Bhojpuri)</div>
+    <!-- duplicate for seamless loop -->
+    <div class="lang-strip-item">🇮🇳 हिन्दी (Hindi)</div>
+    <div class="lang-strip-item">🌐 English</div>
+    <div class="lang-strip-item">🪷 বাংলা (Bengali)</div>
+    <div class="lang-strip-item">🌸 ଓଡ଼ିଆ (Odia)</div>
+    <div class="lang-strip-item">🌺 தமிழ் (Tamil)</div>
+    <div class="lang-strip-item">🌼 తెలుగు (Telugu)</div>
+    <div class="lang-strip-item">🏵️ मराठी (Marathi)</div>
+    <div class="lang-strip-item">☘️ ಕನ್ನಡ (Kannada)</div>
+    <div class="lang-strip-item">🌻 ਪੰਜਾਬੀ (Punjabi)</div>
+    <div class="lang-strip-item">🎋 भोजपुरी (Bhojpuri)</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div style="max-width:1200px; margin:0 auto;">
+    <div class="section-label reveal">What makes us different</div>
+    <h2 class="section-title reveal">Everything you need,<br/>nothing you don't</h2>
+    <p class="section-sub reveal">Built from the ground up for India — with privacy, language, and real human connection at the core.</p>
+
+    <div class="features-grid">
+      <div class="feature-card featured reveal">
+        <div>
+          <div class="feature-icon fi-red" style="width:80px;height:80px;font-size:40px;">🎭</div>
+          <h3 class="feature-title">Absolute Anonymity</h3>
+          <p class="feature-desc">No phone number. No email. No real name. We generate a random 7-digit Guftgu number just for you. Your identity stays 100% private — even we don't know who you are. Share your thoughts, secrets, and feelings without fear of judgment.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.2);border-radius:12px;padding:16px;">
+            <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.1em;">Your Guftgu Number</div>
+            <div style="font-size:28px;font-weight:700;color:var(--accent2);letter-spacing:.2em;">4829361</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px;">Share this with friends to call you directly</div>
+          </div>
+          <div style="background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:20px;">✅</span>
+            <span style="font-size:12px;color:var(--text2);">No account needed — start in seconds</span>
+          </div>
+          <div style="background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:20px;">✅</span>
+            <span style="font-size:12px;color:var(--text2);">30-day account recovery window</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="feature-card reveal">
+        <div class="feature-icon fi-teal">📞</div>
+        <h3 class="feature-title">WebRTC Voice Calls</h3>
+        <p class="feature-desc">Crystal clear, peer-to-peer voice calls with zero server recording. Echo cancellation and noise suppression built-in. Your conversations stay between you and the other person.</p>
+      </div>
+
+      <div class="feature-card reveal">
+        <div class="feature-icon fi-yellow">🎯</div>
+        <h3 class="feature-title">Smart Matching</h3>
+        <p class="feature-desc">Match by mood, language, and region. Feeling lonely? Happy? Curious? We find someone who gets it. Priority matching — language + region first, then language only, then region.</p>
+      </div>
+
+      <div class="feature-card reveal">
+        <div class="feature-icon fi-purple">📱</div>
+        <h3 class="feature-title">Dial by Guftgu Number</h3>
+        <p class="feature-desc">Call your friends directly using their 7-digit Guftgu number. No need to share your real number. Stay anonymous even with people you trust.</p>
+      </div>
+
+      <div class="feature-card reveal">
+        <div class="feature-icon fi-blue">💬</div>
+        <h3 class="feature-title">Friends & Text Chat</h3>
+        <p class="feature-desc">Send friend requests during calls. Once connected, chat via end-to-end messaging. Rename friends with nicknames only you can see. Block, unfriend — you're in control.</p>
+      </div>
+
+      <div class="feature-card reveal">
+        <div class="feature-icon fi-orange">🐱</div>
+        <h3 class="feature-title">30+ SVG Avatars</h3>
+        <p class="feature-desc">Animals, people, fantasy characters — pick one that represents you without revealing your face. Animals 🦊, Professions 👩‍⚕️, Fantasy 🧙 — all beautifully crafted.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div class="section-label reveal">Simple by design</div>
+    <h2 class="section-title reveal">Start talking in<br/>under 30 seconds</h2>
+    <p class="section-sub reveal">No forms. No verification. No waiting. Just open, pick your vibe, and connect.</p>
+
+    <div class="steps-container">
+      <div class="step reveal">
+        <div class="step-num">1</div>
+        <h3 class="step-title">Pick Your Vibe</h3>
+        <p class="step-desc">Choose your mood, avatar, language, and region. Quick start takes 10 seconds — we randomize the rest.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">2</div>
+        <h3 class="step-title">Get Matched</h3>
+        <p class="step-desc">Our smart queue finds someone who speaks your language and matches your mood. Usually under 30 seconds.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">3</div>
+        <h3 class="step-title">Connect & Talk</h3>
+        <p class="step-desc">Accept the match and start your voice call. No awkward intros — your mood emoji says it all.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">4</div>
+        <h3 class="step-title">Add Friends</h3>
+        <p class="step-desc">Click "Add Friend" during a call. Text each other, call directly, or keep exploring. All anonymous.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LANGUAGES -->
+<section id="languages">
+  <div style="max-width:900px;margin:0 auto;">
+    <div class="section-label reveal" style="justify-content:center;">Built for Bharat</div>
+    <h2 class="section-title reveal">9 Indian languages.<br/>One platform.</h2>
+    <p class="section-sub reveal" style="margin:0 auto;">From Kashmir to Kanyakumari — talk in the language your heart speaks.</p>
+
+    <div class="lang-grid reveal">
+      <div class="lang-pill">
+        <span class="lang-flag">🇮🇳</span>
+        <span>Hindi</span>
+        <span class="lang-native">हिन्दी</span>
+      </div>
+      <div class="lang-pill">
+        <span class="lang-flag">🌐</span>
+        <span>English</span>
+        <span class="lang-native">English</span>
+      </div>
+      <div class="lang-pill">
+        <span class="lang-flag">🪷</span>
+        <span>Bengali</span>
+        <span class="lang-native">বাংলা</span>
+      </div>
+      <div class="lang-pill">
+        <span class="lang-flag">🌺</span>
+        <span>Tamil</span>
+        <span class="lang-native">தமிழ்</span>
+      </div>
+      <div class="lang-pill">
+        <span class="lang-flag">🌼</span>
+        <span>Telugu</span>
+        <span class="lang-native">తెలుగు</span>
+      </div>
+      <div class="lang-pill">
+        <span class="lang-flag">🏵️</span>
+        <span>Marathi</span>
+        <span class="lang-native">मराठी</span>
+      </div>
+      <div class="lang-pill">
+        <span class="lang-flag">☘️</span>
+        <span>Kannada</span>
+        <span class="lang-native">ಕನ್ನಡ</span>
+      </div>
+      <div class="lang-pill">
+        <span class="lang-flag">🌻</span>
+        <span>Punjabi</span>
+        <span class="lang-native">ਪੰਜਾਬੀ</span>
+      </div>
+      <div class="lang-pill">
+        <span class="lang-flag">🌸</span>
+        <span>Odia</span>
+        <span class="lang-native">ଓଡ଼ିଆ</span>
+      </div>
+      <div class="lang-pill">
+        <span class="lang-flag">🎋</span>
+        <span>Bhojpuri</span>
+        <span class="lang-native">भोजपुरी</span>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px;" class="reveal">
+      <div style="padding:8px 16px;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:50px;font-size:12px;font-weight:600;color:var(--accent2);">🏔️ North India</div>
+      <div style="padding:8px 16px;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:50px;font-size:12px;font-weight:600;color:var(--accent2);">🌴 South India</div>
+      <div style="padding:8px 16px;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:50px;font-size:12px;font-weight:600;color:var(--accent2);">🌊 East India</div>
+      <div style="padding:8px 16px;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:50px;font-size:12px;font-weight:600;color:var(--accent2);">🌅 West India</div>
+      <div style="padding:8px 16px;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:50px;font-size:12px;font-weight:600;color:var(--accent2);">🌾 Central India</div>
+      <div style="padding:8px 16px;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:50px;font-size:12px;font-weight:600;color:var(--accent2);">🏕️ Northeast</div>
+    </div>
+  </div>
+</section>
+
+<!-- SAFETY -->
+<section id="safety">
+  <div class="safety-grid">
+    <div class="reveal">
+      <div class="section-label">Built-in protection</div>
+      <h2 class="section-title">Your safety,<br/>our promise</h2>
+      <p class="section-sub" style="margin-bottom:32px;">Every feature is designed to keep you safe while staying completely free to express yourself.</p>
+
+      <div class="safety-items">
+        <div class="safety-item">
+          <div class="safety-icon">🚫</div>
+          <div>
+            <div class="safety-title">One-tap Block</div>
+            <div class="safety-desc">Block anyone instantly during a call or from your friends list. Blocked users can't match with you, call you, or send requests.</div>
+          </div>
+        </div>
+        <div class="safety-item">
+          <div class="safety-icon">⚠️</div>
+          <div>
+            <div class="safety-title">Report System</div>
+            <div class="safety-desc">Report inappropriate behavior directly from the match screen or call. Every report is reviewed seriously.</div>
+          </div>
+        </div>
+        <div class="safety-item">
+          <div class="safety-icon">🔒</div>
+          <div>
+            <div class="safety-title">Friends-Only Chat</div>
+            <div class="safety-desc">Text messaging is locked to mutual friends only — both sides must agree before any messages can be sent.</div>
+          </div>
+        </div>
+        <div class="safety-item">
+          <div class="safety-icon">🗑️</div>
+          <div>
+            <div class="safety-title">Delete Everything</div>
+            <div class="safety-desc">Delete your account and all data — profile, history, friends, conversations — completely wiped with 30-day recovery window.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="safety-visual reveal">
+      <div class="safety-shield">
+        🛡️
+        <div class="shield-ring shield-ring-1"></div>
+        <div class="shield-ring shield-ring-2"></div>
+        <div class="shield-ring shield-ring-3"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section id="testimonials">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div class="section-label reveal" style="justify-content:center;">Real voices</div>
+    <h2 class="section-title reveal">What people are saying</h2>
+
+    <div class="testimonials-grid">
+      <div class="testimonial reveal">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">"Main bahut shy hoon aur real life mein log se baat karna mushkil lagta hai. Guftgu ne mujhe ek safe space diya jahan main apni feelings express kar sakta hoon. Best app for introverts!"</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar" style="background:rgba(255,107,107,0.15);">🦊</div>
+          <div>
+            <div class="testimonial-name">QuietFox_Delhi</div>
+            <div class="testimonial-meta">North India · Hindi</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial reveal">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">"The call quality is amazing — feels like the person is right there. I found someone going through the exact same thing I was. We talked for 2 hours. Life-changing honestly."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar" style="background:rgba(78,205,196,0.15);">🐼</div>
+          <div>
+            <div class="testimonial-name">CalmPanda_Chennai</div>
+            <div class="testimonial-meta">South India · Tamil</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial reveal">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">"Amader Bangla te baat kore etota valo laglo! App ta ekdom perfect — kono registration nei, kono data nei. Just talk. Finally ekta India-first app!"</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar" style="background:rgba(255,230,109,0.15);">🦁</div>
+          <div>
+            <div class="testimonial-name">BoldLion_Kolkata</div>
+            <div class="testimonial-meta">East India · Bengali</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="cta-inner reveal">
+    <div class="section-label" style="justify-content:center;">Ready?</div>
+    <h2 class="section-title">Start your first<br/><span style="background:linear-gradient(135deg,#FF6B6B,#FF8E53,#FFE66D);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Guftgu</span> right now</h2>
+    <p style="font-size:16px;color:var(--text2);max-width:440px;margin:20px auto 0;line-height:1.7;">No downloads. No signups. Open on any browser — mobile or desktop — and you're in. Your number is waiting.</p>
+
+    <div class="cta-phone-num">
+      📱 Your number: <span id="random-num">—</span>
+    </div>
+    <p class="cta-hint">This is what your Guftgu number will look like. Fully yours. Fully anonymous.</p>
+
+    <div style="margin-top:40px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <a href="https://guftgu-fun.netlify.app/" target="_blank" class="btn-primary" style="font-size:17px;padding:18px 44px;">
+        🎙️ Start Talking — It's Free
+      </a>
+    </div>
+
+    <div style="margin-top:28px;display:flex;gap:24px;justify-content:center;flex-wrap:wrap;">
+      <span style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px;">✓ No signup required</span>
+      <span style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px;">✓ No credit card</span>
+      <span style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px;">✓ Works on any browser</span>
+      <span style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px;">✓ Made in India 🇮🇳</span>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <a href="#" class="nav-logo" style="margin-bottom:0;">
+        <div class="nav-logo-icon">🎙️</div>
+        <span class="nav-logo-text">Guftgu</span>
+      </a>
+      <p class="footer-brand-desc">India's most anonymous voice & chat app. Speak freely. Connect deeply. No names, no judgments — just real conversations.</p>
+      <div style="margin-top:20px;font-size:12px;color:var(--text3);">Made with ❤️ in India</div>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Product</div>
+      <ul class="footer-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how-it-works">How it works</a></li>
+        <li><a href="#languages">Languages</a></li>
+        <li><a href="#safety">Safety</a></li>
+        <li><a href="https://guftgu-fun.netlify.app/" target="_blank">Launch App</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Regions</div>
+      <ul class="footer-links">
+        <li><a href="#">North India</a></li>
+        <li><a href="#">South India</a></li>
+        <li><a href="#">East India</a></li>
+        <li><a href="#">West India</a></li>
+        <li><a href="#">Northeast</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Support</div>
+      <ul class="footer-links">
+        <li><a href="mailto:guftgu31398@gmail.com">Email Us</a></li>
+        <li><a href="https://wa.me/919597831754">WhatsApp</a></li>
+        <li><a href="#">Report Abuse</a></li>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Terms of Service</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2025–2026 Guftgu. All rights reserved.</span>
+    <div class="footer-bottom-links">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Cookies</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Random Guftgu number
+  const num = String(Math.floor(1000000 + Math.random() * 9000000));
+  document.getElementById('random-num').textContent = num;
+
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 80);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  reveals.forEach(el => observer.observe(el));
+
+  // Nav scroll effect
+  window.addEventListener('scroll', () => {
+    const nav = document.querySelector('nav');
+    if (window.scrollY > 50) {
+      nav.style.borderBottomColor = 'rgba(255,255,255,0.1)';
+    } else {
+      nav.style.borderBottomColor = 'var(--border)';
+    }
+  });
+
+  // Smooth scroll for anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+</body>
+</html>
