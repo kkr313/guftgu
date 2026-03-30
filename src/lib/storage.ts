@@ -8,6 +8,7 @@ const PENDING_KEY = 'guftgu_pending';
 const BLOCKED_KEY = 'guftgu_blocked';
 const CONVERSATIONS_KEY = 'guftgu_conversations';
 const NOTIFS_KEY = 'guftgu_notifications';
+const DELETED_CHATS_KEY = 'guftgu_deleted_chats'; // tracks when chats were "deleted" locally
 
 export interface UserData {
   nickname: string;
@@ -242,6 +243,8 @@ export function saveChatConversations(list: ChatConversation[]): void {
 export function deleteChatConversation(phone: string): void {
   const convos = getChatConversations().filter(c => c.phone !== phone);
   saveChatConversations(convos);
+  // Mark this chat as deleted at current timestamp so ChatScreen filters old msgs
+  markChatDeleted(phone);
 }
 
 export function clearAllConversations(): void {
@@ -354,6 +357,48 @@ export function clearAllData(): void {
     localStorage.removeItem(BLOCKED_KEY);
     localStorage.removeItem(CONVERSATIONS_KEY);
     localStorage.removeItem(NOTIFS_KEY);
+    localStorage.removeItem(DELETED_CHATS_KEY);
     localStorage.removeItem('guftgu_welcomed');
+  } catch (_) { /* ignore */ }
+}
+
+// ── Deleted Chats Timestamps ────────────────────────────────────────────────
+
+/**
+ * Record the timestamp when a user "deleted" a chat locally.
+ * ChatScreen uses this to hide Firebase messages sent before this time.
+ */
+export function markChatDeleted(phone: string): void {
+  try {
+    const raw = localStorage.getItem(DELETED_CHATS_KEY);
+    const map: Record<string, number> = raw ? JSON.parse(raw) : {};
+    map[phone] = Date.now();
+    localStorage.setItem(DELETED_CHATS_KEY, JSON.stringify(map));
+  } catch (_) { /* ignore */ }
+}
+
+/**
+ * Get the timestamp from which messages should be shown for a conversation.
+ * Returns null if the chat was never deleted (show all messages).
+ */
+export function getChatDeletedSince(phone: string): number | null {
+  try {
+    const raw = localStorage.getItem(DELETED_CHATS_KEY);
+    if (!raw) return null;
+    const map: Record<string, number> = JSON.parse(raw);
+    return map[phone] ?? null;
+  } catch (_) { return null; }
+}
+
+/**
+ * Clear deletion marker for a chat (e.g., after re-adding as friend or new message replaces history).
+ */
+export function clearChatDeletedSince(phone: string): void {
+  try {
+    const raw = localStorage.getItem(DELETED_CHATS_KEY);
+    if (!raw) return;
+    const map: Record<string, number> = JSON.parse(raw);
+    delete map[phone];
+    localStorage.setItem(DELETED_CHATS_KEY, JSON.stringify(map));
   } catch (_) { /* ignore */ }
 }

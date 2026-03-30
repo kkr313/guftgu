@@ -384,10 +384,10 @@ nav {
 /* Section wrapper */
 .hero-mockup-section {
   position: relative;
-  padding: 80px 40px 120px;
+  padding: 80px 40px 180px;
   display: flex;
   justify-content: center;
-  overflow: visible;
+  overflow: hidden;
 }
 
 /* ── SCENE WRAPPER ── */
@@ -950,25 +950,25 @@ nav {
 .fc-value { font-size: 13px; font-weight: 700; margin-top: 1px; }
 
 .fc1 {
-  top: 12%; left: -160px;
+  top: 12%; left: -180px;
   animation: fcFloat1 6s ease-in-out infinite;
   border-color: rgba(78,205,196,0.2);
 }
 
 .fc2 {
-  top: 35%; right: -165px;
+  top: 35%; right: -185px;
   animation: fcFloat2 7s ease-in-out 0.5s infinite;
   border-color: rgba(255,107,107,0.2);
 }
 
 .fc3 {
-  top: 58%; left: -175px;
+  top: 58%; left: -190px;
   animation: fcFloat3 5.5s ease-in-out 1s infinite;
   border-color: rgba(255,230,109,0.2);
 }
 
 .fc4 {
-  bottom: 15%; right: -155px;
+  bottom: 15%; right: -175px;
   animation: fcFloat1 6.5s ease-in-out 2s infinite;
   border-color: rgba(167,120,255,0.2);
 }
@@ -1036,6 +1036,11 @@ nav {
 ══════════════════════════════════════════════════ */
 section { padding: 100px 40px; }
 
+.section-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
 .section-label {
   font-size: 11px;
   font-weight: 700;
@@ -1079,6 +1084,7 @@ section { padding: 100px 40px; }
   background: var(--bg2);
   position: relative;
   overflow: hidden;
+  text-align: left;
 }
 
 #features::before {
@@ -1159,7 +1165,7 @@ section { padding: 100px 40px; }
 /* ══════════════════════════════════════════════════
    HOW IT WORKS
 ══════════════════════════════════════════════════ */
-#how-it-works { position: relative; }
+#how-it-works { position: relative; text-align: left; }
 
 .steps-container {
   max-width: 1100px;
@@ -1210,6 +1216,15 @@ section { padding: 100px 40px; }
    LANGUAGES
 ══════════════════════════════════════════════════ */
 #languages { background: var(--bg2); text-align: center; }
+
+#languages .section-title {
+  text-align: center;
+}
+
+#languages .section-sub {
+  text-align: center;
+  margin: 0 auto;
+}
 
 .lang-grid {
   display: flex;
@@ -1339,6 +1354,10 @@ section { padding: 100px 40px; }
 ══════════════════════════════════════════════════ */
 #testimonials { background: var(--bg2); text-align: center; }
 
+#testimonials .section-title {
+  text-align: center;
+}
+
 .testimonials-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1395,6 +1414,10 @@ section { padding: 100px 40px; }
    CTA
 ══════════════════════════════════════════════════ */
 #cta { text-align: center; position: relative; overflow: hidden; }
+
+#cta .section-title {
+  text-align: center;
+}
 
 #cta::before {
   content: '';
@@ -1502,6 +1525,11 @@ footer {
 /* ══════════════════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+  .float-card { display: none; }
+  .hero-mockup-section { padding: 60px 40px 120px; }
+}
+
 @media (max-width: 900px) {
   .float-card { display: none; }
 }
@@ -1611,6 +1639,7 @@ footer {
 </section>
 
 <!-- PHONE MOCKUP -->
+<div class="hero-mockup-section">
 <div class="mockup-scene">
  
   <!-- floating cards LEFT -->
@@ -1800,6 +1829,7 @@ footer {
   </div><!-- /phone-wrap -->
  
 </div><!-- /mockup-scene -->
+</div><!-- /hero-mockup-section -->
 
 <!-- LANGUAGE STRIP -->
 <div class="lang-strip">
@@ -1830,7 +1860,7 @@ footer {
 
 <!-- FEATURES -->
 <section id="features">
-  <div style="max-width:1200px; margin:0 auto;">
+  <div class="section-inner">
     <div class="section-label reveal">What makes us different</div>
     <h2 class="section-title reveal">Everything you need,<br/>nothing you don't</h2>
     <p class="section-sub reveal">Built from the ground up for India — with privacy, language, and real human connection at the core.</p>
@@ -1894,7 +1924,7 @@ footer {
 
 <!-- HOW IT WORKS -->
 <section id="how-it-works">
-  <div style="max-width:1100px;margin:0 auto;">
+  <div class="section-inner">
     <div class="section-label reveal">Simple by design</div>
     <h2 class="section-title reveal">Start talking in<br/>under 30 seconds</h2>
     <p class="section-sub reveal">No forms. No verification. No waiting. Just open, pick your vibe, and connect.</p>
@@ -1926,10 +1956,10 @@ footer {
 
 <!-- LANGUAGES -->
 <section id="languages">
-  <div style="max-width:900px;margin:0 auto;">
+  <div style="max-width:900px;margin:0 auto;text-align:center;">
     <div class="section-label reveal" style="justify-content:center;">Built for Bharat</div>
     <h2 class="section-title reveal">9 Indian languages.<br/>One platform.</h2>
-    <p class="section-sub reveal" style="margin:0 auto;">From Kashmir to Kanyakumari — talk in the language your heart speaks.</p>
+    <p class="section-sub reveal" style="margin:0 auto 0;">From Kashmir to Kanyakumari — talk in the language your heart speaks.</p>
 
     <div class="lang-grid reveal">
       <div class="lang-pill">
@@ -1997,6 +2027,7 @@ footer {
 
 <!-- SAFETY -->
 <section id="safety">
+  <div style="max-width:1100px;margin:0 auto;">
   <div class="safety-grid">
     <div class="reveal">
       <div class="section-label">Built-in protection</div>
@@ -2044,11 +2075,12 @@ footer {
       </div>
     </div>
   </div>
+  </div>
 </section>
 
 <!-- TESTIMONIALS -->
 <section id="testimonials">
-  <div style="max-width:1100px;margin:0 auto;">
+  <div class="section-inner">
     <div class="section-label reveal" style="justify-content:center;">Real voices</div>
     <h2 class="section-title reveal">What people are saying</h2>
 

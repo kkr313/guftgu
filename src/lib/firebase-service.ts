@@ -682,6 +682,20 @@ export async function unblockUserFirebase(
 }
 
 /**
+ * Remove a friend relationship from Firebase (both sides).
+ * Called when a user unfriends someone.
+ */
+export async function removeFriendFirebase(
+  db: Database,
+  myPhone: string,
+  targetPhone: string
+): Promise<void> {
+  // Remove from both sides of the friends list in Firebase
+  await remove(ref(db, `friends/${myPhone}/${targetPhone}`)).catch(() => {});
+  await remove(ref(db, `friends/${targetPhone}/${myPhone}`)).catch(() => {});
+}
+
+/**
  * Report a user.
  */
 export async function reportUserFirebase(

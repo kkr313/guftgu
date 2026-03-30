@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import Avatar from '@/components/Avatar';
-import { getFriends, getPending, FriendRecord, PendingRecord, saveFriends, savePending, BlockedRecord, getBlocked, saveBlocked, formatRelativeTime } from '@/lib/storage';
+import { getFriends, getPending, FriendRecord, PendingRecord, saveFriends, savePending, BlockedRecord, getBlocked, saveBlocked, formatRelativeTime, deleteChatConversation, markChatDeleted } from '@/lib/storage';
 import { 
   listenFriendRequests, 
   listenFriendAccepted, 
@@ -12,6 +12,7 @@ import {
   initiateCall,
   checkUserForCall,
   blockUserFirebase,
+  removeFriendFirebase,
 } from '@/lib/firebase-service';
 import { timeAgo } from '@/lib/data';
 import { S } from '@/lib/strings';
@@ -219,10 +220,18 @@ export default function ChatsScreen() {
   };
 
   // ── Unfriend: remove from friends list ──
-  const unfriendUser = (f: FriendRecord) => {
+  const unfriendUser = async (f: FriendRecord) => {
     const updated = friends.filter(x => x.phone !== f.phone);
     setFriends(updated);
     saveFriends(updated);
+    // Remove from conversation list (they won't be able to chat anymore)
+    deleteChatConversation(f.phone);
+    // Mark chat as deleted so old messages don't reappear if they re-friend later
+    markChatDeleted(f.phone);
+    // Remove from Firebase friends list (both sides)
+    if (dbRef?.current && state.guftguPhone) {
+      removeFriendFirebase(dbRef.current, state.guftguPhone, f.phone).catch(() => {});
+    }
     showToast(`${f.nickname || f.name} has been removed from friends list`);
   };
 

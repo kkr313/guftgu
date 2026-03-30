@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useApp } from '@/context/AppContext';
 import Avatar from '@/components/Avatar';
-import { getFriends, getChatConversations, saveChatConversations, ChatConversation, bumpUnreadCount, formatRelativeTime } from '@/lib/storage';
+import { getFriends, getChatConversations, saveChatConversations, ChatConversation, bumpUnreadCount, formatRelativeTime, getChatDeletedSince, clearChatDeletedSince, markChatDeleted } from '@/lib/storage';
 import { playMessageSound } from '@/lib/sounds';
 import { 
   sendChatMessage, 
@@ -76,18 +76,35 @@ export default function ChatScreen() {
 
     if (isLocalFriend) {
       setIsFriend(true);
-    } else if (dbRef?.current) {
-      // Check Firebase
-      checkIfFriends(dbRef.current, state.guftguPhone, pal.phone)
-        .then(result => setIsFriend(result))
-        .catch(() => setIsFriend(false));
+    } else {
+      // Not a friend locally — don't check Firebase (treat as not friends)
+      // This correctly handles the unfriend case where the conversation is opened
+      // from the chat list but the user has since been unfriended
+      setIsFriend(false);
+      setMessages([{
+        id: 'sys-1',
+        text: '🔒 You are no longer friends. Send a new friend request to chat again.',
+        mine: false,
+        time: '',
+        system: true,
+      }]);
+      setLoading(false);
+      return;
     }
+
+    // Get the deletion cutoff for this conversation (if user deleted chat)
+    const deletedSince = getChatDeletedSince(pal.phone);
 
     // Load chat history
     if (dbRef?.current) {
       loadChatHistory(dbRef.current, state.guftguPhone, pal.phone)
         .then(history => {
-          const displayMessages: DisplayMessage[] = history.map(msg => {
+          // Filter out messages that were sent before the user deleted this chat
+          const filteredHistory = deletedSince
+            ? history.filter(msg => msg.timestamp > deletedSince)
+            : history;
+
+          const displayMessages: DisplayMessage[] = filteredHistory.map(msg => {
             processedIds.current.add(msg.id);
             return {
               id: msg.id,
@@ -150,15 +167,17 @@ export default function ChatScreen() {
   useEffect(() => {
     if (!isActive || !pal?.phone || !dbRef?.current || !state.guftguPhone) return;
 
-    let initialBatchDone = false;
-    const initTimer = setTimeout(() => { initialBatchDone = true; }, 1000);
+    // Record the time we started listening — any message older than this is
+    // "historical" (already rendered from loadChatHistory) and must NOT trigger
+    // a sound or unread badge. Using timestamp is reliable; setTimeout is not.
+    const listenStartedAt = Date.now();
 
     const unsub = listenChatMessages(
       dbRef.current,
       state.guftguPhone,
       pal.phone,
       (msg: ChatMessage) => {
-        // Skip if already processed (from history load)
+        // Skip if already rendered by the history load
         if (processedIds.current.has(msg.id)) return;
         processedIds.current.add(msg.id);
 
@@ -170,25 +189,23 @@ export default function ChatScreen() {
         };
         setMessages(prev => [...prev, displayMsg]);
 
-        // Update conversation list for incoming messages (outgoing handled in sendMessage)
+        // Only react to truly NEW incoming messages (sent after we opened the screen)
+        const isNewMessage = msg.timestamp >= listenStartedAt;
         if (msg.from !== state.guftguPhone) {
           updateConversationList(msg.text);
-          if (initialBatchDone) {
-            // Always play a sound when a genuinely new message arrives in this open chat
+          if (isNewMessage) {
+            // Play beep ONLY for messages that arrive while chat is open
             playMessageSound();
           }
-          // Note: bumpUnreadCount is NOT called here because:
-          // 1. When chat is active (isActive=true), there are no unread messages
-          // 2. When chat is not active, the global background listener in AppContext handles it
         }
       }
     );
 
     return () => {
-      clearTimeout(initTimer);
       unsub();
     };
   }, [isActive, pal?.phone, dbRef, state.guftguPhone]);
+
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -212,6 +229,8 @@ export default function ChatScreen() {
       if (!success) {
         showToast('🚫 Cannot message blocked user');
       } else {
+        // Clear deletion marker when user sends a new message — history restarts from here
+        clearChatDeletedSince(pal.phone);
         updateConversationList(text);
       }
     } catch (error) {
