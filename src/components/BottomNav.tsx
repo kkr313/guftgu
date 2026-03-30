@@ -3,13 +3,10 @@ import { IconHome, IconUsers, IconChat, IconUser } from '@/lib/icons';
 import { S } from '@/lib/strings';
 
 export default function BottomNav() {
-  const { state, showScreen, unreadNotifCount, unreadMsgCount } = useApp();
+  const { state, showScreen, unreadMsgCount } = useApp();
 
   const navScreens = ['screen-home', 'screen-chats', 'screen-notifs', 'screen-profile'];
   if (!navScreens.includes(state.screen)) return null;
-
-  // Unread count from chats (NotifsScreen) — conversations with unread messages
-  // We'll use unreadNotifCount for the Notifications bell badge
 
   const NAV_ITEMS = [
     { id: 'screen-home' as const, label: S.nav.home, icon: <IconHome /> },
@@ -36,15 +33,6 @@ export default function BottomNav() {
                 aria-label={`${unreadMsgCount} unread messages`}
               >
                 {unreadMsgCount > 9 ? '9+' : unreadMsgCount}
-              </span>
-            )}
-            {/* Badge: show unread notif count on the profile tab (notifications bell) */}
-            {item.id === 'screen-profile' && unreadNotifCount > 0 && (
-              <span
-                className="nav-badge"
-                aria-label={`${unreadNotifCount} unread notifications`}
-              >
-                {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
               </span>
             )}
           </div>
