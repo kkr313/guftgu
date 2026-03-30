@@ -37,6 +37,7 @@ export function useOnlineCount(
 
     const blockedUsers = getBlocked().map(b => b.phone);
     const usersRef = ref(db, 'users');
+    const myPhoneStr = String(myPhone).trim();
 
     const unsub = onValue(
       usersRef,
@@ -46,14 +47,14 @@ export function useOnlineCount(
         const now = Date.now();
 
         snap.forEach((child: DataSnapshot) => {
-          const userPhone = child.key;
+          const userPhone = String(child.key || '').trim();
           const userData = child.val() as { online?: boolean; lastSeen?: number } | null;
 
           // Must be marked online
           if (userData?.online !== true) return;
 
           // Skip yourself — myPhone is guaranteed non-empty here
-          if (userPhone === myPhone) return;
+          if (userPhone === myPhoneStr) return;
 
           // Skip blocked users
           if (userPhone && blockedUsers.includes(userPhone)) return;

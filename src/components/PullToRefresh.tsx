@@ -13,9 +13,9 @@ import { playRefreshSound } from '@/lib/sounds';
  *  5. A high threshold (70 px visible / ~170 px finger) before reload triggers.
  */
 
-const DEAD_ZONE   = 30;   // px of finger movement before pull tracking starts
-const THRESHOLD   = 70;   // visible pull px needed to trigger refresh
-const MAX_PULL    = 140;   // visual cap (dampened)
+const DEAD_ZONE   = 50;   // px of finger movement before pull tracking starts
+const THRESHOLD   = 110;  // visible pull px needed to trigger refresh
+const MAX_PULL    = 160;   // visual cap (dampened)
 const SPINNER_SIZE = 36;
 
 export default function PullToRefresh() {
@@ -112,7 +112,7 @@ export default function PullToRefresh() {
       // ── Past dead zone: track the pull ──
       pulling.current = true;
       const effective = dy - DEAD_ZONE;           // subtract dead zone from visual
-      const clamped = Math.min(effective * 0.45, MAX_PULL);  // dampen
+      const clamped = Math.min(effective * 0.4, MAX_PULL);  // dampen
       pullRef.current = clamped;
       setPullDistance(clamped);
 
