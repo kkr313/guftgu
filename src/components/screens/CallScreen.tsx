@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '@/context/AppContext';
 import Avatar from '@/components/Avatar';
-import { saveCallToHistory, getFriends, saveFriends, FriendRecord } from '@/lib/storage';
+import { saveCallToHistory, getFriends, saveFriends, FriendRecord, getPending, savePending } from '@/lib/storage';
 import { sendFriendRequest, checkIfFriends, checkPendingRequest, blockUserFirebase, cleanupCallData, cancelCall, endCall as firebaseEndCall, listenOutgoingCallStatus, listenIncomingCallStatus, acceptFriendRequest, addToFriends, setDirectCallRoomId, watchDirectCallRoomId } from '@/lib/firebase-service';
 import { useTimer } from '@/hooks/useTimer';
 import { IconMic, IconMicOff, IconPhoneEnd, IconSpeaker } from '@/lib/icons';
@@ -563,6 +563,21 @@ export default function CallScreen() {
         state.user,
         pal.phone
       );
+
+      // Save to local pending list so it appears in Friends → Pending tab
+      const currentPending = getPending();
+      if (!currentPending.some(p => p.phone === pal.phone)) {
+        savePending([...currentPending, {
+          phone: pal.phone,
+          name: pal.name || 'Unknown',
+          avatar: pal.avatar || 'cat',
+          mood: pal.mood || '',
+          moodEmoji: pal.moodEmoji || '',
+          direction: 'outgoing',
+          timestamp: Date.now(),
+        }]);
+      }
+
       setFriendStatus('sent');
       showToast(S.call.friendRequestSent);
     } catch (error) {
@@ -609,6 +624,13 @@ export default function CallScreen() {
           addedAt: Date.now(),
         });
         saveFriends(localFriends);
+      }
+
+      // Remove from local pending list (if it was there)
+      const currentPending = getPending();
+      const updatedPending = currentPending.filter(p => p.phone !== pal.phone);
+      if (updatedPending.length !== currentPending.length) {
+        savePending(updatedPending);
       }
       
       // Update UI

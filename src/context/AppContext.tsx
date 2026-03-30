@@ -4,7 +4,7 @@ import { UserData, loadUser, saveUser as persistUser, genGuftguPhone, getCallHis
 import { playMessageSound, playNotifSound, playFriendOnlineSound } from '@/lib/sounds';
 import { Database, ref, set, remove, onValue, push, get, child, off, onChildAdded, DataSnapshot, serverTimestamp } from 'firebase/database';
 import { initFirebase, getDb } from '@/lib/firebase';
-import { registerUser, syncBlockList, setOnlineStatus, listenIncomingCalls, IncomingCall, acceptCall, declineCall, blockUserFirebase, listenFriendRequests, listenFriendAccepted, listenFriendDeclined, listenFriendRemovals, listenFriendsOnlineStatus, listenChatMessages, loadChatHistory } from '@/lib/firebase-service';
+import { registerUser, syncBlockList, setOnlineStatus, listenIncomingCalls, IncomingCall, acceptCall, declineCall, blockUserFirebase, listenFriendRequests, listenFriendAccepted, listenFriendDeclined, listenFriendRemovals, listenFriendsOnlineStatus, listenChatMessages, loadChatHistory, syncFriendsFromFirebase, syncPendingFromFirebase } from '@/lib/firebase-service';
 import { useBackButtonInit } from '@/hooks/useBackButton';
 
 // ── Types ──────────────────────────────────────────
@@ -214,6 +214,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (connected && state.guftguPhone) {
           syncBlockList(db, state.guftguPhone).catch(() => { });
           setOnlineStatus(db, state.guftguPhone, true).catch(() => { });
+          // Sync friends & pending requests from Firebase → localStorage
+          syncFriendsFromFirebase(db, state.guftguPhone).catch(() => { });
+          syncPendingFromFirebase(db, state.guftguPhone).catch(() => { });
         }
       });
 

@@ -1017,6 +1017,111 @@ export async function checkUserForCall(
  * Check if two users are friends.
  * Friendship is stored in both users' friends lists.
  */
+/**
+ * Sync friends list from Firebase → localStorage.
+ * Merges Firebase friends with local friends (Firebase is source of truth).
+ * Call on app startup to recover friends if localStorage was cleared.
+ */
+export async function syncFriendsFromFirebase(
+  db: Database,
+  myPhone: string
+): Promise<void> {
+  try {
+    const friendsRef = ref(db, `friends/${myPhone}`);
+    const snap = await get(friendsRef);
+    if (!snap.exists()) return;
+
+    const firebaseFriends: Array<{
+      phone: string;
+      name: string;
+      avatar: string;
+      mood: string;
+      moodEmoji: string;
+      addedAt: number;
+    }> = [];
+    snap.forEach((child: any) => {
+      const phone = child.key;
+      const data = child.val();
+      if (phone) {
+        firebaseFriends.push({
+          phone,
+          name: data.name || 'Unknown',
+          avatar: data.avatar || 'cat',
+          mood: data.mood || '',
+          moodEmoji: data.moodEmoji || '',
+          addedAt: data.addedAt || Date.now(),
+        });
+      }
+    });
+
+    if (firebaseFriends.length === 0) return;
+
+    // Merge with local — Firebase wins for any phone not in local
+    const { getFriends, saveFriends } = await import('./storage');
+    const localFriends = getFriends();
+    const localPhones = new Set(localFriends.map(f => f.phone));
+    let changed = false;
+
+    for (const fb of firebaseFriends) {
+      if (!localPhones.has(fb.phone)) {
+        localFriends.push(fb);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      saveFriends(localFriends);
+      console.log('[Firebase] Synced friends from Firebase:', firebaseFriends.length, 'remote,', localFriends.length, 'total');
+    }
+  } catch (error) {
+    console.error('[Firebase] Failed to sync friends:', error);
+  }
+}
+
+/**
+ * Sync incoming pending requests from Firebase → localStorage.
+ * Merges Firebase incoming requests with local pending list.
+ */
+export async function syncPendingFromFirebase(
+  db: Database,
+  myPhone: string
+): Promise<void> {
+  try {
+    const reqRef = ref(db, `friendRequests/${myPhone}`);
+    const snap = await get(reqRef);
+    if (!snap.exists()) return;
+
+    const { getPending, savePending, isBlocked } = await import('./storage');
+    const localPending = getPending();
+    const localPhones = new Set(localPending.map(p => p.phone));
+    let changed = false;
+
+    snap.forEach((child: any) => {
+      const data = child.val();
+      const fromPhone = data?.from;
+      if (!fromPhone || localPhones.has(fromPhone) || isBlocked(fromPhone)) return;
+
+      localPending.push({
+        phone: fromPhone,
+        name: data.name || 'Unknown',
+        avatar: data.avatar || 'cat',
+        mood: data.mood || '',
+        moodEmoji: data.moodEmoji || '',
+        direction: 'incoming' as const,
+        timestamp: data.timestamp || Date.now(),
+      });
+      changed = true;
+    });
+
+    if (changed) {
+      savePending(localPending);
+      console.log('[Firebase] Synced pending requests from Firebase');
+    }
+  } catch (error) {
+    console.error('[Firebase] Failed to sync pending:', error);
+  }
+}
+
 export async function checkIfFriends(
   db: Database,
   myPhone: string,
