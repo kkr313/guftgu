@@ -6,6 +6,7 @@ import { sendFriendRequest, checkIfFriends, checkPendingRequest, blockUserFireba
 import { useTimer } from '@/hooks/useTimer';
 import { IconMic, IconMicOff, IconPhoneEnd, IconSpeaker } from '@/lib/icons';
 import { setMuted as webrtcSetMuted, cleanup as cleanupWebRTC, generateRoomId, createRoom, joinRoom, playCallEndedTone, signalMuteState, listenPeerMuteState, isMuted as webrtcIsMuted, endCall as webrtcEndCall } from '@/lib/webrtc';
+import { playOutgoingRingback } from '@/lib/sounds';
 import { S } from '@/lib/strings';
 
 export default function CallScreen() {
@@ -44,14 +45,22 @@ export default function CallScreen() {
   const [friendStatus, setFriendStatus] = useState<'none' | 'friend' | 'sent' | 'received' | 'loading'>('loading');
   const [callStatus, setCallStatus] = useState<'ringing' | 'connected'>('ringing');
   const [callStartedAt] = useState<number>(Date.now()); // Track when the call screen was shown
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const ringIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const formattedRef = useRef<string>('00:00'); // Track current duration for callbacks
+  const connectedAtRef = useRef<number | null>(null); // Track exact connection time for accurate duration
   const endingRef = useRef(false); // Guard against double history save
   const roomWatchCleanupRef = useRef<(() => void) | null>(null); // Cleanup for direct call roomId watcher
   const ringingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Auto-cancel after 45s
   const peerMuteCleanupRef = useRef<(() => void) | null>(null); // Cleanup for peer mute listener
   const { seconds, formatted, start, stop, reset } = useTimer();
+
+  /** Compute accurate call duration from connectedAtRef — always fresh */
+  const computeDuration = useCallback((): string => {
+    if (!connectedAtRef.current) return '00:00';
+    const elapsed = Math.max(0, Math.floor((Date.now() - connectedAtRef.current) / 1000));
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }, []);
 
   // Keep formattedRef in sync with formatted
   useEffect(() => {
@@ -140,7 +149,7 @@ export default function CallScreen() {
           name: pal?.name || 'Unknown',
           phone: pal?.phone || undefined,
           mood: pal?.mood || '',
-          duration: formattedRef.current,
+          duration: computeDuration(),
           type: role === 'caller' ? 'Outgoing' : 'Incoming',
           timestamp: Date.now(),
           callStartedAt: callStartedAt,
@@ -184,6 +193,7 @@ export default function CallScreen() {
     
     // Reset ending guard on new call
     endingRef.current = false;
+    connectedAtRef.current = null;
 
     // For incoming calls (isOutgoingCall === false), set connected immediately
     if (pal?.phone && pal?.isOutgoingCall === false) {
@@ -191,6 +201,7 @@ export default function CallScreen() {
       setCallStatus('connected');
       const timestamp = (pal as any).connectedAt || Date.now();
       setConnectedAt(timestamp);
+      connectedAtRef.current = timestamp;
       start(timestamp);
     }
 
@@ -198,8 +209,10 @@ export default function CallScreen() {
     if (pal?.phone && (pal as any).isMatchCall) {
       console.log('[CallScreen] Match call - setting connected immediately');
       setCallStatus('connected');
-      setConnectedAt(Date.now());
-      start(Date.now());
+      const now = Date.now();
+      setConnectedAt(now);
+      connectedAtRef.current = now;
+      start(now);
     }
     
     if (!isActive || !pal?.phone || !dbRef?.current || !state.guftguPhone) {
@@ -264,6 +277,7 @@ export default function CallScreen() {
             // Use the shared timestamp from Firebase for synchronized timer
             const connectedTime = timestamp || Date.now();
             setConnectedAt(connectedTime);
+            connectedAtRef.current = connectedTime;
             start(connectedTime);
             showToast('Call connected! 🎉');
 
@@ -313,7 +327,7 @@ export default function CallScreen() {
               name: pal?.name || 'Unknown',
               phone: pal?.phone || undefined,
               mood: pal?.mood || '',
-              duration: formattedRef.current,
+              duration: computeDuration(),
               type: 'Outgoing',
               timestamp: Date.now(),
               callStartedAt: callStartedAt,
@@ -345,7 +359,7 @@ export default function CallScreen() {
             name: pal?.name || 'Unknown',
             phone: pal?.phone || undefined,
             mood: pal?.mood || '',
-            duration: formattedRef.current,
+            duration: computeDuration(),
             type: 'Incoming',
             timestamp: Date.now(),
             callStartedAt: callStartedAt,
@@ -369,66 +383,29 @@ export default function CallScreen() {
     };
   }, [isActive, pal?.phone, pal?.isOutgoingCall, dbRef, state.guftguPhone]);
 
-  // Play ringing sound when in ringing state
+  // Play ringing sound when in ringing state (outgoing call ringback tone)
+  const ringbackHandleRef = useRef<{ stop: () => void } | null>(null);
   useEffect(() => {
     console.log('[CallScreen] Ring effect:', { callStatus, isActive });
     
     if (callStatus !== 'ringing' || !isActive) {
-      // Cleanup audio
-      if (ringIntervalRef.current) {
-        clearInterval(ringIntervalRef.current);
-        ringIntervalRef.current = null;
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {});
-        audioContextRef.current = null;
+      // Cleanup ringback
+      if (ringbackHandleRef.current) {
+        ringbackHandleRef.current.stop();
+        ringbackHandleRef.current = null;
       }
       return;
     }
 
-    console.log('[CallScreen] Starting ring tone');
-    
-    // Create audio context for ringing sound
-    try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      audioContextRef.current = audioContext;
+    console.log('[CallScreen] Starting outgoing ringback tone');
+    ringbackHandleRef.current = playOutgoingRingback();
 
-      const playRingTone = () => {
-        console.log('[CallScreen] Playing ring beep');
-        // Double beep pattern
-        const playBeep = (delay: number, freq: number) => {
-          const oscillator = audioContext.createOscillator();
-          const gainNode = audioContext.createGain();
-          oscillator.connect(gainNode);
-          gainNode.connect(audioContext.destination);
-          oscillator.frequency.value = freq;
-          oscillator.type = 'sine';
-          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + delay);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + delay + 0.4);
-          oscillator.start(audioContext.currentTime + delay);
-          oscillator.stop(audioContext.currentTime + delay + 0.4);
-        };
-
-        // Ring pattern: beep-beep (louder and longer)
-        playBeep(0, 480);
-        playBeep(0.5, 480);
-      };
-
-      // Play immediately and then every 2 seconds
-      playRingTone();
-      ringIntervalRef.current = setInterval(playRingTone, 2000);
-
-      return () => {
-        if (ringIntervalRef.current) {
-          clearInterval(ringIntervalRef.current);
-          ringIntervalRef.current = null;
-        }
-        audioContext.close().catch(() => {});
-        audioContextRef.current = null;
-      };
-    } catch (e) {
-      console.error('Failed to play ring tone:', e);
-    }
+    return () => {
+      if (ringbackHandleRef.current) {
+        ringbackHandleRef.current.stop();
+        ringbackHandleRef.current = null;
+      }
+    };
   }, [callStatus, isActive]);
 
   // Start / stop timer when screen is active
@@ -449,6 +426,7 @@ export default function CallScreen() {
       setIsReconnecting(false);
       setIsOffline(false);
       setCallStatus('ringing'); // Reset for next call
+      connectedAtRef.current = null;
     }
     return () => stop();
   }, [isActive]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -519,7 +497,7 @@ export default function CallScreen() {
     
     // Determine call type — match calls and outgoing calls are 'Outgoing', else 'Incoming'
     const callType = (pal?.isOutgoingCall || isMatch) ? 'Outgoing' : 'Incoming';
-    const duration = callStatus === 'ringing' ? '00:00' : formatted;
+    const duration = callStatus === 'ringing' ? '00:00' : computeDuration();
     
     saveCallToHistory({
       avatar: pal?.avatar || 'cat',

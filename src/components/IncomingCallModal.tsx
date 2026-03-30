@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import Avatar from '@/components/Avatar';
 import { IconPhone, IconPhoneEnd, IconBlock } from '@/lib/icons';
+import { playIncomingRingtone } from '@/lib/sounds';
 
 interface IncomingCallModalProps {
   isOpen: boolean;
@@ -37,37 +38,14 @@ export default function IncomingCallModal({
       }, 1500);
     }
 
-    // Try to play a ringtone sound (using Web Audio API beep)
-    try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const playBeep = () => {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        oscillator.frequency.value = 440;
-        oscillator.type = 'sine';
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.5);
-      };
-      
-      playBeep();
-      const beepInterval = setInterval(playBeep, 2000);
-      
-      return () => {
-        clearInterval(beepInterval);
-        if (vibrateInterval) clearInterval(vibrateInterval);
-        navigator.vibrate?.(0);
-        audioContext.close();
-      };
-    } catch (e) {
-      return () => {
-        if (vibrateInterval) clearInterval(vibrateInterval);
-        navigator.vibrate?.(0);
-      };
-    }
+    // Play the musical ringtone from sounds.ts
+    const ringtoneHandle = playIncomingRingtone();
+    
+    return () => {
+      ringtoneHandle.stop();
+      if (vibrateInterval) clearInterval(vibrateInterval);
+      navigator.vibrate?.(0);
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;

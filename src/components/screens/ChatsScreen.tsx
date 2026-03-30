@@ -25,8 +25,9 @@ export default function ChatsScreen() {
   const [tab, setTab] = useState<'friends' | 'pending'>('friends');
   const [friends, setFriends] = useState<FriendRecord[]>([]);
   const [pending, setPending] = useState<PendingRecord[]>([]);
-  const [editingPhone, setEditingPhone] = useState<string | null>(null);
+  const [editingFriend, setEditingFriend] = useState<FriendRecord | null>(null);
   const [editName, setEditName] = useState('');
+  const [showRenameModal, setShowRenameModal] = useState(false);
 
   // Sort: online friends first, then newest first
   const sortedFriends = useMemo(() => [...friends].sort((a, b) => {
@@ -321,29 +322,34 @@ export default function ChatsScreen() {
 
   // ── Rename friend: start editing ──
   const startRename = (f: FriendRecord) => {
-    setEditingPhone(f.phone);
+    setEditingFriend(f);
     setEditName(f.nickname || f.name);
+    setShowRenameModal(true);
   };
 
   // ── Rename friend: save nickname ──
-  const saveRename = (f: FriendRecord) => {
+  const saveRename = () => {
+    if (!editingFriend) return;
     const trimmed = editName.trim();
     if (!trimmed) {
-      setEditingPhone(null);
+      setShowRenameModal(false);
+      setEditingFriend(null);
       return;
     }
     const updated = friends.map(x =>
-      x.phone === f.phone ? { ...x, nickname: trimmed === f.name ? undefined : trimmed } : x
+      x.phone === editingFriend.phone ? { ...x, nickname: trimmed === editingFriend.name ? undefined : trimmed } : x
     );
     setFriends(updated);
     saveFriends(updated);
-    setEditingPhone(null);
+    setShowRenameModal(false);
+    setEditingFriend(null);
     showToast(`✏️ Saved as "${trimmed}"`);
   };
 
   // ── Rename friend: cancel editing ──
   const cancelRename = () => {
-    setEditingPhone(null);
+    setShowRenameModal(false);
+    setEditingFriend(null);
     setEditName('');
   };
 
@@ -389,21 +395,6 @@ export default function ChatsScreen() {
                     />
                   </div>
                   <div className="friend-info">
-                    {editingPhone === f.phone ? (
-                      <div className="friend-rename-row">
-                        <input
-                          className="friend-rename-input"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === 'Enter') saveRename(f); if (e.key === 'Escape') cancelRename(); }}
-                          autoFocus
-                          maxLength={20}
-                          placeholder={f.name}
-                        />
-                        <button className="friend-rename-save" onClick={() => saveRename(f)}>✓</button>
-                        <button className="friend-rename-cancel" onClick={cancelRename}>✕</button>
-                      </div>
-                    ) : (
                       <>
                         <div className="friend-name">
                           {f.nickname || f.name}
@@ -422,7 +413,6 @@ export default function ChatsScreen() {
                           }
                         </div>
                       </>
-                    )}
                   </div>
                   <div className="friend-actions">
                     <button className="friend-action-btn chat" onClick={() => openChatWithFriend(f)} title="Chat">💬</button>
@@ -476,6 +466,61 @@ export default function ChatsScreen() {
           )}
         </div>
       </div>
+
+      {/* Rename Friend Modal */}
+      {showRenameModal && editingFriend && (
+        <div className="modal-overlay show" onClick={cancelRename}>
+          <div className="modal-sheet" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 360 }}>
+            <div className="modal-handle" />
+            <div style={{ padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+                <Avatar avatarKey={editingFriend.avatar || 'cat'} size={48} />
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>{editingFriend.name}</div>
+                  {editingFriend.moodEmoji && (
+                    <div style={{ fontSize: 13, color: 'var(--text3)' }}>{editingFriend.moodEmoji} {editingFriend.mood}</div>
+                  )}
+                </div>
+              </div>
+              <div style={{ width: '100%' }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text2)', marginBottom: 6, display: 'block' }}>
+                  ✏️ Set a nickname
+                </label>
+                <input
+                  className="rename-modal-input"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') saveRename(); if (e.key === 'Escape') cancelRename(); }}
+                  autoFocus
+                  maxLength={20}
+                  placeholder={editingFriend.name}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    fontSize: 16,
+                    borderRadius: 12,
+                    border: '2px solid var(--border)',
+                    background: 'var(--bg2)',
+                    color: 'var(--text)',
+                    outline: 'none',
+                    transition: 'border-color 0.2s',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={(e) => (e.target as HTMLInputElement).style.borderColor = 'var(--accent2)'}
+                  onBlur={(e) => (e.target as HTMLInputElement).style.borderColor = 'var(--border)'}
+                />
+                <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
+                  {editName.length}/20 characters
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, width: '100%', marginTop: 4 }}>
+                <button className="btn btn-ghost" style={{ flex: 1 }} onClick={cancelRename}>Cancel</button>
+                <button className="btn btn-primary" style={{ flex: 1 }} onClick={saveRename} disabled={!editName.trim()}>Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

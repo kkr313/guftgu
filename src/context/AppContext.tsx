@@ -4,7 +4,7 @@ import { UserData, loadUser, saveUser as persistUser, genGuftguPhone, getCallHis
 import { playMessageSound, playNotifSound, playFriendOnlineSound } from '@/lib/sounds';
 import { Database, ref, set, remove, onValue, push, get, child, off, onChildAdded, DataSnapshot, serverTimestamp } from 'firebase/database';
 import { initFirebase, getDb } from '@/lib/firebase';
-import { registerUser, syncBlockList, setOnlineStatus, listenIncomingCalls, IncomingCall, acceptCall, declineCall, blockUserFirebase, listenFriendRequests, listenFriendAccepted, listenFriendDeclined, listenFriendRemovals, listenFriendsOnlineStatus, listenChatMessages } from '@/lib/firebase-service';
+import { registerUser, syncBlockList, setOnlineStatus, listenIncomingCalls, IncomingCall, acceptCall, declineCall, blockUserFirebase, listenFriendRequests, listenFriendAccepted, listenFriendDeclined, listenFriendRemovals, listenFriendsOnlineStatus, listenChatMessages, loadChatHistory } from '@/lib/firebase-service';
 import { useBackButtonInit } from '@/hooks/useBackButton';
 
 // ── Types ──────────────────────────────────────────
@@ -598,6 +598,89 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Stringify friend phones so the effect re-runs when a friend is added/removed
   // eslint-disable-next-line react-hooks/exhaustive-deps
   getFriends().map(f => f.phone).join(',')]);
+
+  // ── Check for messages received while offline ─────────────────────────
+  // On Firebase connect, scan each friend's chat for messages newer than
+  // the last known message in localStorage. If found, bump unread counts
+  // and play a notification beep.
+  useEffect(() => {
+    if (!dbRef.current || !state.guftguPhone || !state.firebaseConnected) return;
+
+    const friends = getFriends();
+    if (!friends.length) return;
+
+    const myPhone = state.guftguPhone;
+    const db = dbRef.current;
+
+    // Run a one-time scan for each friend
+    let totalNewMessages = 0;
+    const friendsWithNewMsgs: string[] = [];
+
+    Promise.all(
+      friends.map(async (friend) => {
+        try {
+          const messages = await loadChatHistory(db, myPhone, friend.phone, 50);
+          if (!messages.length) return;
+
+          // Get the last known message time from our conversations list
+          const convos = getChatConversations();
+          const convo = convos.find(c => c.phone === friend.phone);
+          const lastKnownTime = convo?.lastMessageTime || 0;
+
+          // Filter: messages from the friend, newer than what we know about
+          const newMsgs = messages.filter(
+            m => m.from !== myPhone && m.timestamp > lastKnownTime
+          );
+
+          if (newMsgs.length > 0) {
+            totalNewMessages += newMsgs.length;
+            friendsWithNewMsgs.push(friend.nickname || friend.name);
+
+            // Update the conversation entry with the latest message
+            const latest = newMsgs[newMsgs.length - 1];
+            const updatedConvos = getChatConversations();
+            const idx = updatedConvos.findIndex(c => c.phone === friend.phone);
+            if (idx >= 0) {
+              updatedConvos[idx] = {
+                ...updatedConvos[idx],
+                lastMessage: latest.text,
+                lastMessageTime: latest.timestamp,
+                unreadCount: (updatedConvos[idx].unreadCount || 0) + newMsgs.length,
+              };
+            } else {
+              updatedConvos.unshift({
+                phone: friend.phone,
+                name: friend.nickname || friend.name,
+                avatar: friend.avatar,
+                lastMessage: latest.text,
+                lastMessageTime: latest.timestamp,
+                unreadCount: newMsgs.length,
+              });
+            }
+            saveChatConversations(updatedConvos);
+          }
+        } catch (_) {
+          // Silent fail for individual friend scan
+        }
+      })
+    ).then(() => {
+      if (totalNewMessages > 0) {
+        // Update the badge count
+        setUnreadMsgCount(getTotalUnreadMessages());
+        // Play notification sound
+        playMessageSound();
+        // Show a summary toast
+        if (friendsWithNewMsgs.length === 1) {
+          showToast(`💬 ${totalNewMessages} new message${totalNewMessages > 1 ? 's' : ''} from ${friendsWithNewMsgs[0]}`);
+        } else {
+          showToast(`💬 ${totalNewMessages} new messages from ${friendsWithNewMsgs.length} friends`);
+        }
+      }
+    });
+
+    // This runs only once per Firebase connection, not on every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.firebaseConnected, state.guftguPhone]);
 
   // ── Global background message listener ──────────────────────────────────
   // Keeps a real-time listener open for EVERY friend's conversation so that

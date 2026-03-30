@@ -101,3 +101,143 @@ export function playFriendOnlineSound(): void {
     { freq: 780, duration: 0.15, gainPeak: 0.09, startDelay: 0.10 },
   ]);
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// RINGTONE & RINGBACK — looping sounds with stop handles
+// ──────────────────────────────────────────────────────────────────────────────
+
+interface LoopHandle {
+  stop: () => void;
+}
+
+/**
+ * 📞 Incoming call ringtone — loud, musical phone-ring pattern.
+ * Produces a two-tone arpeggio that repeats every 2 seconds.
+ * Returns a handle with a `stop()` method.
+ */
+export function playIncomingRingtone(): LoopHandle {
+  let stopped = false;
+  let ctx: AudioContext | null = null;
+  let intervalId: ReturnType<typeof setInterval> | null = null;
+
+  try {
+    ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+    const ringCycle = () => {
+      if (stopped || !ctx || ctx.state === 'closed') return;
+
+      // Musical ring: quick ascending triads (like a phone ringing)
+      const notes = [
+        // First ring burst — rising 3-note arpeggio
+        { freq: 784, delay: 0, dur: 0.12 },    // G5
+        { freq: 988, delay: 0.13, dur: 0.12 },  // B5
+        { freq: 1175, delay: 0.26, dur: 0.14 }, // D6
+        // Second ring burst — same but slightly higher
+        { freq: 784, delay: 0.50, dur: 0.12 },
+        { freq: 988, delay: 0.63, dur: 0.12 },
+        { freq: 1175, delay: 0.76, dur: 0.14 },
+      ];
+
+      notes.forEach(({ freq, delay, dur }) => {
+        if (!ctx || ctx.state === 'closed') return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+
+        const t = ctx.currentTime + delay;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.45, t + 0.02);  // Loud!
+        gain.gain.setValueAtTime(0.45, t + dur * 0.6);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+
+        osc.start(t);
+        osc.stop(t + dur + 0.05);
+      });
+    };
+
+    const startRinging = () => {
+      ringCycle();
+      intervalId = setInterval(ringCycle, 2000); // Ring every 2 seconds
+    };
+
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(startRinging).catch(() => {});
+    } else {
+      startRinging();
+    }
+  } catch (_) {
+    /* AudioContext not supported */
+  }
+
+  return {
+    stop: () => {
+      stopped = true;
+      if (intervalId) { clearInterval(intervalId); intervalId = null; }
+      if (ctx) { ctx.close().catch(() => {}); ctx = null; }
+    },
+  };
+}
+
+/**
+ * 📱 Outgoing call ringback — standard "ring-ring...pause" tone.
+ * Sounds like a traditional phone ringback (comfort tone).
+ * Returns a handle with a `stop()` method.
+ */
+export function playOutgoingRingback(): LoopHandle {
+  let stopped = false;
+  let ctx: AudioContext | null = null;
+  let intervalId: ReturnType<typeof setInterval> | null = null;
+
+  try {
+    ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+    const ringbackCycle = () => {
+      if (stopped || !ctx || ctx.state === 'closed') return;
+
+      // Standard US ringback: 440Hz + 480Hz dual-tone, 2s on / 4s off
+      // We play a 1.5s burst every 4 seconds
+      [440, 480].forEach((freq) => {
+        if (!ctx || ctx.state === 'closed') return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+
+        const t = ctx.currentTime;
+        // Each tone at half volume so combined is reasonable
+        gain.gain.setValueAtTime(0.18, t);
+        gain.gain.setValueAtTime(0.18, t + 1.4);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 1.5);
+
+        osc.start(t);
+        osc.stop(t + 1.55);
+      });
+    };
+
+    const startRingback = () => {
+      ringbackCycle();
+      intervalId = setInterval(ringbackCycle, 4000); // 1.5s tone + 2.5s silence
+    };
+
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(startRingback).catch(() => {});
+    } else {
+      startRingback();
+    }
+  } catch (_) {
+    /* AudioContext not supported */
+  }
+
+  return {
+    stop: () => {
+      stopped = true;
+      if (intervalId) { clearInterval(intervalId); intervalId = null; }
+      if (ctx) { ctx.close().catch(() => {}); ctx = null; }
+    },
+  };
+}
