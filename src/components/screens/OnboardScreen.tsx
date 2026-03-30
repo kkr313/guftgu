@@ -72,7 +72,7 @@ export default function OnboardScreen() {
   const [qsName, setQsName] = useState(genUniqueName);
   const [qsMood, setQsMood] = useState<string>(() => QS_MOODS[Math.floor(Math.random() * QS_MOODS.length)]);
   const [qsLang, setQsLang] = useState('Hindi');
-  const [qsRegion, setQsRegion] = useState('');
+  const [qsRegion, setQsRegion] = useState('North');
 
   const reshuffleQS = useCallback(() => {
     setQsAvatar((prev) => {
@@ -88,7 +88,7 @@ export default function OnboardScreen() {
       return next;
     });
     setQsLang('Hindi');
-    setQsRegion('');
+    setQsRegion('North');
   }, []);
 
   const refreshNameChips = useCallback(() => {
@@ -414,7 +414,6 @@ export default function OnboardScreen() {
         {/* QUICK START */}
         {step === 'qs' && (
           <div className="onboard-step active">
-            <div className="step-label">{S.onboard.qsLabel}</div>
             <div className="step-title">{S.onboard.qsTitle}</div>
             <div className="step-sub">{S.onboard.qsSub}</div>
             <div className="qs-profile-preview">

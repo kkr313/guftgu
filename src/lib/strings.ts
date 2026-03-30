@@ -70,11 +70,10 @@ export const S = {
 
     startGuftgu: 'Start talking \uD83C\uDF99\uFE0F',
 
-    qsLabel: 'Quick Start · 1 step',
-    qsTitle: 'Where are you from?',
-    qsSub: "That's all we need — everything else is randomised for you.",
+    qsTitle: 'Language & Region',
+    qsSub: "Pick your language and region — everything else is randomised for you.",
     qsShuffle: '🔀 Shuffle',
-    qsRegionLabel: 'Region (optional)',
+    qsRegionLabel: 'Region',
     qsStartBtn: '⚡ Start Guftgu',
     qsSettingsHint: 'You can update your profile anytime from Settings',
 
