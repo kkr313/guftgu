@@ -164,7 +164,7 @@ export default function CallScreen() {
       if (!endingRef.current) {
         endingRef.current = true;
         cleanupWebRTC();
-        showToast('❌ Audio error: ' + err.message);
+        showToast('Audio error: ' + err.message);
         dispatch({ type: 'SET_PAL', pal: null });
         showScreen('screen-home');
       }
@@ -559,7 +559,7 @@ export default function CallScreen() {
     } catch (error) {
       console.error('Failed to send friend request:', error);
       setAddFriendSent(false);
-      showToast('❌ Failed to send request');
+      showToast('Failed to send request');
     }
   };
 
@@ -608,7 +608,7 @@ export default function CallScreen() {
       showToast('🎉 You are now friends!');
     } catch (error) {
       console.error('Failed to accept friend request:', error);
-      showToast('❌ Failed to accept request');
+      showToast('Failed to accept request');
     }
   };
 

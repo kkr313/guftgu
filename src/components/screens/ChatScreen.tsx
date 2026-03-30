@@ -241,7 +241,7 @@ export default function ChatScreen() {
       }
     } catch (error) {
       console.error('Failed to send message:', error);
-      showToast('❌ Failed to send message');
+      showToast('Failed to send message');
     }
   };
 

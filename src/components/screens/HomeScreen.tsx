@@ -71,7 +71,7 @@ export default function HomeScreen() {
 
     // Check Firebase for user existence and online status
     if (!dbRef?.current) {
-      showToast('❌ Connection error — try again');
+      showToast('Connection error — try again');
       return;
     }
 
@@ -128,7 +128,7 @@ export default function HomeScreen() {
       
     } catch (error) {
       console.error('Dial error:', error);
-      showToast('❌ Something went wrong — try again');
+      showToast('Something went wrong — try again');
     } finally {
       setIsDialing(false);
     }
@@ -227,7 +227,7 @@ export default function HomeScreen() {
           </div>
           <div className="dial-input-row">
             <input
-              className="dial-input"
+              className={`dial-input${dialInput.length >= 7 ? ' dial-valid' : ''}`}
               type="text"
               placeholder={S.home.dialPlaceholder}
               value={dialInput}

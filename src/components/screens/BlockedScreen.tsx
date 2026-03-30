@@ -28,12 +28,12 @@ export default function BlockedScreen() {
         showToast(S.blocked.unblockToast);
       } catch (error) {
         console.error('Failed to unblock:', error);
-        showToast('❌ Failed to unblock');
+        showToast('Failed to unblock');
         // Revert UI on error
         setBlocked(getBlocked());
       }
     } else {
-      showToast('❌ Connection error');
+      showToast('Connection error');
     }
   };
 

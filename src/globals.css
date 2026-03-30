@@ -1842,16 +1842,23 @@ input.input-error {
   }
   .match-pref-item:hover .match-pref-circle::before { opacity:1; }
   .mood-circle {
-    background:linear-gradient(145deg, rgba(255,107,107,0.12), rgba(255,180,107,0.10));
-    box-shadow:0 4px 16px rgba(255,107,107,0.12);
+    background:linear-gradient(145deg, rgba(255,107,107,0.15), rgba(255,180,107,0.12));
+    box-shadow:0 0 12px rgba(255,71,87,0.25), 0 4px 16px rgba(255,107,107,0.15);
+    animation:circleGlow 2.5s ease-in-out infinite;
   }
   .lang-circle {
-    background:linear-gradient(145deg, rgba(78,205,196,0.12), rgba(107,160,255,0.10));
-    box-shadow:0 4px 16px rgba(78,205,196,0.12);
+    background:linear-gradient(145deg, rgba(78,205,196,0.15), rgba(107,160,255,0.12));
+    box-shadow:0 0 12px rgba(255,71,87,0.25), 0 4px 16px rgba(78,205,196,0.15);
+    animation:circleGlow 2.5s ease-in-out infinite 0.4s;
   }
   .region-circle {
-    background:linear-gradient(145deg, rgba(167,139,250,0.12), rgba(251,146,60,0.10));
-    box-shadow:0 4px 16px rgba(167,139,250,0.12);
+    background:linear-gradient(145deg, rgba(167,139,250,0.15), rgba(251,146,60,0.12));
+    box-shadow:0 0 12px rgba(255,71,87,0.25), 0 4px 16px rgba(167,139,250,0.15);
+    animation:circleGlow 2.5s ease-in-out infinite 0.8s;
+  }
+  @keyframes circleGlow {
+    0%, 100% { box-shadow:0 0 10px rgba(255,71,87,0.2), 0 4px 14px rgba(232,67,147,0.1); }
+    50% { box-shadow:0 0 22px rgba(255,71,87,0.45), 0 4px 28px rgba(232,67,147,0.2); }
   }
   .match-pref-emoji {
     font-size:26px; line-height:1;
@@ -1932,6 +1939,15 @@ input.input-error {
   }
   .dial-input:focus {
     border-color:var(--accent);
+  }
+  .dial-input.dial-valid {
+    border-color:#FF4757;
+    box-shadow:0 0 12px rgba(255,71,87,0.35), 0 0 24px rgba(232,67,147,0.18);
+    animation:dialGlow 1.8s ease-in-out infinite;
+  }
+  @keyframes dialGlow {
+    0%, 100% { box-shadow:0 0 10px rgba(255,71,87,0.3), 0 0 20px rgba(232,67,147,0.12); }
+    50% { box-shadow:0 0 18px rgba(255,71,87,0.5), 0 0 36px rgba(232,67,147,0.25); }
   }
   .dial-call-btn {
     width:44px; height:44px; border-radius:50%;

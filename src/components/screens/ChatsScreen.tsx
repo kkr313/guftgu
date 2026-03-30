@@ -203,7 +203,7 @@ export default function ChatsScreen() {
     }
 
     if (!dbRef?.current || !state.guftguPhone) {
-      showToast('❌ Connection error — try again');
+      showToast('Connection error — try again');
       return;
     }
 
@@ -232,7 +232,7 @@ export default function ChatsScreen() {
       showScreen('screen-call');
     } catch (error) {
       console.error('Call friend error:', error);
-      showToast('❌ Failed to call — try again');
+      showToast('Failed to call — try again');
     }
   };
 
