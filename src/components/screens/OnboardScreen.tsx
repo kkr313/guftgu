@@ -3,7 +3,6 @@ import { useApp } from '@/context/AppContext';
 import Avatar from '@/components/Avatar';
 import { AVATAR_CATEGORIES } from '@/components/Avatar';
 import { MOOD_DATA, LANG_DATA, REGION_DATA, INTENT_DATA, QS_AVATARS, QS_MOODS, genUniqueName, MOOD_EMOJIS } from '@/lib/data';
-import { genGuftguPhone } from '@/lib/storage';
 import { generateUniqueGuftguNumber } from '@/lib/firebase-service';
 import { IconChevronLeft } from '@/lib/icons';
 import { S } from '@/lib/strings';
@@ -102,12 +101,15 @@ export default function OnboardScreen() {
     if (!qsLang) { showToast(S.onboard.toastPickLangQs); return; }
     if (isGeneratingNumber) return;
     
+    // Require internet for number assignment
+    if (!dbRef?.current) {
+      showToast('📶 Internet required to create your account. Please connect and try again.');
+      return;
+    }
+
     setIsGeneratingNumber(true);
     try {
-      // Generate unique number from Firebase, fallback to random if no connection
-      const phone = dbRef?.current 
-        ? await generateUniqueGuftguNumber(dbRef.current)
-        : genGuftguPhone();
+      const phone = await generateUniqueGuftguNumber(dbRef.current);
       
       saveUserData({
         nickname: qsName, avatar: qsAvatar, mood: qsMood,
@@ -117,14 +119,7 @@ export default function OnboardScreen() {
       showScreen('screen-welcome');
     } catch (error) {
       console.error('Error generating number:', error);
-      // Fallback to random generation
-      const phone = genGuftguPhone();
-      saveUserData({
-        nickname: qsName, avatar: qsAvatar, mood: qsMood,
-        moodEmoji: MOOD_EMOJIS[qsMood] || '😊',
-        language: qsLang, region: qsRegion, intent: 'Just chat',
-      }, phone);
-      showScreen('screen-welcome');
+      showToast('Failed to generate your number. Please check your connection and try again.');
     } finally {
       setIsGeneratingNumber(false);
     }
@@ -136,12 +131,15 @@ export default function OnboardScreen() {
     setNameError('');
     if (isGeneratingNumber) return;
     
+    // Require internet for number assignment
+    if (!dbRef?.current) {
+      showToast('📶 Internet required to create your account. Please connect and try again.');
+      return;
+    }
+
     setIsGeneratingNumber(true);
     try {
-      // Generate unique number from Firebase, fallback to random if no connection
-      const phone = dbRef?.current 
-        ? await generateUniqueGuftguNumber(dbRef.current)
-        : genGuftguPhone();
+      const phone = await generateUniqueGuftguNumber(dbRef.current);
       
       saveUserData({
         nickname, avatar, mood, moodEmoji,
@@ -150,13 +148,7 @@ export default function OnboardScreen() {
       showScreen('screen-welcome');
     } catch (error) {
       console.error('Error generating number:', error);
-      // Fallback to random generation
-      const phone = genGuftguPhone();
-      saveUserData({
-        nickname, avatar, mood, moodEmoji,
-        language, region, intent,
-      }, phone);
-      showScreen('screen-welcome');
+      showToast('Failed to generate your number. Please check your connection and try again.');
     } finally {
       setIsGeneratingNumber(false);
     }

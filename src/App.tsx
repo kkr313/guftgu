@@ -16,6 +16,7 @@ import Toast from '@/components/Toast';
 import IncomingCallModal from '@/components/IncomingCallModal';
 import PullToRefresh from '@/components/PullToRefresh';
 import GestureTip from '@/components/GestureTip';
+import OfflineBanner from '@/components/OfflineBanner';
 import { useApp } from '@/context/AppContext';
 
 export default function App() {
@@ -68,6 +69,9 @@ export default function App() {
 
       {/* One-time gesture tips overlay (shows after onboarding) */}
       {state.guftguPhone && <GestureTip />}
+
+      {/* Offline overlay for PWA */}
+      <OfflineBanner />
     </>
   );
 }

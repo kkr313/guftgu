@@ -74,11 +74,12 @@ export interface ChatConversation {
   unreadCount: number;
 }
 
-// Collision-safe ID: timestamp + random suffix
+// Local-only fallback number generator (matches new 7-prefix format)
+// Should rarely be used — Firebase atomic counter is the primary source
 export function genGuftguPhone(): string {
-  const ts = Date.now().toString().slice(-5);
-  const rand = Math.floor(10 + Math.random() * 90);
-  return ts + '' + rand;
+  const prefix = [7, 8, 9][Math.floor(Math.random() * 3)];
+  const seq = Math.floor(1 + Math.random() * 999999);
+  return `${prefix}${String(seq).padStart(6, '0')}`;
 }
 
 export function saveUser(user: UserData, guftguPhone: string): void {

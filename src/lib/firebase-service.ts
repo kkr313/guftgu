@@ -11,6 +11,7 @@ import {
   push,
   onDisconnect,
   serverTimestamp,
+  runTransaction,
 } from 'firebase/database';
 import { UserData, isBlocked, getBlocked, saveBlocked, BlockedRecord } from './storage';
 
@@ -1220,58 +1221,56 @@ export async function loadChatHistory(
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Generate a random 7-digit Guftgu number.
- */
-function generateRandomNumber(): string {
-  // Generate 7-digit number (1000000 to 9999999)
-  const num = Math.floor(1000000 + Math.random() * 9000000);
-  return num.toString();
-}
-
-/**
- * Check if a Guftgu number is already taken in Firebase.
- */
-export async function isNumberTaken(
-  db: Database,
-  phone: string
-): Promise<boolean> {
-  try {
-    const userRef = ref(db, `users/${phone}`);
-    const snap = await get(userRef);
-    return snap.exists();
-  } catch (error) {
-    console.error('[Firebase] Error checking number:', error);
-    // On error, assume taken for safety
-    return true;
-  }
-}
-
-/**
- * Generate a unique Guftgu number that doesn't exist in Firebase.
- * Tries up to maxAttempts times before falling back to timestamp-based.
+ * Generate a Guftgu number using atomic Firebase counter.
+ * Format: [7|8|9] + 6-digit zero-padded sequence (e.g., 7000001, 8000042, 9999999)
+ * 
+ * Uses Firebase transaction for atomic increment — no collisions ever.
+ * Deleted numbers are NEVER reassigned; counter only moves forward.
+ * Capacity: 3 prefixes × 999,999 = ~3 million unique numbers.
  */
 export async function generateUniqueGuftguNumber(
   db: Database,
-  maxAttempts: number = 10
 ): Promise<string> {
-  for (let i = 0; i < maxAttempts; i++) {
-    const candidate = generateRandomNumber();
-    const taken = await isNumberTaken(db, candidate);
-    
-    if (!taken) {
-      console.log(`[Firebase] Generated unique number on attempt ${i + 1}:`, candidate);
-      return candidate;
+  const counterRef = ref(db, 'system/phoneCounter');
+
+  const result = await runTransaction(counterRef, (current) => {
+    // First-time init: start at prefix 7, sequence 0
+    if (current === null) {
+      return { prefix: 7, sequence: 1 };
     }
-    
-    console.log(`[Firebase] Number ${candidate} already taken, trying again...`);
+
+    let { prefix, sequence } = current;
+    sequence = (sequence || 0) + 1;
+
+    // Overflow: move to next prefix
+    if (sequence > 999999) {
+      prefix = (prefix || 7) + 1;
+      sequence = 1;
+    }
+
+    // All prefixes exhausted
+    if (prefix > 9) {
+      // Don't abort — return current as-is; we'll handle error below
+      return current;
+    }
+
+    return { prefix, sequence };
+  });
+
+  if (!result.committed || !result.snapshot.exists()) {
+    throw new Error('Failed to generate phone number — transaction aborted');
   }
-  
-  // Fallback: use timestamp + random to virtually guarantee uniqueness
-  const ts = Date.now().toString().slice(-5);
-  const rand = Math.floor(10 + Math.random() * 90);
-  const fallback = ts + rand.toString();
-  console.log('[Firebase] Using fallback number:', fallback);
-  return fallback;
+
+  const { prefix, sequence } = result.snapshot.val();
+
+  // Safety: all numbers exhausted
+  if (prefix > 9) {
+    throw new Error('All Guftgu numbers have been assigned (capacity reached)');
+  }
+
+  const phone = `${prefix}${String(sequence).padStart(6, '0')}`;
+  console.log(`[Firebase] Generated incremental number: ${phone}`);
+  return phone;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
