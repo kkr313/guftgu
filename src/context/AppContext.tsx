@@ -115,6 +115,7 @@ interface IncomingCallData {
   callerAvatar: string;
   callerMood: string;
   callerMoodEmoji: string;
+  callerTimestamp: number; // When the caller initiated the call
 }
 
 interface AppContextType {
@@ -326,6 +327,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           callerAvatar: call.avatar,
           callerMood: call.mood,
           callerMoodEmoji: call.moodEmoji,
+          callerTimestamp: call.timestamp || Date.now(),
         });
       },
       (callerPhone) => {
@@ -341,8 +343,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               mood: prev.callerMood || '',
               duration: '00:00',
               type: 'Missed',
-              timestamp: Date.now(),
-              callStartedAt: Date.now(),
+              timestamp: prev.callerTimestamp || Date.now(),
+              callStartedAt: prev.callerTimestamp || Date.now(),
             });
             return null;
           }
@@ -471,6 +473,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         moodEmoji: incomingCall.callerMoodEmoji,
         isOutgoingCall: false, // We received this call
         connectedAt: connectedAt, // For synchronized timer
+        callerTimestamp: incomingCall.callerTimestamp, // When caller initiated the call
       };
       console.log('[handleAcceptCall] Setting pal:', palData);
 
@@ -512,8 +515,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         mood: incomingCall.callerMood || '',
         duration: '00:00',
         type: 'Declined',
-        timestamp: Date.now(),
-        callStartedAt: Date.now(),
+        timestamp: incomingCall.callerTimestamp || Date.now(),
+        callStartedAt: incomingCall.callerTimestamp || Date.now(),
       });
 
       setIncomingCall(null);
@@ -548,8 +551,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         mood: incomingCall.callerMood || '',
         duration: '00:00',
         type: 'Blocked',
-        timestamp: Date.now(),
-        callStartedAt: Date.now(),
+        timestamp: incomingCall.callerTimestamp || Date.now(),
+        callStartedAt: incomingCall.callerTimestamp || Date.now(),
       });
 
       setIncomingCall(null);

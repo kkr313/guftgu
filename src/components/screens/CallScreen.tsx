@@ -44,7 +44,7 @@ export default function CallScreen() {
   const [isFriend, setIsFriend] = useState(false);
   const [friendStatus, setFriendStatus] = useState<'none' | 'friend' | 'sent' | 'received' | 'loading'>('loading');
   const [callStatus, setCallStatus] = useState<'ringing' | 'connected'>('ringing');
-  const [callStartedAt] = useState<number>(Date.now()); // Track when the call screen was shown
+  const [callStartedAt] = useState<number>((pal as any)?.callerTimestamp || Date.now()); // Use caller's initiation time for receiver; Date.now() for caller
   const formattedRef = useRef<string>('00:00'); // Track current duration for callbacks
   const connectedAtRef = useRef<number | null>(null); // Track exact connection time for accurate duration
   const endingRef = useRef(false); // Guard against double history save
@@ -151,7 +151,7 @@ export default function CallScreen() {
           mood: pal?.mood || '',
           duration: computeDuration(),
           type: role === 'caller' ? 'Outgoing' : 'Incoming',
-          timestamp: Date.now(),
+          timestamp: callStartedAt,
           callStartedAt: callStartedAt,
         });
         showToast('📞 Call disconnected');
@@ -252,7 +252,7 @@ export default function CallScreen() {
           mood: pal?.mood || '',
           duration: '00:00',
           type: 'Outgoing',
-          timestamp: Date.now(),
+          timestamp: callStartedAt,
           callStartedAt: callStartedAt,
         });
         showToast('No answer — call timed out');
@@ -299,7 +299,7 @@ export default function CallScreen() {
               mood: pal?.mood || '',
               duration: '00:00',
               type: 'Outgoing',
-              timestamp: Date.now(),
+              timestamp: callStartedAt,
               callStartedAt: callStartedAt,
             });
             showToast('Call declined');
@@ -329,7 +329,7 @@ export default function CallScreen() {
               mood: pal?.mood || '',
               duration: computeDuration(),
               type: 'Outgoing',
-              timestamp: Date.now(),
+              timestamp: callStartedAt,
               callStartedAt: callStartedAt,
             });
             showToast('Call ended');
@@ -361,7 +361,7 @@ export default function CallScreen() {
             mood: pal?.mood || '',
             duration: computeDuration(),
             type: 'Incoming',
-            timestamp: Date.now(),
+            timestamp: callStartedAt,
             callStartedAt: callStartedAt,
           });
           showToast('Call ended');
@@ -506,7 +506,7 @@ export default function CallScreen() {
       mood: pal?.mood || '',
       duration,
       type: callType,
-      timestamp: Date.now(),
+      timestamp: callStartedAt,
       callStartedAt: callStartedAt,
     });
     dispatch({ type: 'SET_PAL', pal: null });
