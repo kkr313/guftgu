@@ -35,6 +35,7 @@ export interface CallRecord {
   time: string;
   timestamp: number;
   callStartedAt?: number; // When the call actually started (for relative time display)
+  callId?: string; // Unique per-call identifier for deduplication (phone-timestamp)
 }
 
 export interface FriendRecord {
@@ -132,22 +133,22 @@ export function getCallHistory(): CallRecord[] {
 }
 
 export function saveCallToHistory(record: Omit<CallRecord, 'time'>): void {
-  // Deduplication: skip if we already have ANY call from same phone within 10 seconds
-  // This prevents multiple entries like Declined + Missed for the same call
+  // Generate callId if not provided: unique per call session
+  const callId = record.callId || `${record.phone || 'unknown'}-${record.callStartedAt || record.timestamp}`;
+
+  // Deduplication: skip if a record with the same callId already exists
+  // This prevents double-saves from race conditions (WebRTC disconnect + Firebase status,
+  // or Declined + Missed firing for the same call)
   const existingCalls = getCallHistory();
-  const now = Date.now();
-  const recentCall = existingCalls.find(c => 
-    c.phone === record.phone && 
-    c.timestamp && 
-    (now - c.timestamp) < 10000
-  );
-  if (recentCall) {
-    console.log('[saveCallToHistory] Skipping - recent call exists:', recentCall.type, 'for', record.phone, 'new type:', record.type);
+  const duplicate = existingCalls.find(c => c.callId && c.callId === callId);
+  if (duplicate) {
+    console.log('[saveCallToHistory] Skipping duplicate callId:', callId, 'existing:', duplicate.type, 'new:', record.type);
     return;
   }
 
   const fullRecord: CallRecord = {
     ...record,
+    callId,
     time: formatRelativeTime(record.callStartedAt || record.timestamp),
   };
   // Get fresh list and add

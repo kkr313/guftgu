@@ -335,16 +335,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setIncomingCall((prev) => {
           if (prev?.callerPhone === callerPhone) {
             // Caller cancelled or timed out — save as Missed call for the receiver
+            // callId dedup ensures this is skipped if Declined/Blocked was already saved
+            const ts = prev.callerTimestamp || Date.now();
             console.log('[App] Caller cancelled — saving missed call for:', callerPhone);
             saveCallToHistory({
+              callId: `${prev.callerPhone}-${ts}`,
               avatar: prev.callerAvatar || 'cat',
               name: prev.callerName || 'Unknown',
               phone: prev.callerPhone,
               mood: prev.callerMood || '',
               duration: '00:00',
               type: 'Missed',
-              timestamp: prev.callerTimestamp || Date.now(),
-              callStartedAt: prev.callerTimestamp || Date.now(),
+              timestamp: ts,
+              callStartedAt: ts,
             });
             return null;
           }
@@ -508,15 +511,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await declineCall(dbRef.current, state.guftguPhone, incomingCall.callerPhone);
 
       // Save as declined incoming call
+      const ts = incomingCall.callerTimestamp || Date.now();
       saveCallToHistory({
+        callId: `${incomingCall.callerPhone}-${ts}`,
         avatar: incomingCall.callerAvatar || 'cat',
         name: getDisplayName(incomingCall.callerPhone, incomingCall.callerName || 'Unknown'),
         phone: incomingCall.callerPhone,
         mood: incomingCall.callerMood || '',
         duration: '00:00',
         type: 'Declined',
-        timestamp: incomingCall.callerTimestamp || Date.now(),
-        callStartedAt: incomingCall.callerTimestamp || Date.now(),
+        timestamp: ts,
+        callStartedAt: ts,
       });
 
       setIncomingCall(null);
@@ -544,15 +549,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       );
 
       // Save as blocked call
+      const ts = incomingCall.callerTimestamp || Date.now();
       saveCallToHistory({
+        callId: `${incomingCall.callerPhone}-${ts}`,
         avatar: incomingCall.callerAvatar || 'cat',
         name: getDisplayName(incomingCall.callerPhone, incomingCall.callerName || 'Unknown'),
         phone: incomingCall.callerPhone,
         mood: incomingCall.callerMood || '',
         duration: '00:00',
         type: 'Blocked',
-        timestamp: incomingCall.callerTimestamp || Date.now(),
-        callStartedAt: incomingCall.callerTimestamp || Date.now(),
+        timestamp: ts,
+        callStartedAt: ts,
       });
 
       setIncomingCall(null);

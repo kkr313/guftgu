@@ -53,6 +53,9 @@ export default function CallScreen() {
   const peerMuteCleanupRef = useRef<(() => void) | null>(null); // Cleanup for peer mute listener
   const { seconds, formatted, start, stop, reset } = useTimer();
 
+  // Unique call identifier for deduplication — same for both peers in the same call
+  const callId = `${pal?.phone || 'unknown'}-${callStartedAt}`;
+
   /** Compute accurate call duration from connectedAtRef — always fresh */
   const computeDuration = useCallback((): string => {
     if (!connectedAtRef.current) return '00:00';
@@ -145,6 +148,7 @@ export default function CallScreen() {
         stop();
         cleanupWebRTC();
         saveCallToHistory({
+          callId,
           avatar: pal?.avatar || 'cat',
           name: pal?.name || 'Unknown',
           phone: pal?.phone || undefined,
@@ -246,6 +250,7 @@ export default function CallScreen() {
         }
         playCallEndedTone();
         saveCallToHistory({
+          callId,
           avatar: pal?.avatar || 'cat',
           name: pal?.name || 'Unknown',
           phone: pal?.phone || undefined,
@@ -293,6 +298,7 @@ export default function CallScreen() {
             }
             // Save as declined outgoing call (they rejected us)
             saveCallToHistory({
+              callId,
               avatar: pal?.avatar || 'cat',
               name: pal?.name || 'Unknown',
               phone: pal?.phone || undefined,
@@ -323,6 +329,7 @@ export default function CallScreen() {
             stop();
             cleanupWebRTC();
             saveCallToHistory({
+              callId,
               avatar: pal?.avatar || 'cat',
               name: pal?.name || 'Unknown',
               phone: pal?.phone || undefined,
@@ -355,6 +362,7 @@ export default function CallScreen() {
           stop();
           cleanupWebRTC();
           saveCallToHistory({
+            callId,
             avatar: pal?.avatar || 'cat',
             name: pal?.name || 'Unknown',
             phone: pal?.phone || undefined,
@@ -500,6 +508,7 @@ export default function CallScreen() {
     const duration = callStatus === 'ringing' ? '00:00' : computeDuration();
     
     saveCallToHistory({
+      callId,
       avatar: pal?.avatar || 'cat',
       name: pal?.name || 'Unknown',
       phone: pal?.phone || undefined,
