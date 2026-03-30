@@ -8,7 +8,6 @@ import { generateUniqueGuftguNumber } from '@/lib/firebase-service';
 import { IconChevronLeft } from '@/lib/icons';
 import { S } from '@/lib/strings';
 import { isProfane } from '@/lib/profanity';
-import { useBackHandler } from '@/hooks/useBackButton';
 
 type ObStep = 0 | 1 | 2 | 3 | 4 | 'qs';
 
@@ -197,14 +196,6 @@ export default function OnboardScreen() {
       setSelectedChip('');
     }
   }, [isActive, state.guftguPhone, reshuffleQS]);
-
-  // Mobile back button: go to previous onboarding step
-  useBackHandler('onboard', () => {
-    if (!isActive) return;
-    if (step === 'qs') { setStep(0); return; }
-    if (typeof step === 'number' && step > 0) { setStep((step - 1) as ObStep); return; }
-    // step === 0: do nothing — we're at the start
-  });
 
   return (
     <div id="screen-onboard" className={`screen${isActive ? ' active' : ''}`}>

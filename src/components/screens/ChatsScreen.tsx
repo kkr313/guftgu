@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import Avatar from '@/components/Avatar';
-import { getFriends, getPending, FriendRecord, PendingRecord, saveFriends, savePending, BlockedRecord, getBlocked, saveBlocked, formatRelativeTime, deleteChatConversation, markChatDeleted } from '@/lib/storage';
+import { getFriends, getPending, FriendRecord, PendingRecord, saveFriends, savePending, BlockedRecord, getBlocked, saveBlocked, formatRelativeTime, deleteChatConversation } from '@/lib/storage';
 import { 
   listenFriendRequests, 
   listenFriendAccepted, 
@@ -242,9 +242,8 @@ export default function ChatsScreen() {
     setFriends(updated);
     saveFriends(updated);
     // Remove from conversation list (they won't be able to chat anymore)
+    // deleteChatConversation already calls markChatDeleted internally
     deleteChatConversation(f.phone);
-    // Mark chat as deleted so old messages don't reappear if they re-friend later
-    markChatDeleted(f.phone);
     // Remove from Firebase friends list (both sides)
     if (dbRef?.current && state.guftguPhone) {
       removeFriendFirebase(dbRef.current, state.guftguPhone, f.phone).catch(() => {});

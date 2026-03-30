@@ -102,6 +102,17 @@ export function playFriendOnlineSound(): void {
   ]);
 }
 
+/** 🔄 Pull-to-refresh — quick swoosh-pop feedback */
+export function playRefreshSound(): void {
+  if (!canPlay('refresh', 600)) return;
+  playTones([
+    { freq: 400, duration: 0.08, gainPeak: 0.10, startDelay: 0, type: 'triangle' },
+    { freq: 600, duration: 0.08, gainPeak: 0.12, startDelay: 0.06, type: 'triangle' },
+    { freq: 900, duration: 0.12, gainPeak: 0.14, startDelay: 0.12, type: 'sine' },
+    { freq: 1200, duration: 0.18, gainPeak: 0.10, startDelay: 0.18, type: 'sine' },
+  ]);
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // RINGTONE & RINGBACK — looping sounds with stop handles
 // ──────────────────────────────────────────────────────────────────────────────

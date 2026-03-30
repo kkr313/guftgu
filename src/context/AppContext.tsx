@@ -1,6 +1,6 @@
 // @refresh reset
 import React, { createContext, useContext, useReducer, useCallback, useRef, useEffect, useState } from 'react';
-import { UserData, loadUser, saveUser as persistUser, genGuftguPhone, getCallHistory, saveCallToHistory, CallRecord, getFriends, saveFriends, FriendRecord, getPending, savePending, PendingRecord, getBlocked, saveBlocked, BlockedRecord, isBlocked, getDisplayName, addNotif, getUnreadNotifCount, markAllNotifsRead, seedWelcomeNotif, getTotalUnreadMessages, bumpUnreadCount, clearUnreadCount, getChatConversations, saveChatConversations, deleteChatConversation, markChatDeleted } from '@/lib/storage';
+import { UserData, loadUser, saveUser as persistUser, genGuftguPhone, getCallHistory, saveCallToHistory, CallRecord, getFriends, saveFriends, FriendRecord, getPending, savePending, PendingRecord, getBlocked, saveBlocked, BlockedRecord, isBlocked, getDisplayName, addNotif, getUnreadNotifCount, markAllNotifsRead, seedWelcomeNotif, getTotalUnreadMessages, bumpUnreadCount, clearUnreadCount, getChatConversations, saveChatConversations, deleteChatConversation, markChatDeleted, getChatDeletedSince } from '@/lib/storage';
 import { playMessageSound, playNotifSound, playFriendOnlineSound } from '@/lib/sounds';
 import { Database, ref, set, remove, onValue, push, get, child, off, onChildAdded, DataSnapshot, serverTimestamp } from 'firebase/database';
 import { initFirebase, getDb } from '@/lib/firebase';
@@ -627,9 +627,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const convo = convos.find(c => c.phone === friend.phone);
           const lastKnownTime = convo?.lastMessageTime || 0;
 
+          // Respect deletion markers: if the user deleted this chat, only
+          // messages AFTER the deletion timestamp count as "new". This prevents
+          // old messages from resurrecting deleted conversations.
+          const deletedSince = getChatDeletedSince(friend.phone);
+          const cutoff = Math.max(lastKnownTime, deletedSince || 0);
+
           // Filter: messages from the friend, newer than what we know about
           const newMsgs = messages.filter(
-            m => m.from !== myPhone && m.timestamp > lastKnownTime
+            m => m.from !== myPhone && m.timestamp > cutoff
           );
 
           if (newMsgs.length > 0) {

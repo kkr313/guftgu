@@ -62,6 +62,9 @@ export default function NotifsScreen() {
   const handleClearAll = () => {
     // Mark each conversation as deleted so old messages don't reappear
     conversations.forEach(c => markChatDeleted(c.phone));
+    // Also mark ALL friends (some may have Firebase history without a local conversation entry)
+    const friends = getFriends();
+    friends.forEach(f => markChatDeleted(f.phone));
     setConversations([]);
     clearAllConversations();
     setShowClearConfirm(false);

@@ -1,26 +1,20 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 
 /**
- * Mobile-first hardware/browser back & forward button blocker.
+ * FULLY disable browser back / forward / hardware back.
  *
  * Strategy:
- * 1.  Seed two history entries on init and always stay in the middle.
- *     This traps both back AND forward — popstate fires for both.
- * 2.  On every popstate we immediately replace back to the "middle" slot,
- *     so the browser never actually navigates away.
- * 3.  CSS `overscroll-behavior-x: none` blocks swipe-to-navigate on mobile.
- * 4.  Screens can register custom back handlers via `useBackHandler`.
+ * 1.  Seed a 3-entry history stack: [guard-back] [★current★] [guard-forward].
+ * 2.  On every popstate we silently restore the middle slot — the browser
+ *     never actually navigates away and NO app logic runs.
+ * 3.  All in-app navigation is done via React state (`showScreen`, `goBack`),
+ *     which never touches `window.history`, so the trap stays intact.
+ * 4.  CSS `overscroll-behavior-x: none` blocks swipe-to-navigate on mobile.
  */
 
-// ── Global handler stack (shared across hook instances) ──
-type BackHandler = () => boolean | void;
-
-const handlerStack: { id: string; fn: BackHandler }[] = [];
-
 let popstateAttached = false;
-let lastBackTap = 0;
 
-function attachPopstate(fallback: () => void, showToast: (m: string) => void, getScreen: () => string) {
+function attachPopstate() {
   if (popstateAttached) return;
   popstateAttached = true;
 
@@ -35,28 +29,11 @@ function attachPopstate(fallback: () => void, showToast: (m: string) => void, ge
     const tag = e.state?.guftgu;
 
     if (tag === 'back-guard') {
-      // User pressed browser BACK → push back to the middle
+      // User pressed browser/hardware BACK → silently restore the middle slot
       window.history.pushState({ guftgu: 'current' }, '');
       window.history.pushState({ guftgu: 'forward-guard' }, '');
       window.history.back(); // stay on "current"
-
-      // Invoke the app's back logic
-      if (handlerStack.length > 0) {
-        handlerStack[handlerStack.length - 1].fn();
-        return;
-      }
-      const screen = getScreen();
-      if (screen === 'screen-home') {
-        const now = Date.now();
-        if (now - lastBackTap < 2000) {
-          window.close();
-        } else {
-          lastBackTap = now;
-          showToast('Press back again to exit');
-        }
-      } else {
-        fallback();
-      }
+      // Do NOTHING — back is fully disabled
       return;
     }
 
@@ -75,46 +52,43 @@ function attachPopstate(fallback: () => void, showToast: (m: string) => void, ge
   // Block mobile swipe-to-navigate gesture (Chrome, Edge, Safari)
   document.documentElement.style.overscrollBehaviorX = 'none';
   document.body.style.overscrollBehaviorX = 'none';
+
+  // Block keyboard shortcuts for back/forward (Alt+Left, Alt+Right, Backspace)
+  window.addEventListener('keydown', (e) => {
+    // Alt + ArrowLeft / Alt + ArrowRight (browser back/forward)
+    if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      e.preventDefault();
+      return;
+    }
+    // Backspace when not focused on an input (some browsers navigate back)
+    if (e.key === 'Backspace') {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && !(e.target as HTMLElement)?.isContentEditable) {
+        e.preventDefault();
+      }
+    }
+  });
 }
 
 /**
  * Call from a root component (e.g. AppProvider) to wire up the global listener.
- * Only needs to be called once.
+ * Only needs to be called once. Browser/hardware back & forward are fully dead.
+ * Only in-app back buttons (which call goBack / showScreen) will navigate.
  */
 export function useBackButtonInit(
-  goBack: () => void,
-  showToast: (m: string) => void,
-  getScreen: () => string,
+  _goBack: () => void,
+  _showToast: (m: string) => void,
+  _getScreen: () => string,
 ) {
   useEffect(() => {
-    attachPopstate(goBack, showToast, getScreen);
-  }, [goBack, showToast, getScreen]);
+    attachPopstate();
+  }, []);
 
   /** Call this whenever you navigate (screen change, onboard step, etc.) */
   const pushHistory = useCallback(() => {
-    window.history.pushState({ guftgu: true }, '');
+    // No-op: we no longer push history entries for screen changes
+    // because the history stack is locked in a permanent 3-entry trap.
   }, []);
 
   return { pushHistory };
-}
-
-/**
- * Call from individual screens to register a custom back handler.
- * Return `true` from the handler if you consumed the event.
- *
- * Example (OnboardScreen):
- *   useBackHandler('onboard', () => { if (step > 0) goPrev(); });
- */
-export function useBackHandler(id: string, handler: BackHandler) {
-  const handlerRef = useRef(handler);
-  handlerRef.current = handler;
-
-  useEffect(() => {
-    const entry = { id, fn: () => handlerRef.current() };
-    handlerStack.push(entry);
-    return () => {
-      const idx = handlerStack.findIndex((h) => h === entry);
-      if (idx !== -1) handlerStack.splice(idx, 1);
-    };
-  }, [id]);
 }

@@ -14,6 +14,8 @@ import AboutScreen from '@/components/screens/AboutScreen';
 import BottomNav from '@/components/BottomNav';
 import Toast from '@/components/Toast';
 import IncomingCallModal from '@/components/IncomingCallModal';
+import PullToRefresh from '@/components/PullToRefresh';
+import GestureTip from '@/components/GestureTip';
 import { useApp } from '@/context/AppContext';
 
 export default function App() {
@@ -33,6 +35,7 @@ export default function App() {
 
   return (
     <>
+      <PullToRefresh />
       <div id="app">
         <OnboardScreen />
         <WelcomeScreen />
@@ -62,6 +65,9 @@ export default function App() {
         onDecline={handleDeclineCall}
         onBlock={handleBlockCaller}
       />
+
+      {/* One-time gesture tips overlay (shows after onboarding) */}
+      {state.guftguPhone && <GestureTip />}
     </>
   );
 }
