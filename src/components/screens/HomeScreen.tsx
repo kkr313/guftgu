@@ -223,7 +223,7 @@ export default function HomeScreen() {
         <div className="home-dial-card">
           <div className="dial-header">
             <div className="dial-title">{S.home.callAFriend}</div>
-            <div className="dial-my-number">Your Gufgu No.: <span>{state.guftguPhone || '—'}</span></div>
+            <div className="dial-my-number">Your Guftgu No.: <span>{state.guftguPhone || '—'}</span></div>
           </div>
           <div className="dial-input-row">
             <input
