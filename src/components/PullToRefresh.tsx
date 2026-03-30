@@ -2,51 +2,53 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import { playRefreshSound } from '@/lib/sounds';
 
 /**
- * Pull-to-refresh overlay.
- * Listens on touchstart / touchmove / touchend at the document level.
- * Only activates when the active screen's scroll container is at the top.
- * Shows a spinner while pulling, then a full-screen loader before reload.
+ * Pull-to-refresh — only triggers on a deliberate pull-down from the very top.
+ *
+ * Safeguards so normal scrolling never triggers it:
+ *  1. Touch must start when scroll container is at scrollTop ≤ 0.
+ *  2. First 30 px of downward finger movement is a "dead zone" — nothing happens.
+ *  3. After the dead zone we re-verify scroll is still at 0. If the browser
+ *     scrolled during the dead zone the pull is cancelled.
+ *  4. Horizontal movement > vertical during the dead zone → cancelled (swipe).
+ *  5. A high threshold (70 px visible / ~170 px finger) before reload triggers.
  */
 
-const THRESHOLD   = 45;   // px pull distance to trigger refresh
-const MAX_PULL    = 130;   // visual cap (dampened)
+const DEAD_ZONE   = 30;   // px of finger movement before pull tracking starts
+const THRESHOLD   = 70;   // visible pull px needed to trigger refresh
+const MAX_PULL    = 140;   // visual cap (dampened)
 const SPINNER_SIZE = 36;
 
 export default function PullToRefresh() {
   const [pullDistance, setPullDistance] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Use refs for values accessed inside touch handlers to avoid stale closures
   const startY       = useRef(0);
-  const pulling      = useRef(false);
-  const canPull      = useRef(false);
-  const pullRef      = useRef(0);       // mirrors pullDistance without re-registering listeners
-  const refreshRef   = useRef(false);   // mirrors refreshing
+  const startX       = useRef(0);
+  const pulling      = useRef(false);   // true once past dead zone
+  const canPull      = useRef(false);   // initial eligibility
+  const decided      = useRef(false);   // direction decided (down vs scroll/swipe)
+  const pullRef      = useRef(0);
+  const refreshRef   = useRef(false);
 
-  /** Check whether the active scroll container is at the top */
+  /** True only when every visible scroll container is at the very top */
   const isScrolledToTop = useCallback(() => {
     const activeScreen = document.querySelector('.screen.active');
     if (activeScreen) {
       const scrollBody = activeScreen.querySelector('.scroll-body');
-      if (scrollBody && scrollBody.scrollTop > 0) return false;
+      if (scrollBody && scrollBody.scrollTop > 1) return false;
     }
     const chatMessages = document.querySelector('.chat-messages');
-    if (chatMessages && chatMessages.scrollTop > 0) return false;
+    if (chatMessages && chatMessages.scrollTop > 1) return false;
     return true;
   }, []);
 
   const doRefresh = useCallback(() => {
-    if (refreshRef.current) return; // already refreshing
+    if (refreshRef.current) return;
     refreshRef.current = true;
     setRefreshing(true);
     playRefreshSound();
-
-    // Reload after a short delay so the user sees the loader + hears the sound
-    setTimeout(() => {
-      window.location.reload();
-    }, 600);
-
-    // Safety: if reload didn't work after 3s (e.g. offline PWA), dismiss the loader
+    setTimeout(() => window.location.reload(), 600);
+    // Safety fallback
     setTimeout(() => {
       refreshRef.current = false;
       setRefreshing(false);
@@ -55,64 +57,93 @@ export default function PullToRefresh() {
     }, 3000);
   }, []);
 
+  const resetPull = useCallback(() => {
+    pulling.current = false;
+    canPull.current = false;
+    decided.current = false;
+    pullRef.current = 0;
+    setPullDistance(0);
+  }, []);
+
   useEffect(() => {
     const onTouchStart = (e: TouchEvent) => {
       if (refreshRef.current) return;
-      if (!isScrolledToTop()) { canPull.current = false; return; }
+      resetPull();
+
+      // Only eligible if scroll is at the very top
+      if (!isScrolledToTop()) return;
+
       canPull.current = true;
       startY.current = e.touches[0].clientY;
-      pulling.current = false;
+      startX.current = e.touches[0].clientX;
     };
 
     const onTouchMove = (e: TouchEvent) => {
       if (refreshRef.current || !canPull.current) return;
-      const dy = e.touches[0].clientY - startY.current;
 
-      if (dy > 10) {
-        if (!pulling.current && !isScrolledToTop()) {
+      const dy = e.touches[0].clientY - startY.current;
+      const dx = e.touches[0].clientX - startX.current;
+
+      // ── Not pulling down at all → let the browser scroll normally ──
+      if (dy <= 0) {
+        if (pulling.current) resetPull();
+        return;
+      }
+
+      // ── Dead zone: first 30 px of downward movement ──
+      if (!decided.current) {
+        // If horizontal movement is dominant → user is swiping, cancel
+        if (Math.abs(dx) > dy) {
           canPull.current = false;
           return;
         }
-        pulling.current = true;
-        const clamped = Math.min(dy * 0.5, MAX_PULL);
-        pullRef.current = clamped;
-        setPullDistance(clamped);
-        if (dy > 15) e.preventDefault();
-      } else {
-        pulling.current = false;
-        pullRef.current = 0;
-        setPullDistance(0);
+        // Still within dead zone — don't show anything yet
+        if (dy < DEAD_ZONE) return;
+
+        // Exiting dead zone — re-verify scroll is still at top
+        // (browser may have scrolled the container during the dead zone)
+        if (!isScrolledToTop()) {
+          canPull.current = false;
+          return;
+        }
+        decided.current = true;
       }
+
+      // ── Past dead zone: track the pull ──
+      pulling.current = true;
+      const effective = dy - DEAD_ZONE;           // subtract dead zone from visual
+      const clamped = Math.min(effective * 0.45, MAX_PULL);  // dampen
+      pullRef.current = clamped;
+      setPullDistance(clamped);
+
+      // Prevent native scroll / pull-to-refresh while we're pulling
+      e.preventDefault();
     };
 
     const onTouchEnd = () => {
       if (!pulling.current || refreshRef.current) {
-        pullRef.current = 0;
-        setPullDistance(0);
-        pulling.current = false;
+        resetPull();
         return;
       }
-
-      // Use the ref (never stale) instead of state closure
       if (pullRef.current >= THRESHOLD) {
         doRefresh();
       } else {
-        pullRef.current = 0;
-        setPullDistance(0);
+        resetPull();
       }
-      pulling.current = false;
     };
 
     document.addEventListener('touchstart', onTouchStart, { passive: true });
     document.addEventListener('touchmove', onTouchMove,   { passive: false });
     document.addEventListener('touchend', onTouchEnd,      { passive: true });
+    document.addEventListener('touchcancel', resetPull,    { passive: true });
 
     return () => {
       document.removeEventListener('touchstart', onTouchStart);
       document.removeEventListener('touchmove', onTouchMove);
       document.removeEventListener('touchend', onTouchEnd);
+      document.removeEventListener('touchcancel', resetPull);
     };
-  }, [isScrolledToTop, doRefresh]); // stable deps — no re-registration on pull
+  }, [isScrolledToTop, doRefresh, resetPull]);
 
   // ── Full-screen refresh loader ──
   if (refreshing) {
