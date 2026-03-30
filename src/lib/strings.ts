@@ -288,6 +288,17 @@ export const S = {
     deletedToast: 'Account deleted. Start fresh! 👋',
     moodUpdatedToast: (emoji: string) => `Mood updated! ${emoji}`,
     avatarUpdatedToast: 'Avatar updated! ✨',
+    // Share
+    settingShareIcon: '🔗',
+    settingShare: 'Share Guftgu',
+    settingShareDesc: 'Invite friends to try Guftgu',
+    shareTitle: 'Guftgu — Anonymous Voice Chat',
+    shareText: 'Hey! Try Guftgu — India\'s free anonymous voice & chat app. No signup needed. Just real conversations. बात करो, दिल से 🎙️',
+    shareUrl: 'https://guftgu.fun',
+    shareCopiedToast: 'Link copied! Share it with friends 🎉',
+    shareFailedToast: 'Could not share — link copied instead 📋',
+    shareModalTitle: 'Share Guftgu',
+    shareModalSubtitle: 'Invite your friends to Guftgu',
   },
 
   /* ─── Modals ──────────────────────────────────────────── */

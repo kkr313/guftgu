@@ -4052,6 +4052,88 @@ input.input-error {
 .delete-title { font-size: 16px; font-weight: 700; color: var(--accent); }
 .delete-desc  { font-size: 13px; color: var(--text2); line-height: 1.65; max-width: 300px; }
 .delete-actions { display: flex; gap: 10px; width: 100%; }
+
+/* ── Share App ── */
+.share-item {
+  border: 1px solid rgba(99,102,241,0.2) !important;
+  background: rgba(99,102,241,0.04) !important;
+}
+.share-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.share-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border-radius: 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: inherit;
+}
+.share-btn:active {
+  transform: scale(0.95);
+}
+.share-btn-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+.share-whatsapp .share-btn-icon { background: rgba(37,211,102,0.15); }
+.share-telegram .share-btn-icon { background: rgba(0,136,204,0.15); }
+.share-twitter .share-btn-icon  { background: rgba(29,161,242,0.15); }
+.share-copy .share-btn-icon     { background: rgba(99,102,241,0.15); }
+.share-btn-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  white-space: nowrap;
+}
+.share-url-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+/* About screen share CTA */
+.about-share-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15));
+  border: 1px solid rgba(99,102,241,0.25);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 16px auto 0;
+}
+.about-share-cta:active {
+  transform: scale(0.97);
+  background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.25));
+}
 /* ═══════════════════════════════════════════════════════════════
    lang-pills.css
    Single CSS file that styles lang pills consistently in BOTH

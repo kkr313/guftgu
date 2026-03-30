@@ -1,10 +1,32 @@
 ﻿import { useApp } from '@/context/AppContext';
-import { IconChevronLeft } from '@/lib/icons';
+import { IconChevronLeft, IconShare } from '@/lib/icons';
+import { S } from '@/lib/strings';
 
 export default function AboutScreen() {
-  const { state, goBack } = useApp();
+  const { state, goBack, showToast } = useApp();
   const isActive = state.screen === 'screen-appinfo';
   const currentYear = new Date().getFullYear();
+
+  const handleShareApp = async () => {
+    const shareData = {
+      title: S.profile.shareTitle,
+      text: S.profile.shareText,
+      url: S.profile.shareUrl,
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
+      }
+    }
+    // Fallback: copy link
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(S.profile.shareUrl);
+      showToast(S.profile.shareCopiedToast);
+    }
+  };
 
   return (
     <div id="screen-appinfo" className={`screen${isActive ? ' active' : ''}`}>
@@ -66,7 +88,10 @@ export default function AboutScreen() {
 
         {/* Footer */}
         <div className="appinfo-section" style={{ textAlign: 'center', paddingBottom: 32 }}>
-          <div style={{ fontSize: 13, color: 'var(--text3)' }}>Made with ❤️ in India</div>
+          <div className="about-share-cta" onClick={handleShareApp}>
+            <IconShare size={18} /> Share Guftgu with friends
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 16 }}>Made with ❤️ in India</div>
           <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>© 2025–{currentYear} Guftgu · All rights reserved</div>
         </div>
       </div>

@@ -8,7 +8,7 @@ import AvatarPickerModal from '@/components/AvatarPickerModal';
 import { clearAllData, getBlocked, getCallHistory, getChatConversations, getFriends } from '@/lib/storage';
 import { deleteUserFromFirebase } from '@/lib/firebase-service';
 import { S } from '@/lib/strings';
-import { IconAlertTriangle, IconTrash } from '@/lib/icons';
+import { IconAlertTriangle, IconShare, IconTrash } from '@/lib/icons';
 
 export default function ProfileScreen() {
   const { state, showScreen, showToast, saveUserData, dbRef, dispatch } = useApp();
@@ -21,6 +21,7 @@ export default function ProfileScreen() {
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [blockedCount, setBlockedCount] = useState(0);
   
   // Stats
@@ -129,6 +130,37 @@ export default function ProfileScreen() {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(state.guftguPhone || '');
       showToast(S.profile.copiedToast);
+    }
+  };
+
+  const handleShareApp = async () => {
+    const shareData = {
+      title: S.profile.shareTitle,
+      text: S.profile.shareText,
+      url: S.profile.shareUrl,
+    };
+
+    // Try native Web Share API first (works great on mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return; // User shared or dismissed — done
+      } catch (err: any) {
+        // User cancelled share — don't show fallback
+        if (err?.name === 'AbortError') return;
+        // Other error — fall through to modal
+      }
+    }
+
+    // Fallback: open share modal with social buttons + copy link
+    setShareModalOpen(true);
+  };
+
+  const copyShareLink = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(S.profile.shareUrl);
+      showToast(S.profile.shareCopiedToast);
+      setShareModalOpen(false);
     }
   };
 
@@ -249,6 +281,14 @@ export default function ProfileScreen() {
             </div>
             <div className="setting-arrow">{S.common.settingArrow}</div>
           </div>
+          <div className="setting-item share-item" onClick={handleShareApp}>
+            <div className="setting-icon"><IconShare size={20} color="var(--accent)" /></div>
+            <div className="setting-info">
+              <div className="setting-name">{S.profile.settingShare}</div>
+              <div className="setting-desc">{S.profile.settingShareDesc}</div>
+            </div>
+            <div className="setting-arrow">{S.common.settingArrow}</div>
+          </div>
           <div className="setting-item" onClick={() => setHelpModalOpen(true)}>
             <div className="setting-icon">💬</div>
             <div className="setting-info">
@@ -335,6 +375,66 @@ export default function ProfileScreen() {
               </a>
             </div>
             <button className="btn btn-ghost" style={{ width: '100%', marginTop: 16 }} onClick={() => setHelpModalOpen(false)}>Close</button>
+          </div>
+        </div>
+      </div>
+
+      {/* Share App Modal (fallback when Web Share API unavailable) */}
+      <div className={`modal-overlay${shareModalOpen ? ' show' : ''}`} onClick={() => setShareModalOpen(false)}>
+        <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-handle" />
+          <div style={{ padding: '14px 20px 20px' }}>
+            <div style={{ fontSize: 18, fontWeight: 600, textAlign: 'center', marginBottom: 4 }}>
+              {S.profile.shareModalTitle}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--text2)', textAlign: 'center', marginBottom: 20 }}>
+              {S.profile.shareModalSubtitle}
+            </div>
+
+            {/* Share buttons grid */}
+            <div className="share-grid">
+              <a
+                className="share-btn share-whatsapp"
+                href={`https://wa.me/?text=${encodeURIComponent(S.profile.shareText + '\n' + S.profile.shareUrl)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setShareModalOpen(false)}
+              >
+                <div className="share-btn-icon">💬</div>
+                <div className="share-btn-label">WhatsApp</div>
+              </a>
+              <a
+                className="share-btn share-telegram"
+                href={`https://t.me/share/url?url=${encodeURIComponent(S.profile.shareUrl)}&text=${encodeURIComponent(S.profile.shareText)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setShareModalOpen(false)}
+              >
+                <div className="share-btn-icon">✈️</div>
+                <div className="share-btn-label">Telegram</div>
+              </a>
+              <a
+                className="share-btn share-twitter"
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(S.profile.shareText)}&url=${encodeURIComponent(S.profile.shareUrl)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setShareModalOpen(false)}
+              >
+                <div className="share-btn-icon">𝕏</div>
+                <div className="share-btn-label">Twitter</div>
+              </a>
+              <div className="share-btn share-copy" onClick={copyShareLink}>
+                <div className="share-btn-icon">📋</div>
+                <div className="share-btn-label">Copy Link</div>
+              </div>
+            </div>
+
+            {/* Share URL preview */}
+            <div className="share-url-preview">
+              <span>{S.profile.shareUrl}</span>
+            </div>
+
+            <button className="btn btn-ghost" style={{ width: '100%', marginTop: 12 }} onClick={() => setShareModalOpen(false)}>Close</button>
           </div>
         </div>
       </div>

@@ -201,3 +201,14 @@ export const IconUnfriend: React.FC<IconProps> = ({
     <rect x="16.5" y="5.25" width="5" height="1.5" rx="0.75" fill="#fff" />
   </svg>
 );
+
+/** Share icon — arrow pointing out of a box (standard share symbol) */
+export const IconShare: React.FC<IconProps> = ({
+  size = 22, color = 'currentColor', className, style,
+}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7" />
+    <polyline points="16 6 12 2 8 6" />
+    <line x1="12" y1="2" x2="12" y2="15" />
+  </svg>
+);
