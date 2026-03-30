@@ -47,6 +47,7 @@ export function useMatchEngine(isActive: boolean) {
   const isDemo = useRef(false);
   const matchCallStartedAt = useRef<number | null>(null);
   const matchEndedRef = useRef(false);
+  const callHandedOff = useRef(false); // True once call transitions to CallScreen — prevents cleanup from killing WebRTC
 
   const cleanup = useCallback(() => {
     if (tipTimer.current) clearInterval(tipTimer.current);
@@ -55,7 +56,11 @@ export function useMatchEngine(isActive: boolean) {
     if (cleanupQueueRef.current) cleanupQueueRef.current();
     if (cleanupMatchStateRef.current) cleanupMatchStateRef.current();
     if (cleanupRoomWatchRef.current) cleanupRoomWatchRef.current();
-    cleanupWebRTC();
+    // Only clean up WebRTC if the call hasn't been handed off to CallScreen
+    // When screen transitions match→call, this cleanup fires — we must NOT kill the active call
+    if (!callHandedOff.current) {
+      cleanupWebRTC();
+    }
   }, []);
 
   useEffect(() => {
@@ -104,11 +109,12 @@ export function useMatchEngine(isActive: boolean) {
     if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
     matchEndedRef.current = false;
     matchCallStartedAt.current = null;
+    callHandedOff.current = false; // Reset — will be set true once onConnected fires
     dispatch({ type: 'SET_PAL', pal: { avatar: pal.avatar, name: pal.name, mood: pal.mood, moodEmoji: pal.moodEmoji, phone: pal.phone, isMatchCall: true } as any });
     // cleanupQueueRef.current is already called in onMatchFound
     if (cleanupMatchStateRef.current) { cleanupMatchStateRef.current(); cleanupMatchStateRef.current = null; }
     setConnecting(true);
-    const onConnected = () => { matchCallStartedAt.current = Date.now(); setConnecting(false); showScreen('screen-call'); };
+    const onConnected = () => { callHandedOff.current = true; matchCallStartedAt.current = Date.now(); setConnecting(false); showScreen('screen-call'); };
     const onReconnecting = () => { showToast('⚠️ Connection unstable — reconnecting...'); };
     const onReconnected = () => { showToast('✅ Call reconnected'); };
     const onDisconnected = () => {
@@ -155,6 +161,45 @@ export function useMatchEngine(isActive: boolean) {
     if (matchFound && countdown === 0 && !waitingForOther && !connecting) declineMatch();
   }, [countdown, matchFound, waitingForOther, connecting]); // eslint-disable-line
 
+  // ─── IMMEDIATE match state watcher ───────────────────────────────────────
+  // Start watching the match document AS SOON as a match is found, not just
+  // when Accept is clicked. This ensures:
+  //  • If either side skips (or their countdown expires), the other side is
+  //    instantly notified and sent back to searching.
+  //  • If both accept, the call starts automatically.
+  // Without this, a skip during the countdown was invisible to the other side.
+  useEffect(() => {
+    const db = dbRef.current;
+    const matchId = currentMatchId.current;
+    if (!matchFound || !db || !matchId || isDemo.current) return;
+
+    // Don't double-subscribe if acceptMatch already set one up
+    if (cleanupMatchStateRef.current) return;
+
+    cleanupMatchStateRef.current = watchMatchState(db, matchId, state.guftguPhone, () => {
+      // Both accepted — start the call
+      if (cleanupMatchStateRef.current) { cleanupMatchStateRef.current(); cleanupMatchStateRef.current = null; }
+      if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+      setWaitingForOther(false);
+      startCall();
+    }, () => {
+      // Other side skipped — auto-dismiss and find another match
+      if (cleanupMatchStateRef.current) { cleanupMatchStateRef.current(); cleanupMatchStateRef.current = null; }
+      if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null; }
+      setWaitingForOther(false);
+      showToast('They skipped — finding another match...');
+      setMatchFound(false);
+      setSearching(true);
+      currentMatchId.current = null;
+      currentRole.current = null;
+      setTimeout(startSearch, 700);
+    });
+
+    return () => {
+      if (cleanupMatchStateRef.current) { cleanupMatchStateRef.current(); cleanupMatchStateRef.current = null; }
+    };
+  }, [matchFound]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const acceptMatch = useCallback(() => {
     if (waitingForOther || connecting) return;
     const db = dbRef.current;
@@ -164,15 +209,9 @@ export function useMatchEngine(isActive: boolean) {
     setWaitingForOther(true);
     writeMatchResponse(db, matchId, state.guftguPhone, 'accepted');
     showToast('Waiting for the other person...');
-    cleanupMatchStateRef.current = watchMatchState(db, matchId, state.guftguPhone, () => {
-      if (cleanupMatchStateRef.current) { cleanupMatchStateRef.current(); cleanupMatchStateRef.current = null; }
-      setWaitingForOther(false); startCall();
-    }, () => {
-      if (cleanupMatchStateRef.current) { cleanupMatchStateRef.current(); cleanupMatchStateRef.current = null; }
-      setWaitingForOther(false); showToast('They skipped - finding another match...');
-      setMatchFound(false); setSearching(true); setTimeout(startSearch, 700);
-    });
-  }, [dbRef, state.guftguPhone, waitingForOther, connecting, showToast, startCall, startSearch]);
+    // NOTE: watchMatchState is already running from the useEffect above.
+    // It will fire onBothAccepted→startCall or onOtherSkipped→backToSearching.
+  }, [dbRef, state.guftguPhone, waitingForOther, connecting, showToast, startCall]);
 
   const declineMatch = useCallback(() => {
     const db = dbRef.current;
@@ -194,6 +233,7 @@ export function useMatchEngine(isActive: boolean) {
   }, [dbRef, state.guftguPhone, startSearch]);
 
   const cancelSearch = useCallback(() => {
+    callHandedOff.current = false; // Ensure WebRTC IS cleaned up on cancel
     cleanup(); // already calls cleanupQueueRef.current() which runs the new cleanup above
     const db = dbRef.current;
     if (db) {

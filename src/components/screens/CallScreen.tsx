@@ -270,6 +270,7 @@ export default function CallScreen() {
             // BUG 1 FIX: Now establish WebRTC audio (caller creates room)
             if (state.guftguPhone && pal.phone) setupDirectCallWebRTC('caller', state.guftguPhone, pal.phone);
           } else if (status === 'declined') {
+            endingRef.current = true;
             if (ringingTimeoutRef.current) { clearTimeout(ringingTimeoutRef.current); ringingTimeoutRef.current = null; }
             playCallEndedTone();
             // Clean up stale outgoing data so next call isn't poisoned
@@ -291,6 +292,7 @@ export default function CallScreen() {
             dispatch({ type: 'SET_PAL', pal: null });
             showScreen('screen-home');
           } else if (status === 'cancelled') {
+            endingRef.current = true;
             if (ringingTimeoutRef.current) { clearTimeout(ringingTimeoutRef.current); ringingTimeoutRef.current = null; }
             playCallEndedTone();
             // Clean up stale data so next call isn't poisoned
@@ -302,6 +304,7 @@ export default function CallScreen() {
             showScreen('screen-home');
           } else if (status === 'ended') {
             // Other party ended the call - save history
+            endingRef.current = true; // Guard against double processing from callEnded room listener
             playCallEndedTone();
             stop();
             cleanupWebRTC();
@@ -330,6 +333,7 @@ export default function CallScreen() {
         () => {
           // BUG 2 FIX: Skip if we are already ending the call ourselves
           if (endingRef.current) return;
+          endingRef.current = true; // Guard against double processing from callEnded room listener
 
           // Caller ended the call - play tone + save history
           console.log('[CallScreen] Caller ended the call');

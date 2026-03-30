@@ -245,13 +245,29 @@ export async function createRoom(
     });
     callListeners.push(() => off(calleeCandidatesRef, 'child_added', calleeListener));
 
-    // Listen for call ended signal
-    const endedListener = onValue(ref(db, `rooms/${roomId}/callEnded`), (snap) => {
+    // Listen for call ended signal (explicit callEnded=true OR room deletion)
+    const callEndedRef = ref(db, `rooms/${roomId}/callEnded`);
+    const endedListener = onValue(callEndedRef, (snap) => {
       if (snap.exists() && snap.val() === true) {
         onDisconnected();
       }
     });
-    callListeners.push(() => off(ref(db, `rooms/${roomId}/callEnded`), 'value', endedListener));
+    callListeners.push(() => off(callEndedRef, 'value', endedListener));
+
+    // Also listen for room deletion (peer's onDisconnect or manual cleanup)
+    // If the offer node disappears while we're in a call, the room was removed
+    const offerWatchRef = ref(db, `rooms/${roomId}/offer`);
+    let offerSeen = false;
+    const offerListener = onValue(offerWatchRef, (snap) => {
+      if (snap.exists()) {
+        offerSeen = true;
+      } else if (offerSeen) {
+        // Offer existed before but now gone — room was deleted
+        console.log('[WebRTC] Room deleted (offer removed) — ending call');
+        onDisconnected();
+      }
+    });
+    callListeners.push(() => off(offerWatchRef, 'value', offerListener));
 
   } catch (error) {
     onError(error instanceof Error ? error : new Error('Failed to create room'));
@@ -337,13 +353,29 @@ export async function joinRoom(
     });
     callListeners.push(() => off(callerCandidatesRef, 'child_added', callerListener));
 
-    // Listen for call ended signal
-    const endedListener = onValue(ref(db, `rooms/${roomId}/callEnded`), (snap) => {
+    // Listen for call ended signal (explicit callEnded=true OR room deletion)
+    const callEndedRef = ref(db, `rooms/${roomId}/callEnded`);
+    const endedListener = onValue(callEndedRef, (snap) => {
       if (snap.exists() && snap.val() === true) {
         onDisconnected();
       }
     });
-    callListeners.push(() => off(ref(db, `rooms/${roomId}/callEnded`), 'value', endedListener));
+    callListeners.push(() => off(callEndedRef, 'value', endedListener));
+
+    // Also listen for room deletion (peer's onDisconnect or manual cleanup)
+    // If the answer node disappears while we're in a call, the room was removed
+    const answerWatchRef = ref(db, `rooms/${roomId}/answer`);
+    let answerSeen = false;
+    const answerListener = onValue(answerWatchRef, (snap) => {
+      if (snap.exists()) {
+        answerSeen = true;
+      } else if (answerSeen) {
+        // Answer existed before but now gone — room was deleted
+        console.log('[WebRTC] Room deleted (answer removed) — ending call');
+        onDisconnected();
+      }
+    });
+    callListeners.push(() => off(answerWatchRef, 'value', answerListener));
 
   } catch (error) {
     onError(error instanceof Error ? error : new Error('Failed to join room'));

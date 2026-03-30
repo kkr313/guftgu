@@ -12,7 +12,7 @@ export default function MatchScreen() {
   const {
     searching, matchFound, pal, countdown, tipIdx,
     searchTips, acceptMatch, declineMatch, cancelSearch,
-    queueCount,
+    queueCount, waitingForOther, connecting,
   } = useMatchEngine(isActive);
 
   return (
@@ -82,10 +82,12 @@ export default function MatchScreen() {
               <span className="mf-badge">{u.language || 'Hindi'}</span>
               <span className="mf-badge">{pal.region || 'Region'}</span>
             </div>
-            <div className="mf-countdown">{countdown}</div>
+            <div className="mf-countdown">{waitingForOther ? '⏳' : connecting ? '🔗' : countdown}</div>
             <div className="mf-actions">
-              <button className="mf-decline" onClick={declineMatch}>{S.match.skipBtn}</button>
-              <button className="mf-accept" onClick={acceptMatch}>{S.match.connectBtn}</button>
+              <button className="mf-decline" onClick={declineMatch} disabled={connecting}>{S.match.skipBtn}</button>
+              <button className="mf-accept" onClick={acceptMatch} disabled={waitingForOther || connecting}>
+                {connecting ? 'Connecting...' : waitingForOther ? 'Waiting...' : S.match.connectBtn}
+              </button>
             </div>
             <div className="mf-safety-row">
               <button className="mf-safety-btn" onClick={declineMatch}>{S.match.blockBtn}</button>

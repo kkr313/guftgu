@@ -434,10 +434,28 @@ export function watchMatchState(
 ): () => void {
   const matchRef = ref(db, `matches/${matchId}`);
   let cleaned = false;
+  let hasSeen = false; // True once we've seen the match document at least once
 
   const listener = onValue(matchRef, (snap) => {
-    if (cleaned || !snap.exists()) return;
+    if (cleaned) return;
+
+    if (!snap.exists()) {
+      // Match doc was deleted or never existed
+      // If we had previously seen it, treat as other-skipped (they left)
+      if (hasSeen) {
+        onOtherSkipped();
+      }
+      return;
+    }
+
+    hasSeen = true;
     const data = snap.val() as MatchData;
+
+    // If match status is 'ended', treat as other-skipped
+    if (data.status === 'ended') {
+      onOtherSkipped();
+      return;
+    }
 
     const myField = data.user1.phone === myPhone ? 'user1Response' : 'user2Response';
     const otherField = myField === 'user1Response' ? 'user2Response' : 'user1Response';
