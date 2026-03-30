@@ -45,6 +45,22 @@ export default function ChatsScreen() {
     }
   }, [isActive]);
 
+  // Refresh friends list when localStorage changes (e.g., other side unfriends us)
+  useEffect(() => {
+    const handleFriends = () => {
+      if (isActive) setFriends(getFriends());
+    };
+    const handlePending = () => {
+      if (isActive) setPending(getPending());
+    };
+    window.addEventListener('friendsUpdate', handleFriends);
+    window.addEventListener('pendingUpdate', handlePending);
+    return () => {
+      window.removeEventListener('friendsUpdate', handleFriends);
+      window.removeEventListener('pendingUpdate', handlePending);
+    };
+  }, [isActive]);
+
   // Listen for Firebase friend requests and acceptances
   useEffect(() => {
     if (!isActive || !dbRef?.current || !state.guftguPhone) return;
@@ -148,7 +164,7 @@ export default function ChatsScreen() {
     if (dbRef?.current && state.guftguPhone) {
       try {
         if (p.direction === 'incoming') {
-          await declineFriendRequest(dbRef.current, state.guftguPhone, p.phone);
+          await declineFriendRequest(dbRef.current, state.guftguPhone, p.phone, state.user.nickname, state.user.avatar);
         } else {
           await cancelFriendRequest(dbRef.current, state.guftguPhone, p.phone);
         }
@@ -278,7 +294,7 @@ export default function ChatsScreen() {
       try {
         // First decline/cancel the friend request
         if (p.direction === 'incoming') {
-          await declineFriendRequest(dbRef.current, state.guftguPhone, p.phone);
+          await declineFriendRequest(dbRef.current, state.guftguPhone, p.phone, state.user.nickname, state.user.avatar);
         } else {
           await cancelFriendRequest(dbRef.current, state.guftguPhone, p.phone);
         }

@@ -558,14 +558,23 @@ export async function acceptFriendRequest(
 }
 
 /**
- * Decline a friend request — just remove from friendRequests.
+ * Decline a friend request — remove from friendRequests and notify the sender.
  */
 export async function declineFriendRequest(
   db: Database,
   myPhone: string,
-  requesterPhone: string
+  requesterPhone: string,
+  myName?: string,
+  myAvatar?: string
 ): Promise<void> {
   await remove(ref(db, `friendRequests/${myPhone}/${requesterPhone}`));
+  // Notify the requester that we declined
+  await set(ref(db, `friendDeclined/${requesterPhone}/${myPhone}`), {
+    from: myPhone,
+    name: myName || 'Someone',
+    avatar: myAvatar || 'cat',
+    timestamp: Date.now(),
+  });
 }
 
 /**
@@ -636,6 +645,70 @@ export function listenFriendAccepted(
   return () => {
     cleaned = true;
     off(accRef, 'value', listener);
+  };
+}
+
+/**
+ * Listen for declined friend request notifications.
+ * Returns cleanup function.
+ */
+export function listenFriendDeclined(
+  db: Database,
+  myPhone: string,
+  onDeclined: (info: { phone: string; name: string; avatar: string }) => void
+): () => void {
+  const decRef = ref(db, `friendDeclined/${myPhone}`);
+  let cleaned = false;
+
+  const listener = onValue(decRef, (snap) => {
+    if (cleaned || !snap.exists()) return;
+    snap.forEach((child) => {
+      const data = child.val() as { from: string; name: string; avatar: string; timestamp: number };
+      onDeclined({ phone: data.from, name: data.name, avatar: data.avatar });
+      // Remove after processing
+      remove(child.ref);
+    });
+  });
+
+  return () => {
+    cleaned = true;
+    off(decRef, 'value', listener);
+  };
+}
+
+/**
+ * Listen for friends being removed (unfriend from the other side).
+ * Watches `friends/{myPhone}` for child_removed events.
+ * Returns cleanup function.
+ */
+export function listenFriendRemovals(
+  db: Database,
+  myPhone: string,
+  onRemoved: (phone: string, name: string) => void
+): () => void {
+  const friendsRef = ref(db, `friends/${myPhone}`);
+  let cleaned = false;
+  // Skip initial load — we only care about removals that happen AFTER we start listening
+  let initialLoadDone = false;
+
+  // First, read the full list once to mark initial load as complete
+  get(friendsRef).then(() => {
+    // Small delay so that any child_removed events fired during initial sync are ignored
+    setTimeout(() => { initialLoadDone = true; }, 2000);
+  }).catch(() => { initialLoadDone = true; });
+
+  const listener = onChildRemoved(friendsRef, (snap) => {
+    if (cleaned || !initialLoadDone) return;
+    const removedPhone = snap.key;
+    if (!removedPhone) return;
+    const data = snap.val();
+    const name = data?.name || 'Someone';
+    onRemoved(removedPhone, name);
+  });
+
+  return () => {
+    cleaned = true;
+    off(friendsRef, 'child_removed', listener);
   };
 }
 

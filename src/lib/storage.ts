@@ -189,7 +189,10 @@ export function getFriends(): FriendRecord[] {
 }
 
 export function saveFriends(list: FriendRecord[]): void {
-  try { localStorage.setItem(FRIENDS_KEY, JSON.stringify(list)); } catch (_) { /* ignore */ }
+  try {
+    localStorage.setItem(FRIENDS_KEY, JSON.stringify(list));
+    window.dispatchEvent(new Event('friendsUpdate'));
+  } catch (_) { /* ignore */ }
 }
 
 /** Look up a friend's nickname by phone. Returns nickname if set, otherwise the fallback name. */
@@ -206,7 +209,10 @@ export function getPending(): PendingRecord[] {
 }
 
 export function savePending(list: PendingRecord[]): void {
-  try { localStorage.setItem(PENDING_KEY, JSON.stringify(list)); } catch (_) { /* ignore */ }
+  try {
+    localStorage.setItem(PENDING_KEY, JSON.stringify(list));
+    window.dispatchEvent(new Event('pendingUpdate'));
+  } catch (_) { /* ignore */ }
 }
 
 // Blocked

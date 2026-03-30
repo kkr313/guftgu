@@ -1,10 +1,10 @@
 // @refresh reset
 import React, { createContext, useContext, useReducer, useCallback, useRef, useEffect, useState } from 'react';
-import { UserData, loadUser, saveUser as persistUser, genGuftguPhone, getCallHistory, saveCallToHistory, CallRecord, getFriends, saveFriends, FriendRecord, getPending, savePending, PendingRecord, getBlocked, saveBlocked, BlockedRecord, isBlocked, getDisplayName, addNotif, getUnreadNotifCount, markAllNotifsRead, seedWelcomeNotif, getTotalUnreadMessages, bumpUnreadCount, clearUnreadCount, getChatConversations, saveChatConversations } from '@/lib/storage';
+import { UserData, loadUser, saveUser as persistUser, genGuftguPhone, getCallHistory, saveCallToHistory, CallRecord, getFriends, saveFriends, FriendRecord, getPending, savePending, PendingRecord, getBlocked, saveBlocked, BlockedRecord, isBlocked, getDisplayName, addNotif, getUnreadNotifCount, markAllNotifsRead, seedWelcomeNotif, getTotalUnreadMessages, bumpUnreadCount, clearUnreadCount, getChatConversations, saveChatConversations, deleteChatConversation, markChatDeleted } from '@/lib/storage';
 import { playMessageSound, playNotifSound, playFriendOnlineSound } from '@/lib/sounds';
 import { Database, ref, set, remove, onValue, push, get, child, off, onChildAdded, DataSnapshot, serverTimestamp } from 'firebase/database';
 import { initFirebase, getDb } from '@/lib/firebase';
-import { registerUser, syncBlockList, setOnlineStatus, listenIncomingCalls, IncomingCall, acceptCall, declineCall, blockUserFirebase, listenFriendRequests, listenFriendAccepted, listenFriendsOnlineStatus, listenChatMessages } from '@/lib/firebase-service';
+import { registerUser, syncBlockList, setOnlineStatus, listenIncomingCalls, IncomingCall, acceptCall, declineCall, blockUserFirebase, listenFriendRequests, listenFriendAccepted, listenFriendDeclined, listenFriendRemovals, listenFriendsOnlineStatus, listenChatMessages } from '@/lib/firebase-service';
 import { useBackButtonInit } from '@/hooks/useBackButton';
 
 // ── Types ──────────────────────────────────────────
@@ -375,11 +375,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return cleanup;
   }, [state.guftguPhone, state.firebaseConnected, showToast]);
 
-  // Listen for accepted friend requests — create a notification
+  // Listen for accepted friend requests — add to friends list + notification
   useEffect(() => {
     if (!dbRef.current || !state.guftguPhone || !state.firebaseConnected) return;
 
     const cleanup = listenFriendAccepted(dbRef.current, state.guftguPhone, (friend) => {
+      // Add to local friends list (so they appear even if ChatsScreen isn't open)
+      const currentFriends = getFriends();
+      if (!currentFriends.some(f => f.phone === friend.phone)) {
+        const newFriend: FriendRecord = {
+          phone: friend.phone,
+          name: friend.name,
+          avatar: friend.avatar,
+          mood: friend.mood,
+          moodEmoji: friend.moodEmoji,
+          addedAt: Date.now(),
+        };
+        saveFriends([...currentFriends, newFriend]);
+      }
+
+      // Remove from pending list
+      const currentPending = getPending();
+      const updatedPending = currentPending.filter(p => p.phone !== friend.phone);
+      if (updatedPending.length !== currentPending.length) {
+        savePending(updatedPending);
+      }
+
       addNotif({
         type: 'friend_accepted',
         icon: '🎉',
@@ -390,6 +411,44 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         meta: { phone: friend.phone, avatar: friend.avatar || 'cat' },
       });
       showToast(`🎉 ${friend.name || 'Someone'} accepted your request!`);
+    });
+
+    return cleanup;
+  }, [state.guftguPhone, state.firebaseConnected, showToast]);
+
+  // Listen for declined friend requests — notify the sender
+  useEffect(() => {
+    if (!dbRef.current || !state.guftguPhone || !state.firebaseConnected) return;
+
+    const cleanup = listenFriendDeclined(dbRef.current, state.guftguPhone, (info) => {
+      // Remove from pending list
+      const currentPending = getPending();
+      const updatedPending = currentPending.filter(p => p.phone !== info.phone);
+      if (updatedPending.length !== currentPending.length) {
+        savePending(updatedPending);
+      }
+
+      showToast(`😔 ${info.name || 'Someone'} declined your friend request`);
+    });
+
+    return cleanup;
+  }, [state.guftguPhone, state.firebaseConnected, showToast]);
+
+  // Listen for friend removals (when the other side unfriends us)
+  useEffect(() => {
+    if (!dbRef.current || !state.guftguPhone || !state.firebaseConnected) return;
+
+    const cleanup = listenFriendRemovals(dbRef.current, state.guftguPhone, (removedPhone, name) => {
+      // Remove from local friends list
+      const currentFriends = getFriends();
+      const updatedFriends = currentFriends.filter(f => f.phone !== removedPhone);
+      if (updatedFriends.length !== currentFriends.length) {
+        saveFriends(updatedFriends);
+        // Also clean up the conversation
+        deleteChatConversation(removedPhone);
+        markChatDeleted(removedPhone);
+        showToast(`${name} removed you from their friends list`);
+      }
     });
 
     return cleanup;
