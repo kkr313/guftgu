@@ -5,7 +5,7 @@ import { saveCallToHistory, getFriends, saveFriends, FriendRecord } from '@/lib/
 import { sendFriendRequest, checkIfFriends, checkPendingRequest, blockUserFirebase, cleanupCallData, cancelCall, endCall as firebaseEndCall, listenOutgoingCallStatus, listenIncomingCallStatus, acceptFriendRequest, addToFriends, setDirectCallRoomId, watchDirectCallRoomId } from '@/lib/firebase-service';
 import { useTimer } from '@/hooks/useTimer';
 import { IconMic, IconMicOff, IconPhoneEnd, IconSpeaker } from '@/lib/icons';
-import { setMuted as webrtcSetMuted, cleanup as cleanupWebRTC, generateRoomId, createRoom, joinRoom, playCallEndedTone, signalMuteState, listenPeerMuteState, isMuted as webrtcIsMuted } from '@/lib/webrtc';
+import { setMuted as webrtcSetMuted, cleanup as cleanupWebRTC, generateRoomId, createRoom, joinRoom, playCallEndedTone, signalMuteState, listenPeerMuteState, isMuted as webrtcIsMuted, endCall as webrtcEndCall } from '@/lib/webrtc';
 import { S } from '@/lib/strings';
 
 export default function CallScreen() {
@@ -19,6 +19,8 @@ export default function CallScreen() {
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeaker, setIsSpeaker] = useState(false);
   const [peerMuted, setPeerMuted] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   // Sync mute state and peer mute state on mount (fixes bug when returning from chat)
   useEffect(() => {
     setIsMuted(webrtcIsMuted());
@@ -107,12 +109,23 @@ export default function CallScreen() {
 
     const onWebRTCConnected = () => {
       console.log('[CallScreen] WebRTC peer connected');
+      setIsReconnecting(false);
       // Listen for peer's mute state
       if (peerMuteCleanupRef.current) { peerMuteCleanupRef.current(); peerMuteCleanupRef.current = null; }
       peerMuteCleanupRef.current = listenPeerMuteState(db, peerPhone, (muted) => {
         console.log('[CallScreen] Peer mute state:', muted);
         setPeerMuted(muted);
       });
+    };
+    const onWebRTCReconnecting = () => {
+      console.log('[CallScreen] WebRTC reconnecting...');
+      setIsReconnecting(true);
+      showToast('⚠️ Connection unstable — reconnecting...');
+    };
+    const onWebRTCReconnected = () => {
+      console.log('[CallScreen] WebRTC reconnected!');
+      setIsReconnecting(false);
+      showToast('✅ Call reconnected');
     };
     const onWebRTCDisconnected = () => {
       // Peer disconnected (network drop, browser close) — end the call
@@ -132,21 +145,27 @@ export default function CallScreen() {
           timestamp: Date.now(),
           callStartedAt: callStartedAt,
         });
-        showToast('Call ended');
+        showToast('📞 Call disconnected');
         dispatch({ type: 'SET_PAL', pal: null });
         showScreen('screen-home');
       }
     };
     const onWebRTCError = (err: Error) => {
       console.error('[CallScreen] WebRTC error:', err);
-      showToast('❌ Audio error: ' + err.message);
+      if (!endingRef.current) {
+        endingRef.current = true;
+        cleanupWebRTC();
+        showToast('❌ Audio error: ' + err.message);
+        dispatch({ type: 'SET_PAL', pal: null });
+        showScreen('screen-home');
+      }
     };
 
     if (role === 'caller') {
       // Caller: create WebRTC room → share roomId with receiver
       const roomId = generateRoomId();
       console.log('[CallScreen] Caller creating WebRTC room:', roomId);
-      createRoom(db, roomId, onWebRTCConnected, onWebRTCDisconnected, onWebRTCError)
+      createRoom(db, roomId, onWebRTCConnected, onWebRTCDisconnected, onWebRTCError, onWebRTCReconnecting, onWebRTCReconnected)
         .then(() => setDirectCallRoomId(db, callerPhone, receiverPhone, roomId));
     } else {
       // Receiver: watch for roomId from caller → join the room
@@ -155,7 +174,7 @@ export default function CallScreen() {
         // Got the roomId — clean up the watcher and join the room
         if (roomWatchCleanupRef.current) { roomWatchCleanupRef.current(); roomWatchCleanupRef.current = null; }
         console.log('[CallScreen] Receiver joining WebRTC room:', roomId);
-        joinRoom(db, roomId, onWebRTCConnected, onWebRTCDisconnected, onWebRTCError);
+        joinRoom(db, roomId, onWebRTCConnected, onWebRTCDisconnected, onWebRTCError, onWebRTCReconnecting, onWebRTCReconnected);
       });
     }
   }, [dbRef, pal, callStartedAt, stop, dispatch, showScreen, showToast]);
@@ -413,6 +432,8 @@ export default function CallScreen() {
     if (isActive) {
       setIsMuted(false);
       setIsSpeaker(false);
+      setIsReconnecting(false);
+      setIsOffline(!navigator.onLine);
       // callStatus will be set by the outgoing/incoming call effect
     } else {
       stop();
@@ -421,10 +442,36 @@ export default function CallScreen() {
       setFriendStatus('loading');
       setAddFriendSent(false);
       setPeerMuted(false);
+      setIsReconnecting(false);
+      setIsOffline(false);
       setCallStatus('ringing'); // Reset for next call
     }
     return () => stop();
   }, [isActive]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Network connectivity monitoring — show toast + update state on network drop/restore
+  useEffect(() => {
+    if (!isActive) return;
+
+    const handleOffline = () => {
+      setIsOffline(true);
+      showToast('⚠️ Network disconnected — trying to reconnect...');
+    };
+    const handleOnline = () => {
+      setIsOffline(false);
+      if (callStatus === 'connected') {
+        showToast('✅ Network restored');
+      }
+    };
+
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [isActive, callStatus, showToast]);
 
   const endCall = async () => {
     // BUG 2 FIX: Set guard BEFORE Firebase cleanup so listeners don't double-save
@@ -440,7 +487,7 @@ export default function CallScreen() {
     
     const isMatch = (pal as any)?.isMatchCall;
     
-    // For direct calls (not match), signal end via Firebase
+    // For direct calls (not match), signal end via Firebase call signaling
     if (!isMatch && dbRef?.current && state.guftguPhone && pal?.phone) {
       try {
         if (callStatus === 'ringing' && pal?.isOutgoingCall) {
@@ -456,8 +503,15 @@ export default function CallScreen() {
       }
     }
 
-    // Clean up WebRTC resources (for ALL call types)
-    cleanupWebRTC();
+    // Signal call ended via WebRTC rooms path (works for BOTH match and direct calls)
+    // This sets rooms/{roomId}/callEnded = true so the peer gets immediate notification
+    // Then cleans up all WebRTC resources
+    try {
+      await webrtcEndCall(dbRef?.current || null);
+    } catch (_) {
+      // Fallback: just clean up locally
+      cleanupWebRTC();
+    }
     
     // Determine call type — match calls and outgoing calls are 'Outgoing', else 'Incoming'
     const callType = (pal?.isOutgoingCall || isMatch) ? 'Outgoing' : 'Incoming';
@@ -622,9 +676,6 @@ export default function CallScreen() {
             <div className="call-loading-dots">
               <span>.</span><span>.</span><span>.</span>
             </div>
-            <div style={{ marginTop: 20, fontSize: 12, color: '#888' }}>
-              DEBUG: No pal data, isActive={String(isActive)}
-            </div>
           </div>
         </div>
       </div>
@@ -682,7 +733,18 @@ export default function CallScreen() {
       <div className="call-bg" />
       <div className="call-content">
         {/* Status */}
-        <div className="call-status">{peerMuted ? '🔇 Muted' : S.call.connected}</div>
+        <div className={`call-status${isReconnecting ? ' reconnecting' : ''}${isOffline ? ' reconnecting' : ''}`}>
+          {isReconnecting || isOffline
+            ? '🔄 Reconnecting...'
+            : peerMuted ? '🔇 Muted' : S.call.connected}
+        </div>
+
+        {/* Reconnecting banner */}
+        {(isReconnecting || isOffline) && (
+          <div className="call-reconnecting-banner">
+            <span>⚠️</span> Connection unstable — trying to reconnect...
+          </div>
+        )}
 
         {/* Peer muted indicator - above avatar */}
         {peerMuted && (
@@ -690,7 +752,7 @@ export default function CallScreen() {
         )}
 
         {/* Avatar */}
-        <div className={`call-avatar-ring${peerMuted ? ' muted' : ''}`}>
+        <div className={`call-avatar-ring${peerMuted ? ' muted' : ''}${isReconnecting || isOffline ? ' reconnecting' : ''}`}>
           <div className="call-ring-anim" />
           <div className="call-ring-anim" />
           <div className="call-avatar-main">

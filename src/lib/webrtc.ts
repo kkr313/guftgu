@@ -48,6 +48,8 @@ let currentRoomId: string | null = null;
 let isCaller = false;
 let callListeners: Array<() => void> = [];
 let pendingMuteState: boolean | null = null; // Queued mute state if set before stream is ready
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+const RECONNECT_TIMEOUT_MS = 15000; // 15 seconds before giving up reconnection
 
 // ══════════════════════════════════════════════════════════════════════════════
 // HELPERS
@@ -100,12 +102,20 @@ function ensureRemoteAudio(): HTMLAudioElement {
 
 /**
  * Create a new RTCPeerConnection with event handlers.
+ * Handles ICE state transitions:
+ *  - connected/completed → onConnected
+ *  - disconnected → onReconnecting (temporary, 15s timeout before fail)
+ *  - reconnected after disconnect → onReconnected
+ *  - failed/closed → onDisconnected (permanent)
  */
 function createPeerConnection(
   onConnected: () => void,
-  onDisconnected: () => void
+  onDisconnected: () => void,
+  onReconnecting?: () => void,
+  onReconnected?: () => void
 ): RTCPeerConnection {
   const pc = new RTCPeerConnection(ICE_SERVERS);
+  let wasConnected = false;
 
   pc.ontrack = (event) => {
     const audio = ensureRemoteAudio();
@@ -116,9 +126,39 @@ function createPeerConnection(
 
   pc.oniceconnectionstatechange = () => {
     const state = pc.iceConnectionState;
+    console.log('[WebRTC] ICE connection state:', state);
+
     if (state === 'connected' || state === 'completed') {
-      onConnected();
-    } else if (state === 'disconnected' || state === 'failed' || state === 'closed') {
+      // Clear any pending reconnect timer
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+
+      if (wasConnected) {
+        // Was previously connected → this is a reconnection
+        console.log('[WebRTC] Reconnected after temporary disconnect');
+        onReconnected?.();
+      } else {
+        wasConnected = true;
+        onConnected();
+      }
+    } else if (state === 'disconnected') {
+      // Temporary disconnection — ICE will attempt to recover
+      // Start a timeout; if it doesn't reconnect, treat as failed
+      console.log('[WebRTC] ICE disconnected — waiting for reconnection...');
+      onReconnecting?.();
+
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        // Check if still disconnected after timeout
+        if (peerConnection && peerConnection.iceConnectionState === 'disconnected') {
+          console.log('[WebRTC] Reconnection timed out after', RECONNECT_TIMEOUT_MS, 'ms');
+          onDisconnected();
+        }
+      }, RECONNECT_TIMEOUT_MS);
+    } else if (state === 'failed' || state === 'closed') {
+      // Permanent failure — end immediately
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+      console.log('[WebRTC] ICE', state, '— call ended');
       onDisconnected();
     }
   };
@@ -143,7 +183,9 @@ export async function createRoom(
   roomId: string,
   onConnected: () => void,
   onDisconnected: () => void,
-  onError: (error: Error) => void
+  onError: (error: Error) => void,
+  onReconnecting?: () => void,
+  onReconnected?: () => void
 ): Promise<void> {
   try {
     currentRoomId = roomId;
@@ -153,7 +195,7 @@ export async function createRoom(
     localStream = await getMicrophoneStream();
 
     // Create peer connection
-    peerConnection = createPeerConnection(onConnected, onDisconnected);
+    peerConnection = createPeerConnection(onConnected, onDisconnected, onReconnecting, onReconnected);
 
     // Add local audio tracks
     localStream.getTracks().forEach((track) => {
@@ -233,7 +275,9 @@ export async function joinRoom(
   roomId: string,
   onConnected: () => void,
   onDisconnected: () => void,
-  onError: (error: Error) => void
+  onError: (error: Error) => void,
+  onReconnecting?: () => void,
+  onReconnected?: () => void
 ): Promise<void> {
   try {
     currentRoomId = roomId;
@@ -243,7 +287,7 @@ export async function joinRoom(
     localStream = await getMicrophoneStream();
 
     // Create peer connection
-    peerConnection = createPeerConnection(onConnected, onDisconnected);
+    peerConnection = createPeerConnection(onConnected, onDisconnected, onReconnecting, onReconnected);
 
     // Add local audio tracks
     localStream.getTracks().forEach((track) => {
@@ -251,8 +295,12 @@ export async function joinRoom(
     });
 
     // Set up room references
+    const roomRef = ref(db, `rooms/${roomId}`);
     const callerCandidatesRef = ref(db, `rooms/${roomId}/callerCandidates`);
     const calleeCandidatesRef = ref(db, `rooms/${roomId}/calleeCandidates`);
+
+    // Set up onDisconnect cleanup for callee too (caller already sets this)
+    onDisconnect(roomRef).remove();
 
     // Collect ICE candidates
     peerConnection.onicecandidate = (event) => {
@@ -360,6 +408,9 @@ export async function endCall(db: Database | null, blocked = false): Promise<voi
  * Clean up all WebRTC resources.
  */
 export function cleanup(): void {
+  // Clear reconnection timer
+  if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+
   // Remove all listeners
   callListeners.forEach((cleanup) => cleanup());
   callListeners = [];
@@ -406,6 +457,13 @@ export function getCurrentRoomId(): string | null {
  */
 export function getIsCaller(): boolean {
   return isCaller;
+}
+
+/**
+ * Get current ICE connection state.
+ */
+export function getConnectionState(): RTCIceConnectionState | null {
+  return peerConnection ? peerConnection.iceConnectionState : null;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

@@ -5116,3 +5116,550 @@ input.input-error {
 }
 
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   CALL RECONNECTING STATE
+   Shows when ICE is temporarily disconnected or network drops during a call.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Reconnecting status text — pulsing animation */
+.call-status.reconnecting {
+  color: #FFD93D !important;
+  animation: reconnectPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes reconnectPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Reconnecting banner — sits below status, above avatar */
+.call-reconnecting-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: rgba(255, 217, 61, 0.1);
+  border: 1px solid rgba(255, 217, 61, 0.25);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #FFD93D;
+  margin-bottom: 8px;
+  animation: fadeSlideIn 0.3s ease;
+  flex-shrink: 0;
+}
+
+/* Avatar ring pulsing yellow during reconnection */
+.call-avatar-ring.reconnecting .call-ring-anim {
+  border-color: rgba(255, 217, 61, 0.4);
+  animation: callRingYellow 1.5s ease-out infinite;
+}
+
+@keyframes callRingYellow {
+  0% { opacity: 0.8; transform: scale(0.8); }
+  100% { opacity: 0; transform: scale(1.2); }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE VIEWPORT FIXES
+   Ensures all screens work across small phones, standard phones, tablets,
+   and landscape orientations without breaking existing layouts.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── General flex-child overflow prevention ───────────────────────────────
+   Prevent text in flex children from pushing siblings off-screen.
+   Applied broadly but safely — only affects elements already using flex. */
+.home-greeting-wrap,
+.friend-info,
+.pending-info,
+.convo-info,
+.hist-info,
+.blocked-info,
+.notif-body,
+.chat-header-info,
+.qs-info,
+.setting-info {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.home-name,
+.friend-name,
+.pending-name,
+.convo-name,
+.hist-name,
+.blocked-name,
+.chat-header-name,
+.profile-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Small phones (≤ 374px width) — iPhone SE, Galaxy A01, etc. ────────── */
+@media (max-width: 374px) {
+
+  /* --- ChatsScreen: Friend items — shrink action buttons --- */
+  .friend-actions {
+    gap: 5px;
+  }
+  .friend-action-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  .friend-item {
+    gap: 10px;
+  }
+  .friend-avatar {
+    width: 42px;
+    height: 42px;
+  }
+  .friend-name {
+    font-size: 14px;
+  }
+
+  /* --- ChatsScreen: Pending items — compact buttons --- */
+  .pending-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+  .pending-btn.block {
+    padding: 5px 8px;
+    font-size: 13px;
+  }
+  .pending-item {
+    gap: 10px;
+  }
+  .pending-avatar {
+    width: 38px;
+    height: 38px;
+  }
+
+  /* --- OnboardScreen: Region orbit — scale down --- */
+  .region-orbit {
+    width: 240px;
+    height: 240px;
+    transform: scale(0.88);
+    transform-origin: top center;
+    margin-bottom: 8px;
+  }
+
+  /* --- OnboardScreen: Step titles & subtitles --- */
+  .step-title {
+    font-size: 22px;
+  }
+  .step-sub {
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+
+  /* --- OnboardScreen: Mood grid — tighter --- */
+  .mood-grid {
+    gap: 8px;
+  }
+
+  /* --- OnboardScreen: Intent row — tighter --- */
+  .intent-row {
+    gap: 6px;
+  }
+
+  /* --- HomeScreen: Topbar — smaller name --- */
+  .home-name {
+    font-size: 19px;
+  }
+  .home-greeting {
+    font-size: 12px;
+  }
+  .home-topbar {
+    padding: 48px 16px 14px;
+  }
+
+  /* --- HomeScreen: Find button — less padding --- */
+  .home-match-section {
+    padding: 0 16px;
+  }
+  .find-btn-label {
+    font-size: 15px;
+  }
+
+  /* --- HomeScreen: Preference cards --- */
+  .home-prefs {
+    padding: 0 16px;
+    gap: 8px;
+  }
+
+  /* --- HomeScreen: Dial card --- */
+  .home-dial-card {
+    margin: 14px 16px 0;
+  }
+  .dial-input {
+    font-size: 14px;
+    padding: 8px 10px;
+  }
+
+  /* --- ProfileScreen: Stats grid — smaller cards --- */
+  .profile-stats-grid {
+    gap: 8px;
+    margin: 0 16px 20px;
+  }
+  .profile-stat-card {
+    padding: 12px;
+    gap: 10px;
+  }
+  .profile-stat-card .stat-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  .profile-stat-card .stat-value {
+    font-size: 20px;
+  }
+  .profile-section {
+    padding: 0 16px;
+  }
+
+  /* --- ProfileScreen: Hero section --- */
+  .profile-hero {
+    padding: 52px 16px 24px;
+  }
+  .profile-name {
+    font-size: 20px;
+  }
+  .palcode-card {
+    padding: 12px 14px;
+  }
+
+  /* --- WelcomeScreen: Phone number — smaller on narrow screens --- */
+  .welcome-ob-phone {
+    font-size: 26px;
+    letter-spacing: 0.15em;
+  }
+  .welcome-ob-content {
+    padding: 48px 20px 40px;
+  }
+  .welcome-ob-name {
+    font-size: 30px;
+  }
+
+  /* --- MatchScreen: Search state — respect narrow viewport --- */
+  #searchState {
+    max-width: calc(100vw - 48px) !important;
+  }
+  .match-content {
+    padding: 0 16px;
+  }
+  .mf-title {
+    font-size: 22px;
+  }
+  .mf-actions {
+    gap: 10px;
+  }
+  .mf-decline,
+  .mf-accept {
+    font-size: 13px;
+    padding: 12px 12px;
+    min-height: 44px;
+  }
+
+  /* --- ChatScreen: Input bar — more compact --- */
+  .chat-input-bar {
+    padding: 8px 12px;
+    padding-bottom: calc(8px + var(--safe-bottom));
+    gap: 8px;
+  }
+  .chat-input {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+  .chat-send {
+    width: 38px;
+    height: 38px;
+  }
+  .chat-header {
+    padding: 48px 14px 10px;
+    gap: 10px;
+  }
+
+  /* --- NotificationsScreen: Items --- */
+  .notif-item {
+    padding: 12px;
+    gap: 10px;
+  }
+  .notif-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  /* --- HistoryScreen: Items --- */
+  .history-item {
+    gap: 10px;
+  }
+
+  /* --- BlockedScreen: Items --- */
+  .blocked-item {
+    gap: 10px;
+    padding: 12px 16px;
+  }
+
+  /* --- NotifsScreen (Conversations): Items --- */
+  .convo-list {
+    padding: 0 12px;
+  }
+
+  /* --- Modals: Compact padding --- */
+  .modal-sheet {
+    margin: 0 12px;
+  }
+
+  /* --- Incoming Call Modal: Scale avatar slightly --- */
+  .incoming-call-avatar {
+    transform: scale(0.9);
+  }
+
+  /* --- BottomNav: Compact labels --- */
+  .nav-item {
+    font-size: 9px;
+  }
+
+  /* --- AboutScreen: Tighter padding --- */
+  .appinfo-header {
+    padding: 40px 16px 24px;
+  }
+  .appinfo-section {
+    padding: 0 16px 20px;
+  }
+}
+
+
+/* ── Very small screens (≤ 340px width) — iPhone 5/SE1 size ────────────── */
+@media (max-width: 340px) {
+
+  /* --- ChatsScreen: Friend actions — wrap to 2nd line --- */
+  .friend-item {
+    flex-wrap: wrap;
+  }
+  .friend-actions {
+    width: 100%;
+    justify-content: flex-end;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+  }
+
+  /* --- OnboardScreen: Region orbit — scale more aggressively --- */
+  .region-orbit {
+    transform: scale(0.78);
+    margin-bottom: 0;
+  }
+
+  /* --- OnboardScreen: Name chips — smaller --- */
+  .name-chip {
+    font-size: 11px;
+    padding: 7px 10px;
+  }
+
+  /* --- MatchScreen: Match found overlay --- */
+  .match-found {
+    padding: 40px 20px calc(24px + var(--safe-bottom));
+  }
+  .mf-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+  }
+  .mf-countdown {
+    width: 52px;
+    height: 52px;
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+
+  /* --- Welcome: Further compact phone number --- */
+  .welcome-ob-phone {
+    font-size: 22px;
+    letter-spacing: 0.1em;
+  }
+  .welcome-ob-features {
+    gap: 6px;
+  }
+  .welcome-ob-feat {
+    padding: 10px 4px;
+  }
+  .wof-text {
+    font-size: 9px;
+  }
+}
+
+
+/* ── Short viewport / landscape orientation ────────────────────────────── */
+@media (max-height: 600px) {
+
+  /* --- OnboardScreen: Compact vertical spacing --- */
+  .onboard-logo {
+    margin-bottom: 8px;
+  }
+  .onboard-tagline {
+    margin-bottom: 12px;
+  }
+  .step-sub {
+    margin-bottom: 16px;
+  }
+  .region-orbit {
+    transform: scale(0.75);
+    transform-origin: top center;
+    margin-bottom: 0;
+  }
+  .splash-hero-img {
+    max-height: 120px;
+  }
+
+  /* --- MatchScreen: Compact orbit animation area --- */
+  .search-orbit-wrap {
+    transform: scale(0.8);
+    transform-origin: top center;
+    margin-bottom: -10px;
+  }
+  .match-found {
+    padding-top: 30px;
+  }
+  .mf-mood {
+    margin-bottom: 16px;
+  }
+  .mf-countdown {
+    width: 50px;
+    height: 50px;
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+
+  /* --- WelcomeScreen: Compact vertical --- */
+  .welcome-ob-content {
+    padding: 32px 24px 24px;
+  }
+  .welcome-ob-phone-wrap {
+    padding: 12px 18px;
+    margin-bottom: 18px;
+  }
+  .welcome-ob-features {
+    margin-bottom: 18px;
+  }
+
+  /* --- ProfileScreen: Compact hero --- */
+  .profile-hero {
+    padding-top: 40px;
+    padding-bottom: 18px;
+  }
+
+  /* --- Fixed headers: Reduce top padding --- */
+  .screen-fixed-header {
+    padding-top: 28px;
+  }
+  .chat-header {
+    padding-top: 32px;
+  }
+}
+
+
+/* ── Landscape + short — extreme compact ──────────────────────────────── */
+@media (max-height: 500px) and (orientation: landscape) {
+
+  /* --- OnboardScreen: Even more compact --- */
+  .region-orbit {
+    transform: scale(0.65);
+    margin-bottom: -20px;
+  }
+  .step-title {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+  .step-sub {
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+  .onboard-logo .logo-icon {
+    font-size: 32px;
+  }
+  .onboard-logo .logo-text {
+    font-size: 24px;
+  }
+
+  /* --- MatchScreen --- */
+  .search-orbit-wrap {
+    transform: scale(0.6);
+    margin-bottom: -24px;
+  }
+
+  /* --- WelcomeScreen --- */
+  .welcome-ob-avatar {
+    font-size: 56px;
+    margin-bottom: 10px;
+  }
+  .welcome-ob-name {
+    font-size: 28px;
+  }
+  .welcome-ob-phone-wrap {
+    padding: 8px 14px;
+    margin-bottom: 12px;
+  }
+  .welcome-ob-phone {
+    font-size: 24px;
+  }
+  .welcome-ob-features {
+    margin-bottom: 12px;
+  }
+}
+
+
+/* ── Tablet-ish widths (480px – 768px) ────────────────────────────────── */
+@media (min-width: 480px) and (max-width: 768px) {
+
+  /* Screens already capped at 420px max-width and centered.
+     Just ensure modals also respect the container. */
+  .incoming-call-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .incoming-call-modal {
+    max-width: 400px;
+  }
+}
+
+
+/* ── Large desktop (≥ 768px) ──────────────────────────────────────────── */
+@media (min-width: 768px) {
+
+  /* Add a subtle dark vignette around the centered app for visual polish */
+  body {
+    background:
+      radial-gradient(ellipse 50% 80% at 50% 50%, transparent 0%, #06070d 100%),
+      #06070d;
+  }
+
+  /* Ensure incoming call modal doesn't stretch full width */
+  .incoming-call-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .incoming-call-modal {
+    max-width: 400px;
+    width: 100%;
+  }
+
+  /* Modal sheets stay contained */
+  .modal-overlay {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-sheet {
+    max-width: 420px;
+  }
+}
+
+

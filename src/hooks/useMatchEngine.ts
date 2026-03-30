@@ -109,6 +109,8 @@ export function useMatchEngine(isActive: boolean) {
     if (cleanupMatchStateRef.current) { cleanupMatchStateRef.current(); cleanupMatchStateRef.current = null; }
     setConnecting(true);
     const onConnected = () => { matchCallStartedAt.current = Date.now(); setConnecting(false); showScreen('screen-call'); };
+    const onReconnecting = () => { showToast('⚠️ Connection unstable — reconnecting...'); };
+    const onReconnected = () => { showToast('✅ Call reconnected'); };
     const onDisconnected = () => {
       if (matchEndedRef.current) return;
       matchEndedRef.current = true;
@@ -119,17 +121,17 @@ export function useMatchEngine(isActive: boolean) {
       saveCallToHistory({ avatar: pal.avatar, name: pal.name, phone: pal.phone || '', mood: pal.mood, duration: formatted, type: 'Outgoing', timestamp: Date.now(), callStartedAt: startTs || Date.now() });
       dispatch({ type: 'SET_PAL', pal: null });
       showScreen('screen-home');
-      showToast('Call ended');
+      showToast('📞 Call disconnected');
     };
-    const onError = (error: Error) => { setConnecting(false); showToast('Mic error: ' + error.message); goBack(); };
+    const onError = (error: Error) => { setConnecting(false); cleanupWebRTC(); showToast('Mic error: ' + error.message); goBack(); };
     if (isDemo.current || !db || !matchId) { startDemoCall(onConnected, onError); return; }
     if (role === 'caller') {
       const roomId = generateRoomId();
-      createRoom(db, roomId, onConnected, onDisconnected, onError).then(() => { setMatchRoomId(db, matchId, roomId); });
+      createRoom(db, roomId, onConnected, onDisconnected, onError, onReconnecting, onReconnected).then(() => { setMatchRoomId(db, matchId, roomId); });
     } else {
       cleanupRoomWatchRef.current = watchMatchRoomId(db, matchId, (roomId) => {
         if (cleanupRoomWatchRef.current) { cleanupRoomWatchRef.current(); cleanupRoomWatchRef.current = null; }
-        joinRoom(db, roomId, onConnected, onDisconnected, onError);
+        joinRoom(db, roomId, onConnected, onDisconnected, onError, onReconnecting, onReconnected);
       });
       setTimeout(() => { if (cleanupRoomWatchRef.current) { cleanupRoomWatchRef.current(); cleanupRoomWatchRef.current = null; setConnecting(false); showToast('Connection timed out'); goBack(); } }, 20000);
     }

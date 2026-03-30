@@ -332,7 +332,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         console.log('[App] Call removed from:', callerPhone);
         setIncomingCall((prev) => {
           if (prev?.callerPhone === callerPhone) {
-            console.log('[App] Caller cancelled, not saving duplicate entry');
+            // Caller cancelled or timed out — save as Missed call for the receiver
+            console.log('[App] Caller cancelled — saving missed call for:', callerPhone);
+            saveCallToHistory({
+              avatar: prev.callerAvatar || 'cat',
+              name: prev.callerName || 'Unknown',
+              phone: prev.callerPhone,
+              mood: prev.callerMood || '',
+              duration: '00:00',
+              type: 'Missed',
+              timestamp: Date.now(),
+              callStartedAt: Date.now(),
+            });
             return null;
           }
           return prev;

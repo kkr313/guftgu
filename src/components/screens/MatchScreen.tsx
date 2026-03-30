@@ -25,7 +25,7 @@ export default function MatchScreen() {
 
         {/* Searching state */}
         {searching && !matchFound && (
-          <div id="searchState" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '100%', maxWidth: 340 }}>
+          <div id="searchState" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '100%', maxWidth: 340, paddingInline: 8 }}>
             <div className="match-status-pill searching">
               <div className="status-dot-pulse" />
               {S.match.searching}
