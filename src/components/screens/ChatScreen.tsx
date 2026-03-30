@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useApp } from '@/context/AppContext';
 import Avatar from '@/components/Avatar';
-import { getFriends, getChatConversations, saveChatConversations, ChatConversation, bumpUnreadCount, formatRelativeTime, getChatDeletedSince, clearChatDeletedSince, markChatDeleted } from '@/lib/storage';
+import { getFriends, getChatConversations, saveChatConversations, ChatConversation, bumpUnreadCount, formatRelativeTime, getChatDeletedSince } from '@/lib/storage';
 import { playMessageSound } from '@/lib/sounds';
 import { 
   sendChatMessage, 
@@ -172,6 +172,10 @@ export default function ChatScreen() {
     // a sound or unread badge. Using timestamp is reliable; setTimeout is not.
     const listenStartedAt = Date.now();
 
+    // Respect the deletion marker so old messages don't leak through the
+    // real-time listener (race condition: listener fires before history loads)
+    const deletedSince = getChatDeletedSince(pal.phone);
+
     const unsub = listenChatMessages(
       dbRef.current,
       state.guftguPhone,
@@ -179,6 +183,10 @@ export default function ChatScreen() {
       (msg: ChatMessage) => {
         // Skip if already rendered by the history load
         if (processedIds.current.has(msg.id)) return;
+
+        // Skip messages older than the deletion timestamp
+        if (deletedSince && msg.timestamp <= deletedSince) return;
+
         processedIds.current.add(msg.id);
 
         const displayMsg: DisplayMessage = {
@@ -229,8 +237,6 @@ export default function ChatScreen() {
       if (!success) {
         showToast('🚫 Cannot message blocked user');
       } else {
-        // Clear deletion marker when user sends a new message — history restarts from here
-        clearChatDeletedSince(pal.phone);
         updateConversationList(text);
       }
     } catch (error) {

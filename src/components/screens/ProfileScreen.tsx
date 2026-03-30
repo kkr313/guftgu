@@ -5,7 +5,7 @@ import MoodModal from '@/components/MoodModal';
 import LangModal from '@/components/LangModal';
 import RegionModal from '@/components/RegionModal';
 import AvatarPickerModal from '@/components/AvatarPickerModal';
-import { clearAllData, getBlocked, getCallHistory, getFriends } from '@/lib/storage';
+import { clearAllData, getBlocked, getCallHistory, getChatConversations, getFriends } from '@/lib/storage';
 import { deleteUserFromFirebase } from '@/lib/firebase-service';
 import { S } from '@/lib/strings';
 import { IconAlertTriangle, IconTrash } from '@/lib/icons';
@@ -33,9 +33,17 @@ export default function ProfileScreen() {
       // Fetch real stats
       const callHistory = getCallHistory();
       const friends = getFriends();
+      const conversations = getChatConversations();
       
-      // Count calls and calculate total talk time
-      const calls = callHistory.length;
+      // Count UNIQUE people called (by phone number, not name)
+      // Same person called multiple times = 1 unique call contact
+      const uniqueCallPhones = new Set(
+        callHistory
+          .filter(c => c.phone) // Only count entries with phone numbers
+          .map(c => c.phone)
+      );
+      
+      // Calculate total talk time from all calls
       let totalMinutes = 0;
       callHistory.forEach(call => {
         // Parse duration like "2:34" or "12:05"
@@ -46,12 +54,12 @@ export default function ProfileScreen() {
         }
       });
       
-      // Count unique chats (unique names from call history)
-      const uniqueChats = new Set(callHistory.map(c => c.name)).size;
+      // Count UNIQUE people chatted with (from actual chat conversations, not call history)
+      const uniqueChatCount = conversations.length;
       
       setStats({
-        chats: uniqueChats,
-        calls: calls,
+        chats: uniqueChatCount,
+        calls: uniqueCallPhones.size,
         friends: friends.length,
         totalMinutes: Math.round(totalMinutes)
       });
@@ -156,14 +164,14 @@ export default function ProfileScreen() {
             <div className="stat-icon">💬</div>
             <div className="stat-content">
               <div className="stat-value">{stats.chats}</div>
-              <div className="stat-label">Chats</div>
+              <div className="stat-label">People Chatted</div>
             </div>
           </div>
           <div className="profile-stat-card accent">
             <div className="stat-icon">📞</div>
             <div className="stat-content">
               <div className="stat-value">{stats.calls}</div>
-              <div className="stat-label">Calls</div>
+              <div className="stat-label">People Called</div>
             </div>
           </div>
           <div className="profile-stat-card accent">

@@ -1,6 +1,6 @@
 // @refresh reset
 import React, { createContext, useContext, useReducer, useCallback, useRef, useEffect, useState } from 'react';
-import { UserData, loadUser, saveUser as persistUser, genGuftguPhone, getCallHistory, saveCallToHistory, CallRecord, getFriends, saveFriends, FriendRecord, getPending, savePending, PendingRecord, getBlocked, saveBlocked, BlockedRecord, isBlocked, getDisplayName, addNotif, getUnreadNotifCount, markAllNotifsRead, seedWelcomeNotif, getTotalUnreadMessages, bumpUnreadCount, clearUnreadCount, getChatConversations, saveChatConversations, getChatDeletedSince, clearChatDeletedSince } from '@/lib/storage';
+import { UserData, loadUser, saveUser as persistUser, genGuftguPhone, getCallHistory, saveCallToHistory, CallRecord, getFriends, saveFriends, FriendRecord, getPending, savePending, PendingRecord, getBlocked, saveBlocked, BlockedRecord, isBlocked, getDisplayName, addNotif, getUnreadNotifCount, markAllNotifsRead, seedWelcomeNotif, getTotalUnreadMessages, bumpUnreadCount, clearUnreadCount, getChatConversations, saveChatConversations } from '@/lib/storage';
 import { playMessageSound, playNotifSound, playFriendOnlineSound } from '@/lib/sounds';
 import { Database, ref, set, remove, onValue, push, get, child, off, onChildAdded, DataSnapshot, serverTimestamp } from 'firebase/database';
 import { initFirebase, getDb } from '@/lib/firebase';
@@ -579,6 +579,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         // Skip historical messages — only react to truly new incoming messages
         if (msg.timestamp < listenStartedAt) return;
 
+        // Skip if user has since unfriended this person (listener was set up earlier)
+        const currentFriends = getFriends();
+        if (!currentFriends.some(f => f.phone === friend.phone)) return;
+
         const currentScreen = screenRef2.current;
         const currentPal = currentPalRef.current;
 
@@ -586,12 +590,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           currentScreen === 'screen-chat' && currentPal?.phone === friend.phone;
 
         if (!isInsideThisChat) {
-          // If user deleted this chat but the other person sent a new message,
-          // clear the deletion marker so the new message and future ones show up
-          const deletedSince = getChatDeletedSince(friend.phone);
-          if (deletedSince && msg.timestamp > deletedSince) {
-            clearChatDeletedSince(friend.phone);
-          }
+          // NOTE: Do NOT clear the deletion marker here. The marker ensures old
+          // messages stay hidden when the user re-opens the chat. New messages
+          // after the deletion timestamp will pass the filter naturally.
 
           // Update conversation preview + bump unread count
           const convos = getChatConversations();

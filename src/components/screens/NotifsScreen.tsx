@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import Avatar from '@/components/Avatar';
-import { ChatConversation, getChatConversations, deleteChatConversation, clearAllConversations, formatRelativeTime, getDisplayName } from '@/lib/storage';
+import { ChatConversation, getChatConversations, deleteChatConversation, clearAllConversations, formatRelativeTime, getDisplayName, getFriends, markChatDeleted } from '@/lib/storage';
 import { S } from '@/lib/strings';
 import { IconTrash } from '@/lib/icons';
 
@@ -20,16 +20,23 @@ export default function NotifsScreen() {
   );
 
   // Load real conversations from localStorage on screen activation
+  // Only show conversations with current friends
   useEffect(() => {
     if (isActive) {
-      setConversations(getChatConversations());
+      const friends = getFriends();
+      const friendPhones = new Set(friends.map(f => f.phone));
+      setConversations(getChatConversations().filter(c => friendPhones.has(c.phone)));
     }
   }, [isActive]);
 
   // Refresh when a new message updates the conversation list
   useEffect(() => {
     const handler = () => {
-      if (isActive) setConversations(getChatConversations());
+      if (isActive) {
+        const friends = getFriends();
+        const friendPhones = new Set(friends.map(f => f.phone));
+        setConversations(getChatConversations().filter(c => friendPhones.has(c.phone)));
+      }
     };
     window.addEventListener('conversationsUpdate', handler);
     return () => window.removeEventListener('conversationsUpdate', handler);
@@ -53,6 +60,8 @@ export default function NotifsScreen() {
 
   // Clear all conversations
   const handleClearAll = () => {
+    // Mark each conversation as deleted so old messages don't reappear
+    conversations.forEach(c => markChatDeleted(c.phone));
     setConversations([]);
     clearAllConversations();
     setShowClearConfirm(false);
