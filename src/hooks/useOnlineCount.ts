@@ -10,8 +10,8 @@ import { useState, useEffect } from 'react';
 import { Database, ref, onValue, DataSnapshot } from 'firebase/database';
 import { getBlocked } from '@/lib/storage';
 
-// Consider a user stale if no activity in 5 minutes
-const STALE_TIMEOUT_MS = 5 * 60 * 1000;
+// Consider a user stale if no activity in 2 minutes
+const STALE_TIMEOUT_MS = 2 * 60 * 1000;
 
 export function useOnlineCount(
   isActive: boolean,
@@ -26,8 +26,6 @@ export function useOnlineCount(
     const db = dbRef.current;
 
     // ── Guard: wait until we know our own phone number ──────────────────
-    // If myPhone is empty/undefined the first snapshot would count ourselves
-    // because the self-skip condition `myPhone && ...` would short-circuit.
     if (!myPhone) return;
 
     if (!db) {
@@ -43,7 +41,6 @@ export function useOnlineCount(
       usersRef,
       (snap: DataSnapshot) => {
         let count = 0;
-        // Capture currentTime inside the callback so it's never stale
         const now = Date.now();
 
         snap.forEach((child: DataSnapshot) => {
@@ -53,15 +50,18 @@ export function useOnlineCount(
           // Must be marked online
           if (userData?.online !== true) return;
 
-          // Skip yourself — myPhone is guaranteed non-empty here
+          // Skip yourself
           if (userPhone === myPhoneStr) return;
 
           // Skip blocked users
           if (userPhone && blockedUsers.includes(userPhone)) return;
 
-          // Skip stale users (lastSeen > 5 minutes ago)
+          // Must have a valid numeric lastSeen — entries without one are orphaned
           const lastSeen = userData?.lastSeen;
-          if (typeof lastSeen === 'number' && now - lastSeen > STALE_TIMEOUT_MS) return;
+          if (typeof lastSeen !== 'number') return;
+
+          // Skip stale users (lastSeen > 2 minutes ago)
+          if (now - lastSeen > STALE_TIMEOUT_MS) return;
 
           count++;
         });

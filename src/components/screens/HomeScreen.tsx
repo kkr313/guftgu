@@ -3,7 +3,8 @@ import { useApp } from '@/context/AppContext';
 import Avatar from '@/components/Avatar';
 import MoodModal from '@/components/MoodModal';
 import LangModal from '@/components/LangModal';
-import { callTypeClass, getGreeting } from '@/lib/data';
+import RegionModal from '@/components/RegionModal';
+import { callTypeClass, getGreeting, REGION_DATA } from '@/lib/data';
 import { useCallHistory } from '@/hooks/useCallHistory';
 import { useOnlineCount } from '@/hooks/useOnlineCount';
 import { checkUserForCall, initiateCall } from '@/lib/firebase-service';
@@ -18,6 +19,7 @@ export default function HomeScreen() {
 
   const [moodModalOpen, setMoodModalOpen] = useState(false);
   const [langModalOpen, setLangModalOpen] = useState(false);
+  const [regionModalOpen, setRegionModalOpen] = useState(false);
   const [dialInput, setDialInput] = useState('');
   const [isDialing, setIsDialing] = useState(false);
 
@@ -37,6 +39,14 @@ export default function HomeScreen() {
     setLangModalOpen(false);
     showToast(`Language set to ${lang}`);
   };
+
+  const handleRegionSelect = (region: string) => {
+    saveUserData({ ...u, region }, state.guftguPhone);
+    setRegionModalOpen(false);
+    showToast(`Region updated to ${region}`);
+  };
+
+  const regionIcon = REGION_DATA.find(r => r.region === u.region)?.icon || '📍';
 
   const handleDial = async () => {
     // Don't allow starting a call with a different person if already in a call
@@ -177,26 +187,36 @@ export default function HomeScreen() {
           </button>
         </div>
 
-        {/* Preference cards */}
-        <div className="home-prefs">
-          <div className="home-pref-card" onClick={() => setMoodModalOpen(true)}>
-            <div className="home-pref-icon">{u.moodEmoji || '😊'}</div>
-            <div className="home-pref-info">
-              <div className="home-pref-label">{S.home.mood}</div>
-              <div className="home-pref-value">{u.mood || 'Happy'}</div>
-            </div>
-            <div className="home-pref-action">✎</div>
+        {/* Match Preferences — 3 circle options */}
+        <div className="match-prefs-section">
+          <div className="match-prefs-header">
+            <div className="match-prefs-title">{S.home.matchPrefsTitle}</div>
+            <div className="match-prefs-sub">{S.home.matchPrefsSub}</div>
           </div>
-          <div className="home-pref-card" onClick={() => setLangModalOpen(true)}>
-            <div className="home-pref-icon">🌐</div>
-            <div className="home-pref-info">
-              <div className="home-pref-label">{S.home.language}</div>
-              <div className="home-pref-value">{u.language || 'Hindi'}</div>
+          <div className="match-prefs-circles">
+            <div className="match-pref-item" onClick={() => setMoodModalOpen(true)}>
+              <div className="match-pref-circle mood-circle">
+                <span className="match-pref-emoji">{u.moodEmoji || '😊'}</span>
+              </div>
+              <div className="match-pref-label">{S.home.mood}</div>
+              <div className="match-pref-value">{u.mood || 'Happy'}</div>
             </div>
-            <div className="home-pref-action">✎</div>
+            <div className="match-pref-item" onClick={() => setLangModalOpen(true)}>
+              <div className="match-pref-circle lang-circle">
+                <span className="match-pref-emoji">🌐</span>
+              </div>
+              <div className="match-pref-label">{S.home.language}</div>
+              <div className="match-pref-value">{u.language || 'Hindi'}</div>
+            </div>
+            <div className="match-pref-item" onClick={() => setRegionModalOpen(true)}>
+              <div className="match-pref-circle region-circle">
+                <span className="match-pref-emoji">{regionIcon}</span>
+              </div>
+              <div className="match-pref-label">{S.home.region}</div>
+              <div className="match-pref-value">{u.region || 'North'}</div>
+            </div>
           </div>
         </div>
-        <div className="home-pref-hint">Tap a card to change your match preferences</div>
 
 
         {/* Call a friend dial */}
@@ -267,6 +287,7 @@ export default function HomeScreen() {
       {/* Modals */}
       <MoodModal open={moodModalOpen} selected={u.mood || 'Happy'} onSelect={handleMoodSelect} onClose={() => setMoodModalOpen(false)} />
       <LangModal open={langModalOpen} selected={u.language || 'Hindi'} onSelect={handleLangSelect} onClose={() => setLangModalOpen(false)} />
+      <RegionModal open={regionModalOpen} selected={u.region || 'North'} onSelect={handleRegionSelect} onClose={() => setRegionModalOpen(false)} />
     </div>
   );
 }
