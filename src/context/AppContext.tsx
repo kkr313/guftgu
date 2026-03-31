@@ -4,7 +4,7 @@ import { UserData, loadUser, saveUser as persistUser, genGuftguPhone, getCallHis
 import { playMessageSound, playNotifSound, playFriendOnlineSound } from '@/lib/sounds';
 import { Database, ref, set, remove, onValue, push, get, child, off, onChildAdded, DataSnapshot, serverTimestamp } from 'firebase/database';
 import { initFirebase, getDb } from '@/lib/firebase';
-import { registerUser, syncBlockList, setOnlineStatus, listenIncomingCalls, IncomingCall, acceptCall, declineCall, blockUserFirebase, listenFriendRequests, listenFriendAccepted, listenFriendDeclined, listenFriendRemovals, listenFriendsOnlineStatus, listenChatMessages, loadChatHistory, syncFriendsFromFirebase, syncPendingFromFirebase } from '@/lib/firebase-service';
+import { registerUser, updateUserProfile, syncBlockList, setOnlineStatus, listenIncomingCalls, IncomingCall, acceptCall, declineCall, blockUserFirebase, listenFriendRequests, listenFriendAccepted, listenFriendDeclined, listenFriendRemovals, listenFriendsOnlineStatus, listenChatMessages, loadChatHistory, syncFriendsFromFirebase, syncPendingFromFirebase } from '@/lib/firebase-service';
 import { useBackButtonInit } from '@/hooks/useBackButton';
 
 // ── Types ──────────────────────────────────────────
@@ -307,11 +307,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (isFirstRegistration) {
       seedWelcomeNotif();
     }
-    // Register user in Firebase if connected
+    // Push to Firebase if connected
     if (dbRef.current) {
-      registerUser(dbRef.current, phone, user).catch(() => {
-        // Silent fail — localStorage is primary storage
-      });
+      if (isFirstRegistration) {
+        // Full registration: create node + set up presence/disconnect
+        registerUser(dbRef.current, phone, user).catch(() => {});
+      } else {
+        // Profile update only: use update() to avoid overwriting online/lastSeen
+        updateUserProfile(dbRef.current, phone, user).catch(() => {});
+      }
     }
   }, [state.guftguPhone]);
 
@@ -588,7 +592,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const cleanup = listenFriendsOnlineStatus(
       dbRef.current,
       phones,
-      (phone, online, lastSeen) => {
+      (phone, online, lastSeen, profile) => {
         // Detect transition offline → online and show toast
         const wasOnline = prevOnlineRef.current[phone];
         if (online && wasOnline === false) {
@@ -601,6 +605,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         setFriendsOnline(prev => ({ ...prev, [phone]: online }));
         setFriendsLastSeen(prev => ({ ...prev, [phone]: lastSeen }));
+
+        // ── Sync friend's profile (avatar / mood) from Firebase ──
+        if (profile) {
+          const currentFriends = getFriends();
+          const idx = currentFriends.findIndex(f => f.phone === phone);
+          if (idx !== -1) {
+            const fr = currentFriends[idx];
+            const changed =
+              fr.avatar !== profile.avatar ||
+              fr.mood !== profile.mood ||
+              fr.moodEmoji !== profile.moodEmoji;
+            if (changed) {
+              currentFriends[idx] = {
+                ...fr,
+                avatar: profile.avatar,
+                mood: profile.mood,
+                moodEmoji: profile.moodEmoji,
+              };
+              saveFriends(currentFriends);
+              window.dispatchEvent(new Event('friendsUpdate'));
+
+              // Also update currentPal if this friend is the active chat pal
+              const cp = currentPalRef.current;
+              if (cp && cp.phone === phone) {
+                dispatch({
+                  type: 'SET_PAL',
+                  pal: {
+                    ...cp,
+                    avatar: profile.avatar,
+                    mood: profile.mood,
+                    moodEmoji: profile.moodEmoji,
+                  },
+                });
+              }
+            }
+          }
+        }
       }
     );
 

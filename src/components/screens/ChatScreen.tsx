@@ -13,6 +13,7 @@ import {
   updateSeenTimestamp,
   listenSeenStatus,
   setChatTheme as firebaseSetChatTheme,
+  fetchChatTheme,
   listenChatTheme,
   getChatRoomId,
   ChatMessage 
@@ -270,14 +271,24 @@ export default function ChatScreen() {
     return () => { unsub(); };
   }, [isActive, pal?.phone, dbRef, state.guftguPhone, isFriend]);
 
-  // ── Chat theme: load cached + listen for real-time changes ──
+  // ── Chat theme: fetch from Firebase + listen for real-time changes ──
   useEffect(() => {
     if (!isActive || !pal?.phone || !state.guftguPhone) return;
-    // Instant load from cache
     const roomKey = getChatRoomId(state.guftguPhone, pal.phone);
-    setChatTheme(getChatTheme(roomKey));
-    // Real-time listener
+
+    // 1. Instant load from localStorage cache
+    const cached = getChatTheme(roomKey);
+    if (cached !== 'default') setChatTheme(cached);
+
     if (!dbRef?.current) return;
+
+    // 2. One-time fetch from Firebase (reliable, works even if listener glitches)
+    fetchChatTheme(dbRef.current, state.guftguPhone, pal.phone).then((themeId) => {
+      setChatTheme(themeId);
+      saveChatTheme(roomKey, themeId);
+    }).catch(() => {});
+
+    // 3. Real-time listener for live updates (when other user changes theme)
     const unsub = listenChatTheme(dbRef.current, state.guftguPhone, pal.phone, (themeId) => {
       setChatTheme(themeId);
       saveChatTheme(roomKey, themeId);
@@ -301,12 +312,16 @@ export default function ChatScreen() {
 
   const pickTheme = (themeId: string) => {
     if (!dbRef?.current || !state.guftguPhone || !pal?.phone) return;
-    firebaseSetChatTheme(dbRef.current, state.guftguPhone, pal.phone, themeId).catch(() => {});
     const roomKey = getChatRoomId(state.guftguPhone, pal.phone);
-    saveChatTheme(roomKey, themeId);
+    // Optimistic update: apply locally immediately
     setChatTheme(themeId);
+    saveChatTheme(roomKey, themeId);
     setShowThemePicker(false);
     showToast(`🎨 Wallpaper changed!`);
+    // Push to Firebase so other user gets it
+    firebaseSetChatTheme(dbRef.current, state.guftguPhone, pal.phone, themeId)
+      .then(() => console.log('[Theme] Saved to Firebase:', themeId))
+      .catch((err: any) => console.error('[Theme] Firebase write failed:', err));
   };
 
 

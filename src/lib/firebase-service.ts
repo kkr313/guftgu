@@ -3,6 +3,7 @@ import {
   ref,
   set,
   get,
+  update,
   remove,
   onValue,
   onChildAdded,
@@ -128,6 +129,28 @@ export async function registerUser(
   const lastSeenRef = ref(db, `users/${phone}/lastSeen`);
   onDisconnect(presenceRef).set(false);
   onDisconnect(lastSeenRef).set(serverTimestamp());
+}
+
+/**
+ * Update only the profile fields (avatar, mood, etc.) without overwriting
+ * online/lastSeen or re-registering disconnect handlers.
+ * Used when user changes mood or avatar from the profile/home screen.
+ */
+export async function updateUserProfile(
+  db: Database,
+  phone: string,
+  user: UserData
+): Promise<void> {
+  const userRef = ref(db, `users/${phone}`);
+  await update(userRef, {
+    nickname: user.nickname,
+    avatar: user.avatar,
+    mood: user.mood,
+    moodEmoji: user.moodEmoji,
+    language: user.language,
+    region: user.region,
+    intent: user.intent,
+  });
 }
 
 /**
@@ -1442,6 +1465,26 @@ export async function setChatTheme(
 }
 
 /**
+ * Fetch the current theme for a chat room (one-time read).
+ * Returns 'default' if no theme is set.
+ */
+export async function fetchChatTheme(
+  db: Database,
+  myPhone: string,
+  targetPhone: string,
+): Promise<string> {
+  const roomId = getChatRoomId(myPhone, targetPhone);
+  const themeRef = ref(db, `chats/${roomId}/theme`);
+  try {
+    const snap = await get(themeRef);
+    return snap.exists() ? (snap.val() as string) : 'default';
+  } catch (err) {
+    console.error('[Firebase] fetchChatTheme error:', err);
+    return 'default';
+  }
+}
+
+/**
  * Listen for theme changes in a chat room.
  * Fires immediately with current theme, then on every change.
  */
@@ -1857,17 +1900,17 @@ export function watchDirectCallRoomId(
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Watch the online status of multiple friends in real-time.
+ * Watch the online status AND profile of multiple friends in real-time.
  * Creates one Firebase listener per friend phone.
  * @param db         Realtime Database instance
  * @param phones     Array of friend phone numbers to watch
- * @param onChange   Called whenever any friend's status changes
+ * @param onChange   Called whenever any friend's status or profile changes
  * @returns          Cleanup function — unsubscribes all listeners
  */
 export function listenFriendsOnlineStatus(
   db: Database,
   phones: string[],
-  onChange: (phone: string, online: boolean, lastSeen: number | null) => void
+  onChange: (phone: string, online: boolean, lastSeen: number | null, profile?: { avatar: string; mood: string; moodEmoji: string; nickname: string }) => void
 ): () => void {
   if (!phones.length) return () => {};
 
@@ -1881,8 +1924,13 @@ export function listenFriendsOnlineStatus(
         onChange(phone, false, null);
         return;
       }
-      const data = snap.val() as { online?: boolean; lastSeen?: number };
-      onChange(phone, data.online === true, data.lastSeen ?? null);
+      const data = snap.val() as { online?: boolean; lastSeen?: number; avatar?: string; mood?: string; moodEmoji?: string; nickname?: string };
+      onChange(phone, data.online === true, data.lastSeen ?? null, {
+        avatar: data.avatar || 'cat',
+        mood: data.mood || '',
+        moodEmoji: data.moodEmoji || '',
+        nickname: data.nickname || '',
+      });
     });
 
     cleanups.push(() => off(userRef, 'value', listener));
