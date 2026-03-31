@@ -372,7 +372,7 @@ export default function ChatsScreen() {
       </div>
 
       {/* Scrollable content */}
-      <div className="scroll-body" style={{ paddingTop: 140, paddingBottom: 'calc(var(--nav-h) + var(--safe-bottom) + 24px)' }}>
+      <div className="scroll-body" style={{ paddingTop: 155, paddingBottom: 'calc(var(--nav-h) + var(--safe-bottom) + 24px)' }}>
         <div className="chats-panel">
           {/* Friends tab */}
           {tab === 'friends' && (
