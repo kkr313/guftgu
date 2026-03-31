@@ -1347,15 +1347,15 @@ input.input-error {
     min-width:16px; text-align:center;
   }
 
-  .chats-panel { padding:0 24px; flex:1; display:flex; flex-direction:column; }
+  .chats-panel { padding:0 16px; flex:1; display:flex; flex-direction:column; }
 
   /* Friend item — card layout */
   .friend-item {
     display:flex; flex-direction:column; gap:10px;
     padding:14px 16px; border-radius:14px;
     background:var(--bg2); border:1px solid var(--border);
-    margin-bottom:10px;
-    transition:background 0.15s;
+    margin-bottom:10px; width:100%;
+    transition:background 0.15s; box-sizing:border-box;
   }
   .friend-item:last-child { margin-bottom:0; }
   .friend-item:active { background:rgba(255,255,255,0.02); }
