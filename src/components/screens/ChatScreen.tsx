@@ -8,11 +8,9 @@ import {
   listenChatMessages, 
   loadChatHistory,
   checkIfFriends,
-  initiateCall,
-  checkUserForCall,
   ChatMessage 
 } from '@/lib/firebase-service';
-import { IconChevronLeft, IconPhone, IconSend } from '@/lib/icons';
+import { IconChevronLeft, IconSend } from '@/lib/icons';
 import { S } from '@/lib/strings';
 
 interface DisplayMessage {
@@ -35,28 +33,6 @@ export default function ChatScreen() {
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const processedIds = useRef<Set<string>>(new Set());
-
-  // Handle voice call to friend
-  const handleCallFriend = async () => {
-    if (!dbRef?.current || !state.guftguPhone || !pal?.phone) {
-      showToast('Unable to start call');
-      return;
-    }
-
-    // Don't allow starting a call with a different person if already in a call
-    if (state.currentPal && state.currentPal.phone !== pal.phone) {
-      showToast('📞 Please end your current call first');
-      return;
-    }
-
-    const canCall = await checkUserForCall(dbRef.current, pal.phone, state.guftguPhone);
-    if (!canCall.exists || canCall.blockedByTarget) {
-      showToast('User is not available for calls');
-      return;
-    }
-
-    await initiateCall(dbRef.current, state.guftguPhone, myUser, pal.phone);
-  };
 
   // Check if users are friends and load chat history
   useEffect(() => {
@@ -272,20 +248,12 @@ export default function ChatScreen() {
                   </span>
                 : <span style={{ color: 'var(--text-3)', fontSize: '0.78rem' }}>Offline</span>
             }
-            {' '}{pal.moodEmoji} {pal.mood}
           </div>
+          {pal.mood && (
+            <div className="chat-header-mood">{pal.moodEmoji} {pal.mood}</div>
+          )}
         </div>
         <div className="chat-header-actions">
-          {isFriend && (
-            <button
-              className="chat-action-btn"
-              onClick={handleCallFriend}
-              disabled={!!state.currentPal}
-              title={state.currentPal ? 'Call is already active' : 'Voice call'}
-            >
-              <IconPhone size={18} />
-            </button>
-          )}
         </div>
       </div>
 

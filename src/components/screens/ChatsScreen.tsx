@@ -385,44 +385,56 @@ export default function ChatsScreen() {
             ) : (
               sortedFriends.map((f) => (
                 <div key={f.phone} className="friend-item">
-                  <div className="friend-avatar" style={{ position: 'relative' }}>
-                    <Avatar avatarKey={f.avatar || 'cat'} size={48} />
-                    {/* Presence dot */}
-                    <span
-                      className={`friend-presence-dot${friendsOnline[f.phone] ? ' online' : ' offline'}`}
-                      title={friendsOnline[f.phone] ? 'Online' : friendsLastSeen[f.phone] ? `Last seen ${formatRelativeTime(friendsLastSeen[f.phone]!)}` : 'Offline'}
-                    />
+                  {/* Top row: avatar + info */}
+                  <div className="friend-top-row">
+                    <div className="friend-avatar" style={{ position: 'relative' }}>
+                      <Avatar avatarKey={f.avatar || 'cat'} size={48} />
+                      <span
+                        className={`friend-presence-dot${friendsOnline[f.phone] ? ' online' : ' offline'}`}
+                        title={friendsOnline[f.phone] ? 'Online' : friendsLastSeen[f.phone] ? `Last seen ${formatRelativeTime(friendsLastSeen[f.phone]!)}` : 'Offline'}
+                      />
+                    </div>
+                    <div className="friend-info">
+                      <div className="friend-name">
+                        <span className="friend-name-text">{f.nickname || f.name}</span>
+                        <button className="friend-rename-btn" onClick={(e) => { e.stopPropagation(); startRename(f); }} title="Rename">✏️</button>
+                      </div>
+                      {f.nickname && <div className="friend-original-name">aka {f.name}</div>}
+                      <div className="friend-mood">{f.moodEmoji} {f.mood}</div>
+                      <div className="friend-status-row">
+                        {friendsOnline[f.phone]
+                          ? <span className="friend-online-label">🟢 Online now</span>
+                          : <span className="friend-offline-label">
+                              {friendsLastSeen[f.phone]
+                                ? `Last seen ${formatRelativeTime(friendsLastSeen[f.phone]!)}`
+                                : 'Offline'}
+                            </span>
+                        }
+                      </div>
+                    </div>
                   </div>
-                  <div className="friend-info">
-                      <>
-                        <div className="friend-name">
-                          {f.nickname || f.name}
-                          <button className="friend-rename-btn" onClick={(e) => { e.stopPropagation(); startRename(f); }} title="Rename">✏️</button>
-                        </div>
-                        {f.nickname && <div className="friend-original-name">aka {f.name}</div>}
-                        <div className="friend-mood">{f.moodEmoji} {f.mood}</div>
-                        <div className="friend-status-row">
-                          {friendsOnline[f.phone]
-                            ? <span className="friend-online-label">🟢 Online now</span>
-                            : <span className="friend-offline-label">
-                                {friendsLastSeen[f.phone]
-                                  ? `Last seen ${formatRelativeTime(friendsLastSeen[f.phone]!)}`
-                                  : 'Offline'}
-                              </span>
-                          }
-                        </div>
-                      </>
-                  </div>
+                  {/* Bottom row: action buttons */}
                   <div className="friend-actions">
-                    <button className="friend-action-btn chat" onClick={() => openChatWithFriend(f)} title="Chat">💬</button>
+                    <button className="friend-action-btn chat" onClick={() => openChatWithFriend(f)} title="Chat">
+                      <span className="friend-action-icon">💬</span><span className="friend-action-label">Chat</span>
+                    </button>
                     <button 
                       className={`friend-action-btn call${!!(state.currentPal && state.currentPal.phone !== f.phone) ? ' disabled' : ''}`} 
                       onClick={() => callFriend(f)} 
                       title={!!(state.currentPal && state.currentPal.phone !== f.phone) ? 'Cannot call during an active call' : 'Call'}
                       disabled={!!(state.currentPal && state.currentPal.phone !== f.phone)}
-                    >📞</button>
-                    <button className="friend-action-btn unfriend" onClick={() => unfriendUser(f)} title="Unfriend"><IconUnfriend size={22} /></button>
-                    <button className="friend-action-btn block" onClick={() => blockFromFriends(f)} title="Block">🚫</button>
+                    >
+                      <span className="friend-action-icon">📞</span><span className="friend-action-label">Call</span>
+                    </button>
+                    <button className="friend-action-btn rename" onClick={(e) => { e.stopPropagation(); startRename(f); }} title="Rename">
+                      <span className="friend-action-icon">✏️</span><span className="friend-action-label">Rename</span>
+                    </button>
+                    <button className="friend-action-btn unfriend" onClick={() => unfriendUser(f)} title="Unfriend">
+                      <span className="friend-action-icon"><IconUnfriend size={18} /></span><span className="friend-action-label">Remove</span>
+                    </button>
+                    <button className="friend-action-btn block" onClick={() => blockFromFriends(f)} title="Block">
+                      <span className="friend-action-icon">🚫</span><span className="friend-action-label">Block</span>
+                    </button>
                   </div>
                 </div>
               ))
