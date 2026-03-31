@@ -8,6 +8,10 @@ import {
   listenChatMessages, 
   loadChatHistory,
   checkIfFriends,
+  setTypingStatus,
+  listenTypingStatus,
+  updateSeenTimestamp,
+  listenSeenStatus,
   ChatMessage 
 } from '@/lib/firebase-service';
 import { IconChevronLeft, IconSend } from '@/lib/icons';
@@ -18,7 +22,9 @@ interface DisplayMessage {
   text: string;
   mine: boolean;
   time: string;
+  timestamp: number;
   system?: boolean;
+  status?: 'sent' | 'seen';
 }
 
 export default function ChatScreen() {
@@ -31,8 +37,11 @@ export default function ChatScreen() {
   const [input, setInput] = useState('');
   const [isFriend, setIsFriend] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [palTyping, setPalTyping] = useState(false);
+  const [palSeenAt, setPalSeenAt] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const processedIds = useRef<Set<string>>(new Set());
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Check if users are friends and load chat history
   useEffect(() => {
@@ -62,6 +71,7 @@ export default function ChatScreen() {
         text: '🔒 You are no longer friends. Send a new friend request to chat again.',
         mine: false,
         time: '',
+        timestamp: 0,
         system: true,
       }]);
       setLoading(false);
@@ -87,6 +97,8 @@ export default function ChatScreen() {
               text: msg.text,
               mine: msg.from === state.guftguPhone,
               time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              timestamp: msg.timestamp,
+              status: msg.from === state.guftguPhone ? 'sent' as const : undefined,
             };
           });
           
@@ -96,6 +108,7 @@ export default function ChatScreen() {
             text: S.chat.matchSystemMsg(pal.name),
             mine: false,
             time: '',
+            timestamp: 0,
             system: true,
           });
           
@@ -108,6 +121,7 @@ export default function ChatScreen() {
             text: S.chat.matchSystemMsg(pal.name),
             mine: false,
             time: '',
+            timestamp: 0,
             system: true,
           }]);
           setLoading(false);
@@ -170,6 +184,8 @@ export default function ChatScreen() {
           text: msg.text,
           mine: msg.from === state.guftguPhone,
           time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: msg.timestamp,
+          status: msg.from === state.guftguPhone ? 'sent' as const : undefined,
         };
         setMessages(prev => [...prev, displayMsg]);
 
@@ -196,6 +212,59 @@ export default function ChatScreen() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // ── Typing indicator: listen for pal's typing status ──
+  useEffect(() => {
+    if (!isActive || !pal?.phone || !dbRef?.current || !state.guftguPhone || !isFriend) {
+      setPalTyping(false);
+      return;
+    }
+    const unsub = listenTypingStatus(dbRef.current, state.guftguPhone, pal.phone, setPalTyping);
+    return () => { unsub(); setPalTyping(false); };
+  }, [isActive, pal?.phone, dbRef, state.guftguPhone, isFriend]);
+
+  // ── Typing indicator: broadcast my typing status ──
+  const handleInputChange = useCallback((text: string) => {
+    setInput(text);
+    if (!dbRef?.current || !state.guftguPhone || !pal?.phone || !isFriend) return;
+    // Set typing = true
+    setTypingStatus(dbRef.current, state.guftguPhone, pal.phone, true).catch(() => {});
+    // Clear previous timeout
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    // Stop typing after 2s of no input
+    typingTimeoutRef.current = setTimeout(() => {
+      if (dbRef?.current && state.guftguPhone && pal?.phone) {
+        setTypingStatus(dbRef.current, state.guftguPhone, pal.phone, false).catch(() => {});
+      }
+    }, 2000);
+  }, [dbRef, state.guftguPhone, pal?.phone, isFriend]);
+
+  // ── Clean up typing on unmount / screen change ──
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      if (dbRef?.current && state.guftguPhone && pal?.phone) {
+        setTypingStatus(dbRef.current, state.guftguPhone, pal.phone, false).catch(() => {});
+      }
+    };
+  }, [isActive, pal?.phone]);
+
+  // ── Seen receipts: update my "seen" timestamp when I view the chat ──
+  useEffect(() => {
+    if (!isActive || !pal?.phone || !dbRef?.current || !state.guftguPhone || !isFriend) return;
+    // Mark seen on open and whenever new messages arrive
+    updateSeenTimestamp(dbRef.current, state.guftguPhone, pal.phone).catch(() => {});
+  }, [isActive, pal?.phone, dbRef, state.guftguPhone, isFriend, messages.length]);
+
+  // ── Seen receipts: listen for pal's "seen" timestamp ──
+  useEffect(() => {
+    if (!isActive || !pal?.phone || !dbRef?.current || !state.guftguPhone || !isFriend) {
+      setPalSeenAt(0);
+      return;
+    }
+    const unsub = listenSeenStatus(dbRef.current, state.guftguPhone, pal.phone, setPalSeenAt);
+    return () => { unsub(); };
+  }, [isActive, pal?.phone, dbRef, state.guftguPhone, isFriend]);
+
 
   const sendMessage = async () => {
     const text = input.trim();
@@ -207,6 +276,9 @@ export default function ChatScreen() {
     }
 
     setInput('');
+    // Stop typing indicator on send
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    setTypingStatus(dbRef.current, state.guftguPhone, pal.phone, false).catch(() => {});
 
     try {
       const success = await sendChatMessage(dbRef.current, state.guftguPhone, pal.phone, text);
@@ -219,10 +291,6 @@ export default function ChatScreen() {
       console.error('Failed to send message:', error);
       showToast('Failed to send message');
     }
-  };
-
-  const goToCall = () => {
-    showScreen('screen-call');
   };
 
   if (!pal) return null;
@@ -240,13 +308,15 @@ export default function ChatScreen() {
         <div className="chat-header-info">
           <div className="chat-header-name">{pal.name}</div>
           <div className="chat-header-status">
-            {pal.phone && friendsOnline[pal.phone]
-              ? <><div className="online-dot" /> Online</>
-              : pal.phone && friendsLastSeen[pal.phone]
-                ? <span style={{ color: 'var(--text-3)', fontSize: '0.78rem' }}>
-                    Last seen {formatRelativeTime(friendsLastSeen[pal.phone]!)}
-                  </span>
-                : <span style={{ color: 'var(--text-3)', fontSize: '0.78rem' }}>Offline</span>
+            {palTyping
+              ? <span className="chat-typing-label">typing<span className="typing-dots"><span>.</span><span>.</span><span>.</span></span></span>
+              : pal.phone && friendsOnline[pal.phone]
+                ? <><div className="online-dot" /> Online</>
+                : pal.phone && friendsLastSeen[pal.phone]
+                  ? <span style={{ color: 'var(--text-3)', fontSize: '0.78rem' }}>
+                      Last seen {formatRelativeTime(friendsLastSeen[pal.phone]!)}
+                    </span>
+                  : <span style={{ color: 'var(--text-3)', fontSize: '0.78rem' }}>Offline</span>
             }
           </div>
           {pal.mood && (
@@ -285,11 +355,32 @@ export default function ChatScreen() {
                 )}
                 <div className="msg-bubble-wrap">
                   <div className="msg-bubble">{msg.text}</div>
-                  <div className="msg-time">{msg.time}</div>
+                  <div className="msg-time">
+                    {msg.time}
+                    {msg.mine && (
+                      <span className={`msg-tick${msg.timestamp && palSeenAt && msg.timestamp <= palSeenAt ? ' seen' : ''}`}>
+                        {msg.timestamp && palSeenAt && msg.timestamp <= palSeenAt ? ' ✓✓' : ' ✓'}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             )
           )
+        )}
+        {palTyping && (
+          <div className="msg-row">
+            <div className="msg-avatar-sm">
+              <Avatar avatarKey={pal.avatar} size={28} />
+            </div>
+            <div className="msg-bubble-wrap">
+              <div className="msg-bubble typing-bubble">
+                <span className="typing-dot" />
+                <span className="typing-dot" />
+                <span className="typing-dot" />
+              </div>
+            </div>
+          </div>
         )}
         <div ref={messagesEndRef} />
       </div>
@@ -301,7 +392,7 @@ export default function ChatScreen() {
           placeholder={isFriend ? S.chat.placeholder : '🔒 Friends only'}
           rows={1}
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => handleInputChange(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
           disabled={!isFriend}
         />

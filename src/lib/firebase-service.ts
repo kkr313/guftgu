@@ -12,6 +12,7 @@ import {
   onDisconnect,
   serverTimestamp,
   runTransaction,
+  DataSnapshot,
 } from 'firebase/database';
 import { UserData, isBlocked, getBlocked, saveBlocked, BlockedRecord } from './storage';
 
@@ -1319,6 +1320,106 @@ export async function loadChatHistory(
     console.error('[Firebase] Error loading chat history:', error);
     return [];
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TYPING INDICATOR & READ RECEIPTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Set typing status for current user in a chat room.
+ */
+export async function setTypingStatus(
+  db: Database,
+  myPhone: string,
+  targetPhone: string,
+  isTyping: boolean
+): Promise<void> {
+  const roomId = getChatRoomId(myPhone, targetPhone);
+  const typingRef = ref(db, `chats/${roomId}/typing/${myPhone}`);
+  if (isTyping) {
+    await set(typingRef, { typing: true, timestamp: Date.now() });
+  } else {
+    await remove(typingRef);
+  }
+}
+
+/**
+ * Listen for typing status of the other user.
+ * Calls onTyping(true/false) when typing status changes.
+ * Auto-expires after 4 seconds of no update.
+ */
+export function listenTypingStatus(
+  db: Database,
+  myPhone: string,
+  targetPhone: string,
+  onTyping: (isTyping: boolean) => void
+): () => void {
+  const roomId = getChatRoomId(myPhone, targetPhone);
+  const typingRef = ref(db, `chats/${roomId}/typing/${targetPhone}`);
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  const listener = onValue(typingRef, (snap: DataSnapshot) => {
+    if (timeoutId) clearTimeout(timeoutId);
+
+    if (snap.exists() && snap.val()?.typing) {
+      const ts = snap.val().timestamp || 0;
+      // Only show typing if the update is recent (within 5 seconds)
+      if (Date.now() - ts < 5000) {
+        onTyping(true);
+        // Auto-expire after 4 seconds if no new update
+        timeoutId = setTimeout(() => onTyping(false), 4000);
+      } else {
+        onTyping(false);
+      }
+    } else {
+      onTyping(false);
+    }
+  });
+
+  return () => {
+    if (timeoutId) clearTimeout(timeoutId);
+    off(typingRef, 'value', listener as any);
+  };
+}
+
+/**
+ * Update the "last seen" timestamp for the current user in a chat room.
+ * Called when the user has the chat screen open and sees messages.
+ */
+export async function updateSeenTimestamp(
+  db: Database,
+  myPhone: string,
+  targetPhone: string,
+  timestamp?: number
+): Promise<void> {
+  const roomId = getChatRoomId(myPhone, targetPhone);
+  const seenRef = ref(db, `chats/${roomId}/seen/${myPhone}`);
+  await set(seenRef, timestamp || Date.now());
+}
+
+/**
+ * Listen for the other user's "last seen" timestamp.
+ * When it updates, we know they've seen messages up to that time.
+ */
+export function listenSeenStatus(
+  db: Database,
+  myPhone: string,
+  targetPhone: string,
+  onSeen: (lastSeenTimestamp: number) => void
+): () => void {
+  const roomId = getChatRoomId(myPhone, targetPhone);
+  const seenRef = ref(db, `chats/${roomId}/seen/${targetPhone}`);
+
+  const listener = onValue(seenRef, (snap: DataSnapshot) => {
+    if (snap.exists()) {
+      onSeen(snap.val() as number);
+    }
+  });
+
+  return () => {
+    off(seenRef, 'value', listener as any);
+  };
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
