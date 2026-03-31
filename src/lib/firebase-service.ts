@@ -1423,6 +1423,47 @@ export function listenSeenStatus(
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// CHAT THEME / WALLPAPER
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Set the chat wallpaper theme for a conversation.
+ * Stored at room level so both users see the same wallpaper.
+ */
+export async function setChatTheme(
+  db: Database,
+  myPhone: string,
+  targetPhone: string,
+  themeId: string
+): Promise<void> {
+  const roomId = getChatRoomId(myPhone, targetPhone);
+  const themeRef = ref(db, `chats/${roomId}/theme`);
+  await set(themeRef, themeId);
+}
+
+/**
+ * Listen for theme changes in a chat room.
+ * Fires immediately with current theme, then on every change.
+ */
+export function listenChatTheme(
+  db: Database,
+  myPhone: string,
+  targetPhone: string,
+  onTheme: (themeId: string) => void
+): () => void {
+  const roomId = getChatRoomId(myPhone, targetPhone);
+  const themeRef = ref(db, `chats/${roomId}/theme`);
+
+  const listener = onValue(themeRef, (snap: DataSnapshot) => {
+    onTheme(snap.exists() ? (snap.val() as string) : 'default');
+  });
+
+  return () => {
+    off(themeRef, 'value', listener as any);
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // UNIQUE GUFTGU NUMBER GENERATION
 // ══════════════════════════════════════════════════════════════════════════════
 

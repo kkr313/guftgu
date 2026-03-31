@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useApp } from '@/context/AppContext';
 import Avatar from '@/components/Avatar';
-import { getFriends, getChatConversations, saveChatConversations, ChatConversation, bumpUnreadCount, formatRelativeTime, getChatDeletedSince } from '@/lib/storage';
+import { getFriends, getChatConversations, saveChatConversations, ChatConversation, bumpUnreadCount, formatRelativeTime, getChatDeletedSince, saveChatTheme, getChatTheme } from '@/lib/storage';
 import { playMessageSound } from '@/lib/sounds';
 import { 
   sendChatMessage, 
@@ -12,9 +12,12 @@ import {
   listenTypingStatus,
   updateSeenTimestamp,
   listenSeenStatus,
+  setChatTheme as firebaseSetChatTheme,
+  listenChatTheme,
+  getChatRoomId,
   ChatMessage 
 } from '@/lib/firebase-service';
-import { IconChevronLeft, IconSend } from '@/lib/icons';
+import { IconChevronLeft, IconSend, IconPalette } from '@/lib/icons';
 import { S } from '@/lib/strings';
 
 interface DisplayMessage {
@@ -39,6 +42,8 @@ export default function ChatScreen() {
   const [loading, setLoading] = useState(true);
   const [palTyping, setPalTyping] = useState(false);
   const [palSeenAt, setPalSeenAt] = useState(0);
+  const [chatTheme, setChatTheme] = useState('default');
+  const [showThemePicker, setShowThemePicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const processedIds = useRef<Set<string>>(new Set());
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -265,6 +270,45 @@ export default function ChatScreen() {
     return () => { unsub(); };
   }, [isActive, pal?.phone, dbRef, state.guftguPhone, isFriend]);
 
+  // ── Chat theme: load cached + listen for real-time changes ──
+  useEffect(() => {
+    if (!isActive || !pal?.phone || !state.guftguPhone) return;
+    // Instant load from cache
+    const roomKey = getChatRoomId(state.guftguPhone, pal.phone);
+    setChatTheme(getChatTheme(roomKey));
+    // Real-time listener
+    if (!dbRef?.current) return;
+    const unsub = listenChatTheme(dbRef.current, state.guftguPhone, pal.phone, (themeId) => {
+      setChatTheme(themeId);
+      saveChatTheme(roomKey, themeId);
+    });
+    return () => { unsub(); };
+  }, [isActive, pal?.phone, dbRef, state.guftguPhone]);
+
+  // Theme definitions
+  const CHAT_THEMES = [
+    { id: 'default',     emoji: '🌑', label: 'Default' },
+    { id: 'pyaar',       emoji: '❤️', label: 'Pyaar' },
+    { id: 'dosti',       emoji: '🤝', label: 'Dosti' },
+    { id: 'motivation',  emoji: '🔥', label: 'Hustle' },
+    { id: 'dreamy',      emoji: '💜', label: 'Dreamy' },
+    { id: 'heartbeat',   emoji: '💗', label: 'Heartbeat' },
+    { id: 'soulmate',    emoji: '🌙', label: 'Soulmate' },
+    { id: 'sunshine',    emoji: '🌻', label: 'Sunshine' },
+    { id: 'forever',     emoji: '💎', label: 'Forever' },
+    { id: 'yaari',       emoji: '🫂', label: 'Yaari' },
+  ];
+
+  const pickTheme = (themeId: string) => {
+    if (!dbRef?.current || !state.guftguPhone || !pal?.phone) return;
+    firebaseSetChatTheme(dbRef.current, state.guftguPhone, pal.phone, themeId).catch(() => {});
+    const roomKey = getChatRoomId(state.guftguPhone, pal.phone);
+    saveChatTheme(roomKey, themeId);
+    setChatTheme(themeId);
+    setShowThemePicker(false);
+    showToast(`🎨 Wallpaper changed!`);
+  };
+
 
   const sendMessage = async () => {
     const text = input.trim();
@@ -324,6 +368,9 @@ export default function ChatScreen() {
           )}
         </div>
         <div className="chat-header-actions">
+          <button className="chat-action-btn" onClick={() => setShowThemePicker(true)} title="Change wallpaper">
+            <IconPalette size={18} />
+          </button>
         </div>
       </div>
 
@@ -339,7 +386,7 @@ export default function ChatScreen() {
       )}
 
       {/* Messages */}
-      <div className="chat-messages">
+      <div className={`chat-messages${chatTheme !== 'default' ? ` chat-bg-${chatTheme}` : ''}`}>
         {loading ? (
           <div className="chat-loading">Loading messages...</div>
         ) : (
@@ -400,6 +447,32 @@ export default function ChatScreen() {
           <IconSend />
         </button>
       </div>
+
+      {/* Theme Picker Modal */}
+      {showThemePicker && (
+        <div className="modal-overlay show" onClick={() => setShowThemePicker(false)}>
+          <div className="modal-sheet" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 380 }}>
+            <div className="modal-handle" />
+            <div className="theme-picker">
+              <div className="theme-picker-title">🎨 Chat Wallpaper</div>
+              <div className="theme-picker-sub">Both of you will see the same wallpaper</div>
+              <div className="theme-picker-grid">
+                {CHAT_THEMES.map((t) => (
+                  <button
+                    key={t.id}
+                    className={`theme-card${chatTheme === t.id ? ' active' : ''}${t.id !== 'default' ? ` chat-bg-${t.id}` : ''}`}
+                    onClick={() => pickTheme(t.id)}
+                  >
+                    <span className="theme-card-emoji">{t.emoji}</span>
+                    <span className="theme-card-label">{t.label}</span>
+                    {chatTheme === t.id && <span className="theme-card-check">✓</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

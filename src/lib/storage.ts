@@ -9,6 +9,7 @@ const BLOCKED_KEY = 'guftgu_blocked';
 const CONVERSATIONS_KEY = 'guftgu_conversations';
 const NOTIFS_KEY = 'guftgu_notifications';
 const DELETED_CHATS_KEY = 'guftgu_deleted_chats'; // tracks when chats were "deleted" locally
+const CHAT_THEMES_KEY = 'guftgu_chat_themes'; // per-room wallpaper theme cache
 
 export interface UserData {
   nickname: string;
@@ -366,6 +367,7 @@ export function clearAllData(): void {
     localStorage.removeItem(CONVERSATIONS_KEY);
     localStorage.removeItem(NOTIFS_KEY);
     localStorage.removeItem(DELETED_CHATS_KEY);
+    localStorage.removeItem(CHAT_THEMES_KEY);
     localStorage.removeItem('guftgu_welcomed');
   } catch (_) { /* ignore */ }
 }
@@ -409,4 +411,26 @@ export function clearChatDeletedSince(phone: string): void {
     delete map[phone];
     localStorage.setItem(DELETED_CHATS_KEY, JSON.stringify(map));
   } catch (_) { /* ignore */ }
+}
+
+// ── Chat Theme Cache ────────────────────────────────────────────────────────
+
+/** Cache a chat room's wallpaper theme locally for instant loading */
+export function saveChatTheme(roomKey: string, themeId: string): void {
+  try {
+    const raw = localStorage.getItem(CHAT_THEMES_KEY);
+    const map: Record<string, string> = raw ? JSON.parse(raw) : {};
+    map[roomKey] = themeId;
+    localStorage.setItem(CHAT_THEMES_KEY, JSON.stringify(map));
+  } catch (_) { /* ignore */ }
+}
+
+/** Get the cached theme for a chat room (returns 'default' if none) */
+export function getChatTheme(roomKey: string): string {
+  try {
+    const raw = localStorage.getItem(CHAT_THEMES_KEY);
+    if (!raw) return 'default';
+    const map: Record<string, string> = JSON.parse(raw);
+    return map[roomKey] ?? 'default';
+  } catch (_) { return 'default'; }
 }
