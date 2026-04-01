@@ -1,3 +1,4 @@
+import React from 'react';
 import OnboardScreen from '@/components/screens/OnboardScreen';
 import WelcomeScreen from '@/components/screens/WelcomeScreen';
 import HomeScreen from '@/components/screens/HomeScreen';
@@ -17,7 +18,30 @@ import IncomingCallModal from '@/components/IncomingCallModal';
 import PullToRefresh from '@/components/PullToRefresh';
 import GestureTip from '@/components/GestureTip';
 import OfflineBanner from '@/components/OfflineBanner';
-import { useApp } from '@/context/AppContext';
+import { useApp, Screen } from '@/context/AppContext';
+
+/** Map screen IDs to their components */
+const SCREEN_MAP: Record<Screen, React.ComponentType> = {
+  'screen-onboard': OnboardScreen,
+  'screen-welcome': WelcomeScreen,
+  'screen-home': HomeScreen,
+  'screen-match': MatchScreen,
+  'screen-call': CallScreen,
+  'screen-chat': ChatScreen,
+  'screen-chats': ChatsScreen,
+  'screen-notifs': NotifsScreen,
+  'screen-notifications': NotificationsScreen,
+  'screen-profile': ProfileScreen,
+  'screen-history': HistoryScreen,
+  'screen-blocked': BlockedScreen,
+  'screen-appinfo': AboutScreen,
+};
+
+/**
+ * Screens that must stay mounted when a call is active —
+ * CallScreen stays alive so WebRTC isn't torn down when switching to ChatScreen.
+ */
+const CALL_ACTIVE_SCREENS: Screen[] = ['screen-call', 'screen-chat'];
 
 export default function App() {
   const { state, incomingCall, handleAcceptCall, handleDeclineCall, handleBlockCaller } = useApp();
@@ -34,23 +58,23 @@ export default function App() {
     );
   }
 
+  // Determine which screens to mount
+  const current = state.screen;
+  const callIsActive = state.currentPal !== null;
+  const screensToMount = new Set<Screen>([current]);
+
+  // Keep call + chat mounted during an active call so WebRTC persists
+  if (callIsActive) {
+    CALL_ACTIVE_SCREENS.forEach((s) => screensToMount.add(s));
+  }
+
   return (
     <>
       <PullToRefresh />
       <div id="app">
-        <OnboardScreen />
-        <WelcomeScreen />
-        <HomeScreen />
-        <MatchScreen />
-        <CallScreen />
-        <ChatScreen />
-        <ChatsScreen />
-        <NotifsScreen />
-        <NotificationsScreen />
-        <ProfileScreen />
-        <HistoryScreen />
-        <BlockedScreen />
-        <AboutScreen />
+        {(Object.entries(SCREEN_MAP) as [Screen, React.ComponentType][]).map(([id, Component]) =>
+          screensToMount.has(id) ? <Component key={id} /> : null
+        )}
       </div>
       <BottomNav />
       <Toast />

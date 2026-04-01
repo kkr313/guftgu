@@ -1,0 +1,539 @@
+{
+  "rules": {
+
+    "users": {
+      ".indexOn": ["online"],
+      "$phone": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['nickname', 'avatar'])",
+        "nickname": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 30"
+        },
+        "avatar": {
+          ".validate": "newData.isString() && newData.val().length <= 50"
+        },
+        "mood": {
+          ".validate": "newData.isString() && newData.val().length <= 50"
+        },
+        "moodEmoji": {
+          ".validate": "newData.isString() && newData.val().length <= 10"
+        },
+        "language": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "region": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "intent": {
+          ".validate": "newData.isString() && newData.val().length <= 50"
+        },
+        "online": {
+          ".validate": "newData.isBoolean()"
+        },
+        "lastSeen": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+
+    "chats": {
+      "$roomId": {
+        ".read": true,
+        ".write": true,
+
+        "messages": {
+          ".indexOn": ["timestamp"],
+          "$messageId": {
+            ".validate": "newData.hasChildren(['from', 'text', 'timestamp'])",
+            "from": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 15"
+            },
+            "text": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 2000"
+            },
+            "timestamp": {
+              ".validate": "newData.isNumber()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+
+        "typing": {
+          "$phone": {
+            ".validate": "newData.hasChild('typing')",
+            "typing": {
+              ".validate": "newData.isBoolean()"
+            },
+            "timestamp": {
+              ".validate": "newData.isNumber()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+
+        "seen": {
+          "$phone": {
+            ".validate": "newData.isNumber()"
+          }
+        },
+
+        "theme": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+
+    "rooms": {
+      "$roomId": {
+        ".read": true,
+        ".write": true,
+
+        "offer": {
+          ".validate": "newData.hasChildren(['type', 'sdp'])",
+          "type": {
+            ".validate": "newData.isString()"
+          },
+          "sdp": {
+            ".validate": "newData.isString()"
+          }
+        },
+        "answer": {
+          ".validate": "newData.hasChildren(['type', 'sdp'])",
+          "type": {
+            ".validate": "newData.isString()"
+          },
+          "sdp": {
+            ".validate": "newData.isString()"
+          }
+        },
+        "callerCandidates": {
+          "$candidateId": {
+            ".validate": true
+          }
+        },
+        "calleeCandidates": {
+          "$candidateId": {
+            ".validate": true
+          }
+        },
+        "callEnded": {
+          ".validate": "newData.isBoolean()"
+        },
+        "callBlocked": {
+          ".validate": "newData.isBoolean()"
+        },
+        "muted": {
+          "$phone": {
+            ".validate": "newData.isBoolean()"
+          }
+        },
+
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+
+    "calls": {
+      "$phone": {
+        ".read": true,
+        ".write": true,
+
+        "incoming": {
+          "$callerPhone": {
+            ".validate": "newData.hasChildren(['from', 'name', 'timestamp', 'status'])",
+            "from": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 15"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length <= 30"
+            },
+            "avatar": {
+              ".validate": "newData.isString() && newData.val().length <= 50"
+            },
+            "mood": {
+              ".validate": "newData.isString() && newData.val().length <= 50"
+            },
+            "moodEmoji": {
+              ".validate": "newData.isString() && newData.val().length <= 10"
+            },
+            "timestamp": {
+              ".validate": "newData.isNumber()"
+            },
+            "status": {
+              ".validate": "newData.isString() && (newData.val() === 'ringing' || newData.val() === 'accepted' || newData.val() === 'declined' || newData.val() === 'missed' || newData.val() === 'busy')"
+            },
+            "connectedAt": {
+              ".validate": "newData.isNumber()"
+            },
+            "roomId": {
+              ".validate": "newData.isString()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "outgoing": {
+          "$targetPhone": {
+            ".validate": "newData.hasChildren(['status'])",
+            "status": {
+              ".validate": "newData.isString() && (newData.val() === 'ringing' || newData.val() === 'accepted' || newData.val() === 'declined' || newData.val() === 'missed' || newData.val() === 'busy')"
+            },
+            "roomId": {
+              ".validate": "newData.isString()"
+            },
+            "connectedAt": {
+              ".validate": "newData.isNumber()"
+            },
+            "name": {
+              ".validate": "newData.isString()"
+            },
+            "avatar": {
+              ".validate": "newData.isString()"
+            },
+            "timestamp": {
+              ".validate": "newData.isNumber()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      }
+    },
+
+    "matchQueue": {
+      ".read": true,
+      ".indexOn": ["ts", "status"],
+      "$phone": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['phone', 'name', 'ts', 'status'])",
+        "phone": {
+          ".validate": "newData.isString() && newData.val() === $phone"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "avatar": {
+          ".validate": "newData.isString() && newData.val().length <= 50"
+        },
+        "mood": {
+          ".validate": "newData.isString() && newData.val().length <= 50"
+        },
+        "moodEmoji": {
+          ".validate": "newData.isString() && newData.val().length <= 10"
+        },
+        "language": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "region": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "intent": {
+          ".validate": "newData.isString() && newData.val().length <= 50"
+        },
+        "ts": {
+          ".validate": "newData.isNumber()"
+        },
+        "status": {
+          ".validate": "newData.isString() && (newData.val() === 'searching' || newData.val() === 'matched')"
+        },
+        "matchId": {
+          ".validate": "newData.isString()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+
+    "matchProposals": {
+      "$phone": {
+        ".read": true,
+        ".write": true,
+        "$proposerPhone": {
+          ".validate": "newData.hasChildren(['from'])",
+          "from": {
+            ".validate": "newData.isString()"
+          },
+          "matchId": {
+            ".validate": "newData.isString()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+
+    "matches": {
+      "$matchId": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['user1', 'user2', 'status', 'createdAt', 'priority'])",
+        "user1": {
+          ".validate": "newData.hasChildren(['phone', 'name'])",
+          "phone": { ".validate": "newData.isString()" },
+          "name": { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "avatar": { ".validate": "newData.isString() && newData.val().length <= 50" },
+          "mood": { ".validate": "newData.isString()" },
+          "moodEmoji": { ".validate": "newData.isString()" },
+          "language": { ".validate": "newData.isString()" },
+          "region": { ".validate": "newData.isString()" },
+          "intent": { ".validate": "newData.isString()" },
+          "ts": { ".validate": "newData.isNumber()" },
+          "status": { ".validate": "newData.isString()" },
+          "matchId": { ".validate": "newData.isString()" },
+          "$other": { ".validate": false }
+        },
+        "user2": {
+          ".validate": "newData.hasChildren(['phone', 'name'])",
+          "phone": { ".validate": "newData.isString()" },
+          "name": { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "avatar": { ".validate": "newData.isString() && newData.val().length <= 50" },
+          "mood": { ".validate": "newData.isString()" },
+          "moodEmoji": { ".validate": "newData.isString()" },
+          "language": { ".validate": "newData.isString()" },
+          "region": { ".validate": "newData.isString()" },
+          "intent": { ".validate": "newData.isString()" },
+          "ts": { ".validate": "newData.isNumber()" },
+          "status": { ".validate": "newData.isString()" },
+          "matchId": { ".validate": "newData.isString()" },
+          "$other": { ".validate": false }
+        },
+        "status": {
+          ".validate": "newData.isString()"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "priority": {
+          ".validate": "newData.isNumber()"
+        },
+        "user1Response": {
+          ".validate": "newData.isString() || newData.val() === null"
+        },
+        "user2Response": {
+          ".validate": "newData.isString() || newData.val() === null"
+        },
+        "webrtcRoomId": {
+          ".validate": "newData.isString()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+
+    "blocked": {
+      "$phone": {
+        ".read": true,
+        ".write": true,
+        "$blockedPhone": {
+          ".validate": "newData.hasChildren(['name', 'blockedAt'])",
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 30"
+          },
+          "avatar": {
+            ".validate": "newData.isString() && newData.val().length <= 50"
+          },
+          "phone": {
+            ".validate": "newData.isString()"
+          },
+          "blockedAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+
+    "friends": {
+      "$phone": {
+        ".read": true,
+        ".write": true,
+        "$friendPhone": {
+          ".validate": "newData.hasChildren(['name', 'addedAt'])",
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 30"
+          },
+          "avatar": {
+            ".validate": "newData.isString() && newData.val().length <= 50"
+          },
+          "mood": {
+            ".validate": "newData.isString()"
+          },
+          "moodEmoji": {
+            ".validate": "newData.isString()"
+          },
+          "phone": {
+            ".validate": "newData.isString()"
+          },
+          "addedAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+
+    "friendRequests": {
+      "$phone": {
+        ".read": true,
+        ".write": true,
+        "$fromPhone": {
+          ".validate": "newData.hasChildren(['from', 'name', 'timestamp'])",
+          "from": {
+            ".validate": "newData.isString()"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 30"
+          },
+          "avatar": {
+            ".validate": "newData.isString() && newData.val().length <= 50"
+          },
+          "mood": {
+            ".validate": "newData.isString()"
+          },
+          "moodEmoji": {
+            ".validate": "newData.isString()"
+          },
+          "timestamp": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+
+    "friendAccepted": {
+      "$phone": {
+        ".read": true,
+        ".write": true,
+        "$byPhone": {
+          ".validate": "newData.hasChildren(['from', 'name', 'timestamp'])",
+          "from": {
+            ".validate": "newData.isString()"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 30"
+          },
+          "avatar": {
+            ".validate": "newData.isString()"
+          },
+          "mood": {
+            ".validate": "newData.isString()"
+          },
+          "moodEmoji": {
+            ".validate": "newData.isString()"
+          },
+          "timestamp": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+
+    "friendDeclined": {
+      "$phone": {
+        ".read": true,
+        ".write": true,
+        "$byPhone": {
+          ".validate": "newData.hasChildren(['from', 'timestamp'])",
+          "from": {
+            ".validate": "newData.isString()"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 30"
+          },
+          "avatar": {
+            ".validate": "newData.isString() && newData.val().length <= 50"
+          },
+          "timestamp": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+
+    "reports": {
+      "$targetPhone": {
+        ".read": false,
+        ".write": true,
+        "$reportId": {
+          ".validate": "newData.hasChildren(['reportedBy', 'reason', 'timestamp'])",
+          "reportedBy": {
+            ".validate": "newData.isString()"
+          },
+          "reason": {
+            ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 30"
+          },
+          "matchId": {
+            ".validate": "newData.isString() || newData.val() === null"
+          },
+          "timestamp": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+
+    "system": {
+      "phoneCounter": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['prefix', 'sequence'])",
+        "prefix": {
+          ".validate": "newData.isNumber() && newData.val() >= 7 && newData.val() <= 9"
+        },
+        "sequence": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 999999"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+
+    "presence": {
+      ".read": false,
+      ".write": false
+    },
+
+    "$other": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

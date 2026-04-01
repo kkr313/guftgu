@@ -3,9 +3,10 @@ import Avatar from '@/components/Avatar';
 import { useMatchEngine } from '@/hooks/useMatchEngine';
 import { IconChevronLeft } from '@/lib/icons';
 import { S } from '@/lib/strings';
+import { blockUserFirebase, reportUserFirebase } from '@/lib/firebase-service';
 
 export default function MatchScreen() {
-  const { state } = useApp();
+  const { state, dbRef, showToast } = useApp();
   const isActive = state.screen === 'screen-match';
   const u = state.user;
 
@@ -90,8 +91,21 @@ export default function MatchScreen() {
               </button>
             </div>
             <div className="mf-safety-row">
-              <button className="mf-safety-btn" onClick={declineMatch}>{S.match.blockBtn}</button>
-              <button className="mf-safety-btn" onClick={declineMatch}>{S.match.reportBtn}</button>
+              <button className="mf-safety-btn" onClick={async () => {
+                if (dbRef.current && state.guftguPhone && pal.phone) {
+                  await blockUserFirebase(dbRef.current, state.guftguPhone, pal.phone, pal.name, pal.avatar);
+                  showToast('🚫 User blocked');
+                }
+                declineMatch();
+              }}>{S.match.blockBtn}</button>
+              <button className="mf-safety-btn" onClick={async () => {
+                if (dbRef.current && state.guftguPhone && pal.phone) {
+                  await reportUserFirebase(dbRef.current, state.guftguPhone, pal.phone, pal.name, 'match-report');
+                  await blockUserFirebase(dbRef.current, state.guftguPhone, pal.phone, pal.name, pal.avatar);
+                  showToast('🚨 User reported & blocked');
+                }
+                declineMatch();
+              }}>{S.match.reportBtn}</button>
             </div>
           </div>
         )}

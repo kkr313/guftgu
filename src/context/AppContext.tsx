@@ -5,6 +5,7 @@ import { playMessageSound, playNotifSound, playFriendOnlineSound } from '@/lib/s
 import { Database, ref, set, remove, onValue, push, get, child, off, onChildAdded, DataSnapshot, serverTimestamp } from 'firebase/database';
 import { initFirebase, getDb } from '@/lib/firebase';
 import { registerUser, updateUserProfile, syncBlockList, setOnlineStatus, listenIncomingCalls, IncomingCall, acceptCall, declineCall, blockUserFirebase, listenFriendRequests, listenFriendAccepted, listenFriendDeclined, listenFriendRemovals, listenFriendsOnlineStatus, listenChatMessages, loadChatHistory, syncFriendsFromFirebase, syncPendingFromFirebase } from '@/lib/firebase-service';
+import { escHtml } from '@/lib/data';
 import { useBackButtonInit } from '@/hooks/useBackButton';
 
 // ── Types ──────────────────────────────────────────
@@ -36,6 +37,7 @@ interface AppState {
   toastMsg: string;
   toastVisible: boolean;
   isRestoring: boolean; // True while checking localStorage on mount
+  friendsVersion: number; // Bumped when friends list changes — avoids calling getFriends() in deps
 }
 
 type Action =
@@ -50,6 +52,7 @@ type Action =
   | { type: 'HIDE_TOAST' }
   | { type: 'RESTORE_USER'; user: UserData; phone: string }
   | { type: 'FINISH_RESTORE' }
+  | { type: 'BUMP_FRIENDS' }
   | { type: 'LOGOUT' };
 
 const defaultUser: UserData = {
@@ -69,6 +72,7 @@ const initialState: AppState = {
   toastMsg: '',
   toastVisible: false,
   isRestoring: true, // Start with true - we're checking localStorage
+  friendsVersion: 0,
 };
 
 function reducer(state: AppState, action: Action): AppState {
@@ -95,6 +99,8 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, user: { ...defaultUser, ...action.user }, guftguPhone: action.phone, screen: 'screen-home', isRestoring: false };
     case 'FINISH_RESTORE':
       return { ...state, isRestoring: false };
+    case 'BUMP_FRIENDS':
+      return { ...state, friendsVersion: state.friendsVersion + 1 };
     case 'LOGOUT':
       // Full reset to initial state
       return {
@@ -175,6 +181,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener('callHistoryUpdate', syncNotifs);
       window.removeEventListener('conversationsUpdate', syncMsgs);
     };
+  }, []);
+
+  // Bump friendsVersion when friends list in localStorage changes
+  useEffect(() => {
+    const bump = () => dispatch({ type: 'BUMP_FRIENDS' });
+    window.addEventListener('friendsUpdate', bump);
+    return () => window.removeEventListener('friendsUpdate', bump);
   }, []);
 
   const markNotifsRead = useCallback(() => {
@@ -375,7 +388,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         type: 'friend_request',
         icon: '🤝',
         title: 'New Friend Request',
-        body: `<b>${req.name || 'Someone'}</b> wants to be your friend`,
+        body: `<b>${escHtml(req.name || 'Someone')}</b> wants to be your friend`,
         time: req.timestamp || Date.now(),
         unread: true,
         meta: { phone: req.phone, avatar: req.avatar || 'cat' },
@@ -417,7 +430,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         type: 'friend_accepted',
         icon: '🎉',
         title: 'Friend Request Accepted',
-        body: `<b>${friend.name || 'Someone'}</b> accepted your friend request`,
+        body: `<b>${escHtml(friend.name || 'Someone')}</b> accepted your friend request`,
         time: friend.timestamp || Date.now(),
         unread: true,
         meta: { phone: friend.phone, avatar: friend.avatar || 'cat' },
@@ -648,11 +661,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return cleanup;
     // Re-subscribe when friends list changes or Firebase reconnects
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.firebaseConnected, state.guftguPhone,
-  // Stringify friend phones so the effect re-runs when a friend is added/removed
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  getFriends().map(f => f.phone).join(',')]);
-
+  }, [state.firebaseConnected, state.guftguPhone, state.friendsVersion]);
   // ── Check for messages received while offline ─────────────────────────
   // On Firebase connect, scan each friend's chat for messages newer than
   // the last known message in localStorage. If found, bump unread counts
@@ -833,9 +842,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       cleanups.forEach(fn => fn());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.firebaseConnected, state.guftguPhone,
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  getFriends().map(f => f.phone).join(',')]);
+  }, [state.firebaseConnected, state.guftguPhone, state.friendsVersion]);
 
 
   return (

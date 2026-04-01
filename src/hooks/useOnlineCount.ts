@@ -1,13 +1,13 @@
 /**
  * useOnlineCount — Firebase-backed online user count.
  * Counts users with online=true in the users collection.
- * Excludes: yourself, blocked users, and stale users (no activity in 5 mins).
+ * Excludes: yourself, blocked users, and stale users (no activity in 2 mins).
  *
  * Usage:
  *   const onlineCount = useOnlineCount(isActive, dbRef, myPhone);
  */
 import { useState, useEffect } from 'react';
-import { Database, ref, onValue, DataSnapshot } from 'firebase/database';
+import { Database, ref, query, orderByChild, equalTo, onValue, DataSnapshot } from 'firebase/database';
 import { getBlocked } from '@/lib/storage';
 
 // Consider a user stale if no activity in 2 minutes
@@ -35,10 +35,11 @@ export function useOnlineCount(
 
     const blockedUsers = getBlocked().map(b => b.phone);
     const usersRef = ref(db, 'users');
+    const onlineQuery = query(usersRef, orderByChild('online'), equalTo(true));
     const myPhoneStr = String(myPhone).trim();
 
     const unsub = onValue(
-      usersRef,
+      onlineQuery,
       (snap: DataSnapshot) => {
         let count = 0;
         const now = Date.now();
@@ -47,9 +48,7 @@ export function useOnlineCount(
           const userPhone = String(child.key || '').trim();
           const userData = child.val() as { online?: boolean; lastSeen?: number } | null;
 
-          // Must be marked online
-          if (userData?.online !== true) return;
-
+          // Already filtered to online=true by query — no need to check userData.online
           // Skip yourself
           if (userPhone === myPhoneStr) return;
 

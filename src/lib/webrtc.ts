@@ -28,7 +28,25 @@ import {
 // CONFIGURATION
 // ══════════════════════════════════════════════════════════════════════════════
 
-const ICE_SERVERS: RTCConfiguration = {
+/**
+ * TURN Server Configuration
+ * ─────────────────────────
+ * STUN alone fails for ~15-30% of users (symmetric NATs, firewalls, Jio/Airtel 4G).
+ * A TURN server relays audio when direct P2P fails — fixing those dropped calls.
+ *
+ * HOW TO ENABLE:
+ * 1. Sign up free at https://dashboard.metered.ca/signup
+ * 2. Create an app → copy the API key
+ * 3. Paste it below as METERED_API_KEY
+ * 4. That's it — TURN credentials are fetched automatically before each call
+ *
+ * If no API key is set, falls back to STUN-only (current behavior, ~70-85% success).
+ */
+const METERED_API_KEY = import.meta.env.VITE_METERED_API_KEY || '';
+const METERED_APP_NAME = import.meta.env.VITE_METERED_APP_NAME || '';
+
+// Fallback STUN-only config (used when TURN credentials can't be fetched)
+const STUN_ONLY_CONFIG: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
@@ -36,6 +54,42 @@ const ICE_SERVERS: RTCConfiguration = {
     { urls: 'stun:stun3.l.google.com:19302' },
   ],
 };
+
+// Cache TURN credentials (valid ~24h, re-fetched each call just in case)
+let cachedIceServers: RTCIceServer[] | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL_MS = 3600_000; // 1 hour
+
+/**
+ * Fetch TURN + STUN credentials from Metered API.
+ * Falls back to STUN-only if API key is missing or fetch fails.
+ */
+async function getIceServers(): Promise<RTCConfiguration> {
+  // No API key → STUN-only (preserves current behavior)
+  if (!METERED_API_KEY || !METERED_APP_NAME) {
+    return STUN_ONLY_CONFIG;
+  }
+
+  // Return cached credentials if fresh
+  if (cachedIceServers && Date.now() - cacheTimestamp < CACHE_TTL_MS) {
+    return { iceServers: cachedIceServers };
+  }
+
+  try {
+    const res = await fetch(
+      `https://${METERED_APP_NAME}.metered.live/api/v1/turn/credentials?apiKey=${METERED_API_KEY}`
+    );
+    if (!res.ok) throw new Error(`TURN API ${res.status}`);
+    const servers: RTCIceServer[] = await res.json();
+    cachedIceServers = servers;
+    cacheTimestamp = Date.now();
+    console.log('[WebRTC] TURN credentials fetched:', servers.length, 'servers');
+    return { iceServers: servers };
+  } catch (err) {
+    console.warn('[WebRTC] Failed to fetch TURN credentials, using STUN-only:', err);
+    return STUN_ONLY_CONFIG;
+  }
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // STATE
@@ -56,10 +110,13 @@ const RECONNECT_TIMEOUT_MS = 15000; // 15 seconds before giving up reconnection
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Generate a random room ID.
+ * Generate a cryptographically secure random room ID.
+ * Uses crypto.getRandomValues for unpredictable IDs.
  */
 export function generateRoomId(): string {
-  return Math.random().toString(36).substr(2, 6).toUpperCase();
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(36)).join('').substring(0, 10).toUpperCase();
 }
 
 /**
@@ -109,12 +166,13 @@ function ensureRemoteAudio(): HTMLAudioElement {
  *  - failed/closed → onDisconnected (permanent)
  */
 function createPeerConnection(
+  iceConfig: RTCConfiguration,
   onConnected: () => void,
   onDisconnected: () => void,
   onReconnecting?: () => void,
   onReconnected?: () => void
 ): RTCPeerConnection {
-  const pc = new RTCPeerConnection(ICE_SERVERS);
+  const pc = new RTCPeerConnection(iceConfig);
   let wasConnected = false;
 
   pc.ontrack = (event) => {
@@ -194,8 +252,11 @@ export async function createRoom(
     // Get microphone
     localStream = await getMicrophoneStream();
 
+    // Fetch TURN + STUN credentials (falls back to STUN-only if unavailable)
+    const iceConfig = await getIceServers();
+
     // Create peer connection
-    peerConnection = createPeerConnection(onConnected, onDisconnected, onReconnecting, onReconnected);
+    peerConnection = createPeerConnection(iceConfig, onConnected, onDisconnected, onReconnecting, onReconnected);
 
     // Add local audio tracks
     localStream.getTracks().forEach((track) => {
@@ -302,8 +363,11 @@ export async function joinRoom(
     // Get microphone
     localStream = await getMicrophoneStream();
 
+    // Fetch TURN + STUN credentials (falls back to STUN-only if unavailable)
+    const iceConfig = await getIceServers();
+
     // Create peer connection
-    peerConnection = createPeerConnection(onConnected, onDisconnected, onReconnecting, onReconnected);
+    peerConnection = createPeerConnection(iceConfig, onConnected, onDisconnected, onReconnecting, onReconnected);
 
     // Add local audio tracks
     localStream.getTracks().forEach((track) => {

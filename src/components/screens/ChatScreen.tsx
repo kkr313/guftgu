@@ -48,6 +48,7 @@ export default function ChatScreen() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const processedIds = useRef<Set<string>>(new Set());
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSendTime = useRef(0); // Rate-limit: track last send timestamp
 
   // Check if users are friends and load chat history
   useEffect(() => {
@@ -329,6 +330,17 @@ export default function ChatScreen() {
     const text = input.trim();
     if (!text || !pal?.phone || !dbRef?.current || !state.guftguPhone) return;
 
+    // Client-side max length (matches DB rule: 2000 chars)
+    if (text.length > 2000) {
+      showToast('Message too long (max 2000 characters)');
+      return;
+    }
+
+    // Rate-limit: minimum 300ms between sends to prevent spam
+    const now = Date.now();
+    if (now - lastSendTime.current < 300) return;
+    lastSendTime.current = now;
+
     if (!isFriend) {
       showToast(S.call.chatFriendsOnly);
       return;
@@ -453,6 +465,7 @@ export default function ChatScreen() {
           className="chat-input"
           placeholder={isFriend ? S.chat.placeholder : '🔒 Friends only'}
           rows={1}
+          maxLength={2000}
           value={input}
           onChange={(e) => handleInputChange(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}

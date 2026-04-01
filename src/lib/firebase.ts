@@ -3,14 +3,14 @@ import { initializeApp, getApps, deleteApp, FirebaseApp } from 'firebase/app';
 import { getDatabase, Database } from 'firebase/database';
 
 const FIREBASE_CONFIG = {
-  apiKey: 'AIzaSyDHPhw5HegUFJhFWlBp_km2-IJ-o1Xucy0',
-  authDomain: 'guftgu-511b5.firebaseapp.com',
-  databaseURL: 'https://guftgu-511b5-default-rtdb.firebaseio.com',
-  projectId: 'guftgu-511b5',
-  storageBucket: 'guftgu-511b5.firebasestorage.app',
-  messagingSenderId: '1055502505262',
-  appId: '1:1055502505262:web:91b9a0aafdeaf7787c96bf',
-  measurementId: 'G-3P31R9LSM9',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 let fbApp: FirebaseApp | null = null;

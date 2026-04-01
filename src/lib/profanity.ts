@@ -2,69 +2,91 @@
  * Profanity / vulgar-name filter
  * Covers English, Hindi (romanized / Hinglish), and common leetspeak variations.
  * All checks are case-insensitive and strip common substitution characters.
+ *
+ * Two matching strategies:
+ *  1. EXACT_STEMS — short / ambiguous stems tested with word-boundary logic
+ *     so "class" doesn't match "ass", "document" doesn't match "cum", etc.
+ *  2. SUBSTRING_STEMS — long, unambiguous stems that are profane no matter
+ *     where they appear (e.g. "chutiya", "madarchod").
  */
 
-// ── Blocked stems ──
-// Each entry is a regex-safe stem. We test against the *normalized* input.
-const BLOCKED: string[] = [
-  // ── English ──
-  'fuck', 'fuk', 'fuq', 'fck', 'phuck', 'phuk',
-  'shit', 'sh1t', 'sht',
+// ── Short / ambiguous stems — matched with word boundaries ──
+// These are profane on their own but commonly appear inside normal words.
+const EXACT_STEMS: string[] = [
   'ass', 'a55',
+  'cum', 'kum',
+  'fag',
+  'dic', 'dik',
+  'cok',
+  'mc', 'bc',
+  'bkl',
+  'gand', 'gaand',
+  'chut', 'choot',
+  'haram',
+  'ullu',
+  'saala',
+  'suar',
+  'nude', 'nud3',
+  'sexy', 'sexi',
+  'porn', 'p0rn',
+  'rape', 'r4pe',
+  'pedo', 'paedo',
+];
+
+// ── Long / unambiguous stems — matched as substrings (no boundaries needed) ──
+const SUBSTRING_STEMS: string[] = [
+  // English
+  'fuck', 'fuk', 'fuq', 'fck', 'phuck', 'phuk',
+  'shit', 'sh1t',
   'bitch', 'b1tch', 'btch', 'biatch',
-  'dick', 'd1ck', 'dik',
-  'cock', 'c0ck', 'cok',
+  'dick', 'd1ck',
+  'cock', 'c0ck',
   'pussy', 'pu55y', 'pus5y',
   'cunt', 'kunt',
-  'whore', 'wh0re', 'hoar',
+  'whore', 'wh0re',
   'slut', 'sl0t',
   'nigger', 'n1gger', 'nigg3r', 'nigga', 'n1gga',
-  'fag', 'faggot',
+  'faggot',
   'retard', 'retrd',
   'penis', 'pen1s',
   'vagina', 'vag1na',
   'boob', 'b00b',
   'dildo', 'd1ldo',
-  'jerk ?off', 'jackoff', 'jack ?off',
+  'jerkoff', 'jackoff',
   'wank', 'wanker',
-  'cum', 'kum',
-  'porn', 'p0rn',
-  'sexy', 'sexi',
-  'nude', 'nud3',
-  'rape', 'r4pe',
   'molest',
-  'pedo', 'paedo',
 
-  // ── Hindi / Hinglish (romanized) ──
+  // Hindi / Hinglish (romanized) — long enough to be unambiguous
   'bhosdi', 'bhosd1', 'bhosdike', 'bhosdiwale', 'bhosdiwali',
-  'madarchod', 'madarc?hod', 'mc', 'maderchod',
-  'behenchod', 'behenc?hod', 'bc', 'bhenchod', 'bhnchd',
-  'chutiya', 'chut1ya', 'chutiy', 'choot', 'chut',
-  'gand', 'gaand', 'g[a@]nd',
-  'lund', 'l[u\\*]nd', 'lauda', 'lavda', 'l[a@]uda', 'lawda',
-  'randi', 'r[a@]ndi', 'rand1',
+  'madarchod', 'maderchod',
+  'behenchod', 'bhenchod', 'bhnchd',
+  'chutiya', 'chut1ya', 'chutiy',
+  'lund', 'lauda', 'lavda', 'lawda',
+  'randi', 'rand1',
   'harami', 'haramkhor', 'haram1',
-  'kutt?a', 'kutt?i', 'kuttiya',
-  'suar', 'su[a@]r', 'suwwar',
-  'jhantu', 'jhant', 'jh[a@]nt',
-  'tatt?i', 'tatti', 'tatt1',
-  'gandu', 'g[a@]ndu',
-  'bkl', 'bakl[a@]nd',
-  'ch[o0]d', 'ch[o0]dna',
-  'dalla', 'dall[a@]',
+  'kutta', 'kutti', 'kuttiya',
+  'suwwar',
+  'jhantu', 'jhant',
+  'tatti', 'tatt1',
+  'gandu',
+  'baklund', 'bakland',
+  'dalla',
   'hijra', 'h1jra', 'hijda',
-  'kamina', 'kam[i1]n[a@]', 'kameena',
-  'badzaat', 'badz[a@][a@]t',
-  'ullu',
-  'gadha', 'gadh[a@]',
-  'saala', 'saal[a@]', 's[a@]l[a@]',
-  'haram',
+  'kamina', 'kameena',
+  'badzaat',
+  'gadha',
 ];
 
-// Build one big regex from all stems
-// Stems are wrapped in word-ish boundaries (\b or start/end)
-const BLOCKED_RE = new RegExp(
-  BLOCKED.map((s) => `(?:${s})`).join('|'),
+// Build exact-match regex: each stem wrapped with start/end or non-alpha boundaries
+// Matches "ass" but not "class" or "passage"
+const EXACT_RE = new RegExp(
+  EXACT_STEMS.map((s) => `(?:^|[^a-z])${s}(?:$|[^a-z])`).join('|'),
+  'i',
+);
+
+// Build substring regex: matches anywhere in the normalized string
+const SUBSTRING_RE = new RegExp(
+  SUBSTRING_STEMS.map((s) => `(?:${s})`).join('|'),
   'i',
 );
 
@@ -87,14 +109,39 @@ function normalize(input: string): string {
 }
 
 /**
+ * Light normalization that preserves word boundaries (spaces → single space).
+ * Used for the EXACT_RE check so "my ass" still matches but "class" doesn't.
+ */
+function normalizeSoft(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/@/g, 'a')
+    .replace(/0/g, 'o')
+    .replace(/1/g, 'i')
+    .replace(/3/g, 'e')
+    .replace(/\$/g, 's')
+    .replace(/5/g, 's')
+    .replace(/\+/g, 't')
+    .replace(/[^a-z\s]/g, '')  // keep letters AND spaces
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
  * Returns `true` if the name contains profanity / vulgar content.
  */
 export function isProfane(name: string): boolean {
   if (!name || name.trim().length === 0) return false;
 
-  const raw = name.trim().toLowerCase();
   const normalized = normalize(name);
+  const soft = normalizeSoft(name);
 
-  // Check both raw (preserves spaces for multi-word stems) and normalized
-  return BLOCKED_RE.test(raw) || BLOCKED_RE.test(normalized);
+  // 1. Check long/unambiguous stems as substrings
+  if (SUBSTRING_RE.test(normalized)) return true;
+
+  // 2. Check short/ambiguous stems with boundary awareness
+  //    Pad with spaces so start/end anchors in the regex work
+  if (EXACT_RE.test(` ${soft} `)) return true;
+
+  return false;
 }

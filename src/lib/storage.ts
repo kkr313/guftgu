@@ -1,5 +1,6 @@
 // Storage helpers for localStorage persistence
 import { playNotifSound } from './sounds';
+import { escHtml } from './data';
 
 const STORAGE_KEY = 'guftgu_user_v1';
 const CALL_HISTORY_KEY = 'guftgu_call_history';
@@ -171,7 +172,7 @@ export function saveCallToHistory(record: Omit<CallRecord, 'time'>): void {
       type: 'missed_call',
       icon: '📵',
       title: 'Missed Call',
-      body: `<b>${record.name || 'Someone'}</b> tried to call you`,
+      body: `<b>${escHtml(record.name || 'Someone')}</b> tried to call you`,
       time: record.callStartedAt || record.timestamp,
       unread: true,
       meta: { phone: record.phone || '', avatar: record.avatar || 'cat' },

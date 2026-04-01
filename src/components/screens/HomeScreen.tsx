@@ -63,6 +63,12 @@ export default function HomeScreen() {
       return;
     }
 
+    // Format validation: must be exactly 7 digits starting with 7, 8, or 9
+    if (!/^[789]\d{6}$/.test(targetPhone)) {
+      showToast('Enter a valid 7-digit Guftgu number');
+      return;
+    }
+
     // Can't call yourself
     if (targetPhone === state.guftguPhone) {
       showToast(S.home.cantCallSelf);

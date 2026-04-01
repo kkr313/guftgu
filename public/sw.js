@@ -1,7 +1,10 @@
 // Guftgu PWA Service Worker
 // Cache-first for static assets, network-first for API/dynamic
+// __SW_CACHE_NAME__ is replaced at build time by vite plugin (see vite.config.ts)
+// In dev mode the placeholder is left as-is, so we fall back to a static name.
 
-const CACHE_NAME = 'guftgu-v1';
+const RAW_CACHE = '__SW_CACHE_NAME__';
+const CACHE_NAME = RAW_CACHE.startsWith('__') ? 'guftgu-dev-v1' : RAW_CACHE;
 const STATIC_ASSETS = [
   '/',
   '/index.html',

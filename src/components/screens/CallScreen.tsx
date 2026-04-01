@@ -14,11 +14,10 @@ export default function CallScreen() {
   const isActive = state.screen === 'screen-call';
   const pal = state.currentPal;
 
-  // Debug logging
-  console.log('[CallScreen] Render:', { isActive, pal, screen: state.screen });
-
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeaker, setIsSpeaker] = useState(false);
+  const speakerSupported = typeof HTMLMediaElement !== 'undefined'
+    && 'setSinkId' in HTMLMediaElement.prototype;
   const [peerMuted, setPeerMuted] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -51,7 +50,7 @@ export default function CallScreen() {
   const roomWatchCleanupRef = useRef<(() => void) | null>(null); // Cleanup for direct call roomId watcher
   const ringingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null); // Auto-cancel after 45s
   const peerMuteCleanupRef = useRef<(() => void) | null>(null); // Cleanup for peer mute listener
-  const { seconds, formatted, start, stop, reset } = useTimer();
+  const { formatted, start, stop } = useTimer();
 
   // Unique call identifier for deduplication — same for both peers in the same call
   const callId = `${pal?.phone || 'unknown'}-${callStartedAt}`;
@@ -107,8 +106,8 @@ export default function CallScreen() {
     }
   }, [isActive, pal?.phone, dbRef, state.guftguPhone]);
 
-  // Store the connected timestamp for synchronized timer
-  const [connectedAt, setConnectedAt] = useState<number | null>(null);
+  // Store the connected timestamp via ref for synchronized timer
+  // (connectedAtRef is the single source of truth)
 
   // Set call status based on whether this is an outgoing or incoming call
   // And listen for status changes
@@ -204,7 +203,6 @@ export default function CallScreen() {
       console.log('[CallScreen] Incoming call - setting connected immediately');
       setCallStatus('connected');
       const timestamp = (pal as any).connectedAt || Date.now();
-      setConnectedAt(timestamp);
       connectedAtRef.current = timestamp;
       start(timestamp);
     }
@@ -214,7 +212,6 @@ export default function CallScreen() {
       console.log('[CallScreen] Match call - setting connected immediately');
       setCallStatus('connected');
       const now = Date.now();
-      setConnectedAt(now);
       connectedAtRef.current = now;
       start(now);
     }
@@ -281,7 +278,6 @@ export default function CallScreen() {
             setCallStatus('connected');
             // Use the shared timestamp from Firebase for synchronized timer
             const connectedTime = timestamp || Date.now();
-            setConnectedAt(connectedTime);
             connectedAtRef.current = connectedTime;
             start(connectedTime);
             showToast('Call connected! 🎉');
@@ -538,8 +534,7 @@ export default function CallScreen() {
   };
 
   const toggleSpeaker = () => {
-    // Toggle speaker state — note: Web Audio API has no direct speaker routing,
-    // but we can attempt to use setSinkId on supported browsers
+    if (!speakerSupported) return;
     const next = !isSpeaker;
     setIsSpeaker(next);
     try {
@@ -777,11 +772,6 @@ export default function CallScreen() {
         <div className="call-name">{pal.name}</div>
         <div className="call-mood">{pal.moodEmoji} {pal.mood}</div>
 
-        {/* Peer muted indicator */}
-        {peerMuted && (
-          <div className="call-peer-muted">🔇 Muted</div>
-        )}
-
         {/* Timer */}
         <div className="call-timer">{formatted}</div>
 
@@ -828,12 +818,14 @@ export default function CallScreen() {
             <div className="call-ctrl-label">{S.call.end}</div>
           </div>
 
+          {speakerSupported && (
           <div className="call-ctrl" onClick={toggleSpeaker}>
             <button className={`call-ctrl-btn${isSpeaker ? ' active' : ''}`}>
               <IconSpeaker />
             </button>
             <div className="call-ctrl-label">{isSpeaker ? S.call.speakerOn : S.call.speaker}</div>
           </div>
+          )}
         </div>
 
         {/* Switch to chat - only enabled if friends */}

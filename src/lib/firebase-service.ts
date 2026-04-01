@@ -14,8 +14,18 @@ import {
   serverTimestamp,
   runTransaction,
   DataSnapshot,
+  query,
+  orderByChild,
+  limitToLast,
 } from 'firebase/database';
 import { UserData, isBlocked, getBlocked, saveBlocked, BlockedRecord } from './storage';
+
+/** Generate a cryptographically random short ID (base36, 8 chars). */
+function cryptoId(): string {
+  const bytes = new Uint8Array(5);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(36)).join('').substring(0, 8);
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -79,22 +89,21 @@ const P3_MS = 25000; // 25 seconds for fallback
 function calculatePriority(
   me: QueueEntry,
   them: QueueEntry,
-  _elapsed: number
+  elapsed: number
 ): number | null {
-  // Check language first (mandatory for any connection)
   const sameLanguage = me.language === them.language;
   const sameRegion = me.region === them.region;
 
-  // Best: Language + Region match
+  // Best: Language + Region match — available immediately
   if (sameLanguage && sameRegion) return 3;
 
-  // Good: Language only match
-  if (sameLanguage) return 2;
+  // Good: Language-only match — unlocks after P2_MS (8 s)
+  if (sameLanguage && elapsed >= P2_MS) return 2;
 
-  // Fallback: Region only match
-  if (sameRegion) return 1;
+  // Fallback: Region-only match — unlocks after P3_MS (25 s)
+  if (sameRegion && elapsed >= P3_MS) return 1;
 
-  // No match
+  // No match yet (or too early to relax criteria)
   return null;
 }
 
@@ -314,7 +323,7 @@ export function enterMatchQueue(
       // Lock immediately before any async work
       matchAccepted = true;
 
-      const matchId = `match_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+      const matchId = `match_${Date.now()}_${cryptoId()}`;
       currentMatchId = matchId;
 
       // FIX 3: Cancel our own outgoing proposal now that we're matched
@@ -615,6 +624,10 @@ export async function cancelFriendRequest(
 
 /**
  * Listen for incoming friend requests.
+ * Uses onChildAdded so only NEW requests fire the callback — avoids the
+ * duplicate-toast problem that onValue caused (re-firing for every existing
+ * child on each snapshot).
+ * Skips requests that already exist when the listener first attaches.
  * Returns cleanup function.
  */
 export function listenFriendRequests(
@@ -624,24 +637,39 @@ export function listenFriendRequests(
 ): () => void {
   const reqRef = ref(db, `friendRequests/${myPhone}`);
   let cleaned = false;
+  let initialLoadDone = false;
 
-  const listener = onValue(reqRef, (snap) => {
+  // Read existing keys once so we can skip them in onChildAdded
+  const existingKeys = new Set<string>();
+  get(reqRef).then((snap) => {
+    if (snap.exists()) {
+      snap.forEach((child) => { existingKeys.add(child.key!); });
+    }
+    // Small delay so any rapid onChildAdded events from the initial sync are caught
+    setTimeout(() => { initialLoadDone = true; }, 500);
+  }).catch(() => { initialLoadDone = true; });
+
+  const listener = onChildAdded(reqRef, (snap) => {
     if (cleaned || !snap.exists()) return;
-    snap.forEach((child) => {
-      const req = child.val() as FriendRequest;
-      const fromPhone = req.from;
-      // Silently drop requests from blocked users
-      if (isBlocked(fromPhone)) {
-        remove(child.ref);
-        return;
-      }
-      onRequest({ ...req, phone: fromPhone });
-    });
+    const key = snap.key!;
+
+    // Skip requests that existed before we started listening
+    if (!initialLoadDone && existingKeys.has(key)) return;
+
+    const req = snap.val() as FriendRequest;
+    const fromPhone = req.from;
+
+    // Silently drop requests from blocked users
+    if (isBlocked(fromPhone)) {
+      remove(snap.ref);
+      return;
+    }
+    onRequest({ ...req, phone: fromPhone });
   });
 
   return () => {
     cleaned = true;
-    off(reqRef, 'value', listener);
+    off(reqRef, 'child_added', listener);
   };
 }
 
@@ -657,19 +685,17 @@ export function listenFriendAccepted(
   const accRef = ref(db, `friendAccepted/${myPhone}`);
   let cleaned = false;
 
-  const listener = onValue(accRef, (snap) => {
+  const listener = onChildAdded(accRef, (snap) => {
     if (cleaned || !snap.exists()) return;
-    snap.forEach((child) => {
-      const acc = child.val() as FriendRequest;
-      onAccepted({ ...acc, phone: acc.from });
-      // Remove after processing
-      remove(child.ref);
-    });
+    const acc = snap.val() as FriendRequest;
+    onAccepted({ ...acc, phone: acc.from });
+    // Remove after processing so it doesn't fire again on re-subscribe
+    remove(snap.ref);
   });
 
   return () => {
     cleaned = true;
-    off(accRef, 'value', listener);
+    off(accRef, 'child_added', listener);
   };
 }
 
@@ -685,19 +711,17 @@ export function listenFriendDeclined(
   const decRef = ref(db, `friendDeclined/${myPhone}`);
   let cleaned = false;
 
-  const listener = onValue(decRef, (snap) => {
+  const listener = onChildAdded(decRef, (snap) => {
     if (cleaned || !snap.exists()) return;
-    snap.forEach((child) => {
-      const data = child.val() as { from: string; name: string; avatar: string; timestamp: number };
-      onDeclined({ phone: data.from, name: data.name, avatar: data.avatar });
-      // Remove after processing
-      remove(child.ref);
-    });
+    const data = snap.val() as { from: string; name: string; avatar: string; timestamp: number };
+    onDeclined({ phone: data.from, name: data.name, avatar: data.avatar });
+    // Remove after processing so it doesn't fire again on re-subscribe
+    remove(snap.ref);
   });
 
   return () => {
     cleaned = true;
-    off(decRef, 'value', listener);
+    off(decRef, 'child_added', listener);
   };
 }
 
@@ -966,6 +990,40 @@ export async function deleteUserFromFirebase(
 
     // 8. Remove any reports from this user
     await remove(ref(db, `reports/${phone}`));
+
+    // 9. Remove this user from OTHER users' friends lists & clean up chats
+    const friendsSnap = await get(ref(db, `friends/${phone}`));
+    if (friendsSnap.exists()) {
+      const friends = friendsSnap.val() as Record<string, unknown>;
+      for (const friendPhone of Object.keys(friends)) {
+        // Remove me from their friends list
+        await remove(ref(db, `friends/${friendPhone}/${phone}`)).catch(() => {});
+
+        // Remove the shared chat room
+        const chatRoomId = getChatRoomId(phone, friendPhone);
+        await remove(ref(db, `chats/${chatRoomId}`)).catch(() => {});
+      }
+    }
+    // Remove my entire friends node
+    await remove(ref(db, `friends/${phone}`));
+
+    // 10. Remove friendAccepted / friendDeclined notifications involving this user
+    await remove(ref(db, `friendAccepted/${phone}`));
+    await remove(ref(db, `friendDeclined/${phone}`));
+
+    // Also remove entries this user left in OTHER users' accepted/declined nodes
+    // friendRequests are keyed as friendRequests/{target}/{requester}
+    // We already cleaned friendRequests/{phone}. Now clean where phone is the requester.
+    // This is expensive (full scan), so we do it best-effort.
+    const allReqSnap = await get(ref(db, 'friendRequests'));
+    if (allReqSnap.exists()) {
+      const allReqs = allReqSnap.val() as Record<string, Record<string, unknown>>;
+      for (const targetPhone of Object.keys(allReqs)) {
+        if (allReqs[targetPhone]?.[phone]) {
+          await remove(ref(db, `friendRequests/${targetPhone}/${phone}`)).catch(() => {});
+        }
+      }
+    }
 
     console.log('[Firebase] User data deleted:', phone);
   } catch (error) {
@@ -1321,7 +1379,9 @@ export async function loadChatHistory(
   const messagesRef = ref(db, `chats/${roomId}/messages`);
   
   try {
-    const snap = await get(messagesRef);
+    // Server-side pagination: only fetch the last N messages
+    const q = query(messagesRef, orderByChild('timestamp'), limitToLast(limit));
+    const snap = await get(q);
     if (!snap.exists()) return [];
 
     const messages: ChatMessage[] = [];
@@ -1335,10 +1395,8 @@ export async function loadChatHistory(
       });
     });
 
-    // Sort by timestamp and return last N messages
-    return messages
-      .sort((a, b) => a.timestamp - b.timestamp)
-      .slice(-limit);
+    // Already limited by server, just sort in case
+    return messages.sort((a, b) => a.timestamp - b.timestamp);
   } catch (error) {
     console.error('[Firebase] Error loading chat history:', error);
     return [];
@@ -1362,6 +1420,8 @@ export async function setTypingStatus(
   const typingRef = ref(db, `chats/${roomId}/typing/${myPhone}`);
   if (isTyping) {
     await set(typingRef, { typing: true, timestamp: Date.now() });
+    // Auto-clear typing if user disconnects unexpectedly
+    onDisconnect(typingRef).remove();
   } else {
     await remove(typingRef);
   }
@@ -1600,7 +1660,7 @@ export async function initiateCall(
   myUser: UserData,
   targetPhone: string
 ): Promise<string> {
-  const callId = `call_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+  const callId = `call_${Date.now()}_${cryptoId()}`;
   
   // Clean up any stale call data from a previous call to the same user
   // (e.g. leftover 'declined' status that would poison the new listener)
